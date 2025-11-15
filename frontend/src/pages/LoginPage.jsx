@@ -132,21 +132,7 @@ export default function LoginPage() {
                     {loading ? "Ingresando..." : "Iniciar sesión"}
                   </button>
 
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      className="w-full py-2 rounded-full border border-violet-200 text-violet-700 bg-white hover:bg-violet-50 flex items-center justify-center gap-2 text-sm"
-                      onClick={() => alert("Implementar OAuth")}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path d="M21 12.2c0-.7-.1-1.4-.3-2H12v3.8h5.5c-.2 1-1 2.6-2.5 3.4l-.1.7 3.6 2.8.3.1c2.2-2 3.5-5.2 3.5-8.8z" fill="#4285F4"/>
-                        <path d="M12 22c2.7 0 5-0.9 6.6-2.4l-3.1-2.4C14.8 18.4 13.5 19 12 19c-3 0-5.6-2-6.5-4.7l-.7.1-3.3 2.5C4.6 20.8 8.1 22 12 22z" fill="#34A853"/>
-                        <path d="M5.5 13.3a6.8 6.8 0 010-2.6l-.1-.2-3.4-2.6-.1.1A11.9 11.9 0 000 12c0 1.9.4 3.8 1.1 5.5l4.4-4.2z" fill="#FBBC05"/>
-                        <path d="M12 5.2c1.5 0 2.9.5 4 1.5l3.1-3C17 1.6 14.7 1 12 1 8.1 1 4.6 2.2 1.9 4.8l3.6 2.8C6.4 6.4 9 5.2 12 5.2z" fill="#EA4335"/>
-                      </svg>
-                      Ingresar con Google
-                    </button>
-                  </div>
+                  {/* Botón de Google eliminado */}
                 </form>
 
                 <p className="text-sm text-slate-600 mt-4">
