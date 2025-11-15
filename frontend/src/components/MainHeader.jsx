@@ -134,7 +134,7 @@ export default function MainHeader({
 
             {/* center title */}
             <div className="hidden md:flex items-center justify-center flex-1">
-              <div className="text-white font-beauty text-lg">Baseline</div>
+              <div className="text-white font-beauty text-lg">Vitrinex</div>
             </div>
 
             {/* right: search, notifications, avatar+name */}
