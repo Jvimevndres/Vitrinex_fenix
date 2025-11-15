@@ -1,5 +1,5 @@
 // src/pages/RegisterPage.jsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ export default function RegisterPage() {
   } = useForm();
 
   const { signup, isAuthenticated, authErrors } = useAuth();
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +23,20 @@ export default function RegisterPage() {
   }, [isAuthenticated, navigate]);
 
   const onSubmit = handleSubmit(async (values) => {
-    await signup(values); // values: { username, email, password }
+    setError("");
+    try {
+      await signup(values); // values: { username, email, password }
+    } catch (err) {
+      if (err?.response?.status === 429) {
+        setError("Demasiados intentos. Espera un momento y vuelve a intentar.");
+      } else {
+        const msg =
+          err?.response?.data?.message ||
+          (Array.isArray(err?.response?.data?.error) && err?.response?.data?.error[0]) ||
+          "Error al crear la cuenta";
+        setError(msg);
+      }
+    }
   });
 
   return (
@@ -35,15 +49,11 @@ export default function RegisterPage() {
           Explora negocios en el mapa y, si quieres, registra tu propio negocio más adelante.
         </p>
 
-        {authErrors &&
-          authErrors.map((err, i) => (
-            <p
-              key={i}
-              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
-            >
-              {err}
-            </p>
-          ))}
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
         <form onSubmit={onSubmit} className="space-y-4 text-sm">
           <div>

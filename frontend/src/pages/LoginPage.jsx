@@ -20,11 +20,15 @@ export default function LoginPage() {
       await signin(form);
       navigate("/", { replace: true }); // 👈 redirige al home (mapa)
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error?.[0] ||
-        "Credenciales inválidas";
-      setError(msg);
+      if (err?.response?.status === 429) {
+        setError("Demasiados intentos. Espera un momento y vuelve a intentar.");
+      } else {
+        const msg =
+          err?.response?.data?.message ||
+          (Array.isArray(err?.response?.data?.error) && err?.response?.data?.error[0]) ||
+          "Credenciales inválidas";
+        setError(msg);
+      }
     }
   };
 

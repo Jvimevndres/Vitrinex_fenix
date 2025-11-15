@@ -12,6 +12,7 @@ import taskRoutes from "./routes/tasks.routes.js";
 import storeRoutes from "./routes/store.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import { ensureStoreIndexes } from "./models/store.model.js";
+import helmet from "helmet";
 
 const app = express();
 
@@ -31,6 +32,11 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// Seguridad HTTP headers
+app.use(helmet());
+
+// Nota: el rate-limit se aplica únicamente a rutas sensibles (ej. auth)
 
 // 📂 Servir archivos estáticos subidos (avatars, logos, etc.)
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));

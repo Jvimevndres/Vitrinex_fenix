@@ -1,5 +1,6 @@
 // backend/src/routes/auth.routes.js
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import {
   register,
   login,
@@ -12,9 +13,23 @@ import { authRequired } from "../middlewares/authRequired.js";
 
 const router = Router();
 
+// Rate limiter para rutas de autenticación (login/register)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 6, // máximo 6 intentos por IP en la ventana
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      error: "too_many_attempts",
+      message: "Has excedido el número de intentos. Intenta más tarde.",
+    });
+  },
+});
+
 // Rutas de autenticación
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", authLimiter, register);
+router.post("/login", authLimiter, login);
 router.post("/logout", logout);
 
 // Perfil privado (usuario logueado)

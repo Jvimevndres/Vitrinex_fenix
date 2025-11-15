@@ -2,6 +2,8 @@
 import User from "../models/user.model.js";
 import { createAccessToken } from "../libs/jwt.js";
 
+const isProd = process.env.NODE_ENV === "production";
+
 // 🧾 REGISTRO
 export const register = async (req, res) => {
   try {
@@ -26,8 +28,8 @@ export const register = async (req, res) => {
     const token = await createAccessToken({ id: newUser._id });
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       path: "/",
     });
 
@@ -82,8 +84,8 @@ export const login = async (req, res) => {
     const token = await createAccessToken({ id: userFound._id });
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       path: "/",
     });
 
