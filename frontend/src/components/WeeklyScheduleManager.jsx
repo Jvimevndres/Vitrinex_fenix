@@ -223,9 +223,15 @@ export default function WeeklyScheduleManager({ storeId }) {
         <p className="text-sm font-semibold text-slate-600">
           {weekTitle}
         </p>
-        <p className="text-xs text-slate-500 mt-1">
-          Configura tu disponibilidad para cada día de la semana
-        </p>
+        <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-xs text-blue-800 font-medium mb-1">
+            ℹ️ Horario Semanal = Plantilla para todos los días
+          </p>
+          <p className="text-xs text-blue-700">
+            Al configurar un día aquí (ej: Jueves 09:00-18:00), ese horario se aplicará a <strong>todos los jueves</strong>.
+            Para tener días específicos diferentes (ej: cerrar un jueves en particular), usa <strong>"Vista de Calendario Mensual"</strong>.
+          </p>
+        </div>
       </div>
 
       {/* Mensajes */}

@@ -823,7 +823,7 @@ export const createStoreProduct = async (req, res) => {
     if (store.mode !== "products")
       return res.status(400).json({ message: "Esta tienda no vende productos" });
 
-    const { name, description, price, images, isActive, stock } = req.body || {};
+    const { name, description, price, images, isActive, stock, category, tags, discount } = req.body || {};
 
     if (!name || typeof price === "undefined") {
       return res.status(400).json({ message: "Nombre y precio del producto son obligatorios" });
@@ -842,6 +842,9 @@ export const createStoreProduct = async (req, res) => {
       images: parseImages(images),
       isActive: typeof isActive === "boolean" ? isActive : true,
       stock: typeof stock === "number" ? stock : 0,
+      category: category || "",
+      tags: Array.isArray(tags) ? tags : [],
+      discount: typeof discount === "number" ? Math.max(0, Math.min(100, discount)) : 0,
     });
 
     res.status(201).json(mapProductResponse(product));
@@ -862,7 +865,7 @@ export const updateStoreProduct = async (req, res) => {
     if (store.mode !== "products")
       return res.status(400).json({ message: "Esta tienda no vende productos" });
 
-    const { name, description, price, images, isActive } = req.body || {};
+    const { name, description, price, images, isActive, stock, category, tags, discount } = req.body || {};
 
     const update = {};
     
@@ -878,12 +881,20 @@ export const updateStoreProduct = async (req, res) => {
     if (typeof images !== "undefined") update.images = parseImages(images);
     if (typeof isActive !== "undefined") update.isActive = Boolean(isActive);
     if (typeof stock !== "undefined") {
-  const numericStock = Number(stock);
-  if (Number.isNaN(numericStock) || numericStock < 0) {
-    return res.status(400).json({ message: "El stock debe ser válido" });
-  }
-  update.stock = numericStock;
-}
+      const numericStock = Number(stock);
+      if (Number.isNaN(numericStock) || numericStock < 0) {
+        return res.status(400).json({ message: "El stock debe ser válido" });
+      }
+      update.stock = numericStock;
+    }
+    if (typeof category !== "undefined") update.category = category || "";
+    if (typeof tags !== "undefined") update.tags = Array.isArray(tags) ? tags : [];
+    if (typeof discount !== "undefined") {
+      const numericDiscount = Number(discount);
+      if (!Number.isNaN(numericDiscount)) {
+        update.discount = Math.max(0, Math.min(100, numericDiscount));
+      }
+    }
 
 
     const product = await Product.findOneAndUpdate(

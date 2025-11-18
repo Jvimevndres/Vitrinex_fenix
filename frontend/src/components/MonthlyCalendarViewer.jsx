@@ -81,9 +81,20 @@ export default function MonthlyCalendarViewer({ storeId }) {
         <h3 className="text-xl font-bold text-slate-800">
           📆 Vista de Calendario Mensual
         </h3>
-        <p className="text-sm text-slate-500 mt-1">
-          Haz clic en cualquier día para ver su configuración
-        </p>
+        <div className="mt-2 space-y-2">
+          <p className="text-sm text-slate-600">
+            Aquí ves cómo se aplicará tu <strong>Horario Semanal</strong> a cada día del mes.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-xs text-amber-800 font-medium mb-1">
+              💡 ¿Necesitas cerrar un día específico o cambiar su horario?
+            </p>
+            <p className="text-xs text-amber-700">
+              Para cerrar el jueves 27 pero dejar abierto el jueves 20, debes crear una <strong>excepción</strong> en ese día específico.
+              Ve a <strong>"Horarios y Excepciones"</strong> en el menú lateral para agregar días especiales.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Leyenda */}

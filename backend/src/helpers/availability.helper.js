@@ -341,10 +341,22 @@ const DAY_FROM_INDEX = {
 export const normalizeDateOnly = (dateInput) => {
   if (!dateInput) return null;
   
+  // Si es string en formato YYYY-MM-DD, parsear manualmente para evitar problemas de zona horaria
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [year, month, day] = dateInput.split('-').map(Number);
+    // Crear fecha UTC pero guardando los componentes originales para .getDay()
+    const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+    // Guardar componentes originales para obtener el día correcto
+    date._originalYear = year;
+    date._originalMonth = month;
+    date._originalDay = day;
+    return date;
+  }
+  
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return null;
   
-  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCHours(12, 0, 0, 0);
   return date;
 };
 
@@ -380,66 +392,10 @@ export const getAvailabilityForDate = (date, bookingAvailability = [], specialDa
     };
   }
   
-  // 2. Si no hay specialDay, usar horario semanal
-  const dayIndex = normalizedDate.getDay();
-  const dayName = DAY_FROM_INDEX[dayIndex];
-  
-  const weeklyAvailability = bookingAvailability.find(
-    av => av.dayOfWeek === dayName
-  );
-  
-  if (!weeklyAvailability) {
-    console.log(`⚠️ No hay configuración para ${dayName} en bookingAvailability`);
-    return { isClosed: true, timeBlocks: [], reason: "Sin horario configurado" };
-  }
-
-  console.log(`📋 Configuración encontrada para ${dayName}:`, {
-    isClosed: weeklyAvailability.isClosed,
-    hasTimeBlocks: !!weeklyAvailability.timeBlocks?.length,
-    hasSlots: !!weeklyAvailability.slots?.length,
-    timeBlocks: weeklyAvailability.timeBlocks,
-    slots: weeklyAvailability.slots,
-  });
-
-  // 🆕 MIGRACIÓN AUTOMÁTICA: Si solo tiene slots, convertir a timeBlocks
-  let timeBlocks = weeklyAvailability.timeBlocks || [];
-  
-  if (timeBlocks.length === 0 && weeklyAvailability.slots && weeklyAvailability.slots.length > 0) {
-    // Convertir slots antiguos a timeBlocks
-    const slots = weeklyAvailability.slots.map(s => normalizeTime(s)).filter(Boolean).sort();
-    
-    if (slots.length > 0) {
-      // Crear un bloque desde el primer slot hasta 30min después del último
-      const firstSlot = slots[0];
-      const lastSlot = slots[slots.length - 1];
-      const lastSlotMinutes = timeToMinutes(lastSlot);
-      const endMinutes = lastSlotMinutes + 30;
-      const endHours = Math.floor(endMinutes / 60);
-      const endMins = endMinutes % 60;
-      const endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
-      
-      timeBlocks = [{
-        startTime: firstSlot,
-        endTime: endTime,
-        slotDuration: 30,
-      }];
-      
-      console.log(`🔄 Migración automática de ${slots.length} slots a timeBlock para ${dayName}:`, timeBlocks[0]);
-    }
-  }
-
-  // 🆕 VERIFICAR SI HAY BLOQUES VÁLIDOS
-  if (timeBlocks.length === 0) {
-    console.warn(`⚠️ ${dayName} no tiene timeBlocks válidos`);
-    return { isClosed: true, timeBlocks: [], reason: "Sin bloques de horario configurados" };
-  }
-  
-  return {
-    isClosed: !!weeklyAvailability.isClosed,
-    timeBlocks,
-    reason: weeklyAvailability.isClosed ? "Cerrado" : "",
-    isSpecialDay: false,
-  };
+  // 2. Si no hay specialDay configurado, el día está cerrado
+  // (Ya no usamos bookingAvailability - solo configuración individual por día)
+  console.log(`⚠️ No hay specialDay para ${normalizedDate.toISOString().split('T')[0]} - día cerrado`);
+  return { isClosed: true, timeBlocks: [], reason: "Día no configurado", isSpecialDay: false };
 };
 
 /**

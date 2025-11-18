@@ -209,11 +209,18 @@ export default function MonthlyCalendarEditor({ storeId }) {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">
-          Calendario de Excepciones
+          📅 Configurar Horarios
         </h2>
-        <p className="text-gray-600 mt-1">
-          Marca días especiales, feriados o cierres temporales
-        </p>
+        <div className="mt-2 space-y-2">
+          <p className="text-gray-600">
+            Configura cada día del mes individualmente. Haz clic en cualquier día para agregar horarios.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              💡 <strong>Configura día por día:</strong> Haz clic en un día, agrega bloques horarios y usa "📋 Copiar de otro día" para ahorrar tiempo.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Error message */}
@@ -298,7 +305,7 @@ export default function MonthlyCalendarEditor({ storeId }) {
                     })}
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Configura este día como excepción
+                    Configura los horarios para este día específico
                   </p>
                 </div>
                 <button
@@ -358,9 +365,50 @@ export default function MonthlyCalendarEditor({ storeId }) {
                 {/* Bloques horarios (solo si no está cerrado) */}
                 {!formData.isClosed && (
                   <div className="space-y-3">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Horarios especiales para este día
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Horarios especiales para este día
+                      </label>
+                      
+                      {/* Botón para copiar horarios de otro día */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const otherDates = specialDays.filter(sd => {
+                            const sdKey = formatDateKey(sd.date);
+                            const currentKey = formatDateKey(selectedDate);
+                            return sdKey !== currentKey && !sd.isClosed && sd.timeBlocks && sd.timeBlocks.length > 0;
+                          });
+                          
+                          if (otherDates.length === 0) {
+                            alert("No hay otros días con horarios configurados para copiar");
+                            return;
+                          }
+                          
+                          const dateList = otherDates.map((sd, idx) => {
+                            const d = new Date(sd.date);
+                            return `${idx + 1}. ${d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} (${sd.timeBlocks.length} bloques)`;
+                          }).join('\n');
+                          
+                          const choice = prompt(`Selecciona el día del que quieres copiar horarios:\n\n${dateList}\n\nEscribe el número:`);
+                          
+                          if (choice) {
+                            const index = parseInt(choice) - 1;
+                            if (index >= 0 && index < otherDates.length) {
+                              setFormData({
+                                ...formData,
+                                timeBlocks: JSON.parse(JSON.stringify(otherDates[index].timeBlocks))
+                              });
+                            } else {
+                              alert("Número inválido");
+                            }
+                          }
+                        }}
+                        className="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+                      >
+                        📋 Copiar de otro día
+                      </button>
+                    </div>
 
                     {/* Lista de bloques existentes */}
                     {formData.timeBlocks.length > 0 && (

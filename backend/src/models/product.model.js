@@ -42,6 +42,25 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    category: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+
+    tags: {
+      type: [String],
+      default: [],
+    },
+
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
   },
   {
     timestamps: true,

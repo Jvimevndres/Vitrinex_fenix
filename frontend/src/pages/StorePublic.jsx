@@ -12,9 +12,11 @@ import {
   getStoreServices,
   getAvailabilityByDate,
   createAppointmentWithService,
+  getSpecialDays,
 } from "../api/services";
 import { getStoreAppearance } from "../api/appearance"; // 🎨 Personalización visual
 import MainHeader from "../components/MainHeader";
+import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tienda moderna
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -380,6 +382,9 @@ export default function StorePublicPage() {
   const [availability, setAvailability] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
+  
+  // 📅 Días especiales configurados individualmente
+  const [specialDays, setSpecialDays] = useState([]);
 
   // 🆕 SERVICIOS Y FLUJO PASO A PASO
   const [services, setServices] = useState([]);
@@ -388,6 +393,17 @@ export default function StorePublicPage() {
   const [selectedService, setSelectedService] = useState(null);
   const [dateSlots, setDateSlots] = useState([]);
   const [dateSlotsLoading, setDateSlotsLoading] = useState(false);
+  
+  // Inicializar calendario en el mes actual
+  const [calendarValue, setCalendarValue] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+  
+  // 🆕 Cache de disponibilidad por fecha (para marcar días en verde correctamente)
+  const [availabilityCache, setAvailabilityCache] = useState({}); // { "2025-11-19": { hasSlots: true, loading: false } }
+  const [cacheVersion, setCacheVersion] = useState(0); // Para forzar re-render del calendario
 
   const [bookingForm, setBookingForm] = useState({
     customerName: "",
@@ -539,11 +555,31 @@ export default function StorePublicPage() {
       const activeServices = Array.isArray(data) ? data.filter(s => s.isActive) : [];
       console.log("🛎️ Servicios activos cargados:", activeServices.length, activeServices);
       setServices(activeServices);
+      
+      // Cargar specialDays para marcar el calendario
+      await loadSpecialDays();
     } catch (err) {
       console.error("❌ Error al cargar servicios:", err);
       setServices([]);
     } finally {
       setServicesLoading(false);
+    }
+  };
+  
+  // 📅 CARGAR SPECIAL DAYS
+  const loadSpecialDays = async () => {
+    try {
+      const { data } = await getSpecialDays(id);
+      const days = Array.isArray(data) ? data : [];
+      console.log("📅 SpecialDays cargados:", days.length);
+      days.forEach(sd => {
+        const date = new Date(sd.date);
+        console.log(`  ${sd.isClosed ? '🚫' : '⭐'} ${date.toLocaleDateString('es-ES')}: ${sd.isClosed ? 'CERRADO' : `${sd.timeBlocks?.length || 0} bloques`}`);
+      });
+      setSpecialDays(days);
+    } catch (err) {
+      console.error("❌ Error al cargar specialDays:", err);
+      setSpecialDays([]);
     }
   };
 
@@ -557,17 +593,30 @@ export default function StorePublicPage() {
     try {
       setDateSlotsLoading(true);
       console.log("📡 Llamando a API getAvailabilityByDate...");
+      console.log("📡 URL:", `/stores/${id}/availability/date/${date}?serviceId=${serviceId}`);
+      
       const { data } = await getAvailabilityByDate(id, date, serviceId);
       
       console.log("📅 Disponibilidad recibida:", data);
       console.log("📊 availableSlots:", data.availableSlots);
-      console.log("📊 Cantidad de slots:", data.availableSlots?.length || 0);
+      console.log("📊 bookedSlots:", data.bookedSlots);
+      console.log("📊 Cantidad de slots disponibles:", data.availableSlots?.length || 0);
+      console.log("📊 isClosed:", data.isClosed);
+      console.log("📊 timeBlocks:", data.timeBlocks);
       
-      // El backend devuelve "availableSlots", no "slots"
+      // El backend YA filtra los slots ocupados en availableSlots
+      // Solo guardamos los slots que están disponibles
       const slots = Array.isArray(data.availableSlots) ? data.availableSlots : [];
       setDateSlots(slots);
       
-      console.log("✅ dateSlots actualizado con", slots.length, "slots");
+      console.log("✅ dateSlots actualizado con", slots.length, "slots disponibles");
+      if (slots.length === 0) {
+        console.warn("⚠️ No se recibieron slots. Razones posibles:");
+        console.warn("   - Día cerrado:", data.isClosed);
+        console.warn("   - Sin timeBlocks:", !data.timeBlocks || data.timeBlocks.length === 0);
+        console.warn("   - Bloques muy cortos para el servicio");
+        console.warn("   - Todos los slots están ocupados:", data.bookedSlots?.length || 0);
+      }
     } catch (err) {
       console.error("❌ Error al cargar slots:", err);
       console.error("❌ Error details:", err.response?.data);
@@ -591,12 +640,29 @@ export default function StorePublicPage() {
     setBookingStep(2);
     setBookingForm(prev => ({ ...prev, slot: "", date: "" }));
     setDateSlots([]);
+    setAvailabilityCache({}); // Limpiar cache al cambiar de servicio
+    
+    // Resetear calendario al mes actual
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    setCalendarValue(today);
   };
 
   const handleCalendarChange = (value) => {
     if (!value) return;
-    const iso = value.toISOString().slice(0, 10);
+    
+    // Actualizar el valor del calendario para el cache
+    setCalendarValue(value);
+    
+    // FIX: Usar fecha local en lugar de UTC para evitar problemas de zona horaria
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    const iso = `${year}-${month}-${day}`;
+    
     console.log("📅 Fecha seleccionada:", iso, "Servicio:", selectedService?._id);
+    console.log("📅 Objeto Date:", value);
+    console.log("📅 ISO local:", iso);
     
     setBookingForm((p) => ({ ...p, date: iso, slot: "" }));
     setBookingError("");
@@ -616,44 +682,148 @@ export default function StorePublicPage() {
   const isDayDisabled = ({ date, view }) => {
     if (view !== "month") return false;
     
-    // Obtener día de la semana
-    const dayOfWeek = DAY_FROM_INDEX[date.getDay()];
+    // No deshabilitar días pasados aquí, lo maneja el Calendar con minDate
     
-    // Buscar configuración para ese día
-    const dayConfig = availability.find(a => a.dayOfWeek === dayOfWeek);
-    
-    console.log(`🔍 isDayDisabled para ${date.toLocaleDateString('es-ES')} (${dayOfWeek}):`, 
-      dayConfig ? `Encontrado - cerrado:${dayConfig.isClosed} bloques:${dayConfig.timeBlocks?.length || 0}` : 'No encontrado');
-    
-    // Deshabilitar si:
-    // 1. No hay configuración
-    // 2. Está marcado como cerrado
-    // 3. No tiene timeBlocks ni slots
-    if (!dayConfig) return true;
-    if (dayConfig.isClosed) return true;
-    if ((!dayConfig.timeBlocks || dayConfig.timeBlocks.length === 0) && 
-        (!dayConfig.slots || dayConfig.slots.length === 0)) {
-      return true;
+    // Si hay servicio seleccionado, verificar disponibilidad real con el cache
+    if (selectedService) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      
+      const cached = availabilityCache[dateKey];
+      
+      // Si ya se cargó y no tiene slots, deshabilitar
+      if (cached && !cached.loading && !cached.hasSlots) {
+        return true;
+      }
+      
+      // Si está cargando o no se ha cargado, no deshabilitar (esperar)
+      return false;
     }
     
+    // Si no hay servicio seleccionado, no deshabilitar días
+    // (la disponibilidad solo se verifica cuando se selecciona un servicio)
     return false;
   };
 
   // 🆕 Función para marcar días disponibles visualmente
   const getTileClassName = ({ date, view }) => {
     if (view !== "month") return null;
-    if (date < new Date()) return null;
     
-    const dayOfWeek = DAY_FROM_INDEX[date.getDay()];
-    const dayConfig = availability.find(a => a.dayOfWeek === dayOfWeek);
+    // No marcar días pasados
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return null;
     
-    if (dayConfig && !dayConfig.isClosed && 
-        (dayConfig.timeBlocks?.length > 0 || dayConfig.slots?.length > 0)) {
-      return "available-day";
+    // Si hay servicio seleccionado, SOLO usar el cache (disponibilidad real)
+    if (selectedService) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      
+      const cached = availabilityCache[dateKey];
+      
+      // Solo marcar verde si está cargado Y tiene slots
+      if (cached && !cached.loading && cached.hasSlots) {
+        return "available-day";
+      }
+      
+      return null;
     }
     
-    return null;
+    // Si NO hay servicio seleccionado, usar specialDays para marcar visualmente
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
+    
+    // Verificar si este día está en specialDays y NO está cerrado
+    const hasSpecialDay = specialDays.some(sd => {
+      const sdDate = new Date(sd.date);
+      const sdYear = sdDate.getFullYear();
+      const sdMonth = String(sdDate.getMonth() + 1).padStart(2, '0');
+      const sdDay = String(sdDate.getDate()).padStart(2, '0');
+      const sdKey = `${sdYear}-${sdMonth}-${sdDay}`;
+      return sdKey === dateKey && !sd.isClosed && sd.timeBlocks?.length > 0;
+    });
+    
+    return hasSpecialDay ? "available-day" : null;
   };
+
+  // 🆕 Precargar disponibilidad para el mes visible cuando se selecciona un servicio
+  useEffect(() => {
+    if (!selectedService || !calendarValue) return;
+    
+    const loadMonthAvailability = async () => {
+      // Limpiar cache anterior
+      setAvailabilityCache({});
+      
+      const year = calendarValue.getFullYear();
+      const month = calendarValue.getMonth();
+      
+      // Obtener primer y último día del mes visible
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      console.log(`📅 Precargando disponibilidad para ${firstDay.toLocaleDateString('es-ES')} - ${lastDay.toLocaleDateString('es-ES')}`);
+      console.log(`📅 Servicio seleccionado: ${selectedService.name} (${selectedService.duration}min)`);
+      
+      // Cargar disponibilidad para cada día del mes
+      const promises = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let daysToCheck = 0;
+      let daysSkipped = 0;
+      
+      for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+        // Solo cargar días futuros
+        if (d < today) {
+          daysSkipped++;
+          continue;
+        }
+        
+        const dateYear = d.getFullYear();
+        const dateMonth = String(d.getMonth() + 1).padStart(2, '0');
+        const dateDay = String(d.getDate()).padStart(2, '0');
+        const dateKey = `${dateYear}-${dateMonth}-${dateDay}`;
+        
+        daysToCheck++;
+        
+        // Cargar slots reales directamente desde la API
+        // La API ya maneja la lógica de specialDays vs bookingAvailability
+        promises.push(
+          getAvailabilityByDate(id, dateKey, selectedService._id)
+            .then(({ data }) => {
+              const hasSlots = Array.isArray(data.availableSlots) && data.availableSlots.length > 0;
+              const dayOfWeek = DAY_FROM_INDEX[d.getDay()];
+              console.log(`${hasSlots ? '✅' : '⚠️'} ${dateKey} (${dayOfWeek}): ${data.availableSlots?.length || 0} slots disponibles`);
+              setAvailabilityCache(prev => ({ 
+                ...prev, 
+                [dateKey]: { hasSlots, loading: false, slots: data.availableSlots || [] } 
+              }));
+            })
+            .catch(err => {
+              console.error(`❌ Error cargando ${dateKey}:`, err.message);
+              setAvailabilityCache(prev => ({ ...prev, [dateKey]: { hasSlots: false, loading: false } }));
+            })
+        );
+      }
+      
+      console.log(`📊 Días a verificar: ${daysToCheck}, Días omitidos (pasados): ${daysSkipped}`);
+      
+      // Esperar a que todas las peticiones terminen
+      await Promise.all(promises);
+      console.log(`✅ Disponibilidad del mes cargada - Total en cache:`, Object.keys(availabilityCache).length);
+      
+      // Forzar re-render del calendario
+      setCacheVersion(prev => prev + 1);
+    };
+    
+    loadMonthAvailability();
+  }, [selectedService, calendarValue, specialDays, id]);
 
   const handleSlotSelect = (slot) => {
     setBookingForm(prev => ({ ...prev, slot }));
@@ -676,12 +846,6 @@ export default function StorePublicPage() {
     setBookingMsg("");
     setCreatedBookingId(null); // 🆕 Reset bookingId
   };
-
-  const calendarValue = useMemo(() => {
-    if (!bookingForm.date) return new Date();
-    const d = new Date(bookingForm.date);
-    return Number.isNaN(d.getTime()) ? new Date() : d;
-  }, [bookingForm.date]);
 
   // 🆕 Slots para el día seleccionado (ahora vienen de dateSlots)
   const slotsForSelectedDay = useMemo(() => {
@@ -1216,11 +1380,18 @@ export default function StorePublicPage() {
 
                   <div className="flex flex-col items-center">
                     <Calendar
+                      key={`calendar-${cacheVersion}`}
                       onChange={handleCalendarChange}
                       value={calendarValue}
                       minDate={new Date()}
                       tileDisabled={isDayDisabled}
                       tileClassName={getTileClassName}
+                      onActiveStartDateChange={({ activeStartDate }) => {
+                        // Cuando cambian de mes, actualizar el calendario para recargar disponibilidad
+                        if (activeStartDate && selectedService) {
+                          setCalendarValue(activeStartDate);
+                        }
+                      }}
                       className="rounded-2xl border-2 border-slate-200 shadow-lg p-3 max-w-md mx-auto"
                       locale="es-ES"
                     />
@@ -1461,246 +1632,7 @@ export default function StorePublicPage() {
 
           {/* PRODUCTOS */}
           {store.mode === "products" && (
-            <section
-              ref={productsSectionRef}
-              className="rounded-2xl p-6 space-y-8"
-              style={getCardStyle(appearance, colors)}
-            >
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-800">
-                    Catálogo de productos
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    Agrega lo que quieras comprar a tu pedido.
-                  </p>
-                </div>
-
-                {productsLoading ? (
-                  <p className="text-sm text-slate-500">
-                    Cargando catálogo…
-                  </p>
-                ) : productsError ? (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {productsError}
-                  </p>
-                ) : products.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    Aún no hay productos.
-                  </p>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {products.map((product) => {
-                      const imageSrc =
-                        product.imageUrl ||
-                        product.image ||
-                        (product.images?.[0] ?? null);
-                      return (
-                        <article
-                          key={product._id}
-                          className="border border-slate-200 rounded-2xl overflow-hidden flex flex-col bg-slate-50/60"
-                        >
-                          <div className="h-56 bg-slate-100 flex items-center justify-center">
-                            {imageSrc ? (
-                              <img
-                                src={imageSrc}
-                                alt={product.name}
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-full text-xs text-slate-400">
-                                Sin imagen
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4 space-y-1 flex-1 flex flex-col">
-                            <h4 className="font-semibold text-slate-800 text-sm">
-                              {product.name}
-                            </h4>
-                            {product.description && (
-                              <p className="text-xs text-slate-500 line-clamp-2">
-                                {product.description}
-                              </p>
-                            )}
-                            <p className="mt-2 font-semibold text-emerald-600 text-sm">
-                              {currencyFormatter.format(
-                                product.price || 0
-                              )}
-                            </p>
-                            <div className="mt-3">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleQuickAdd(product._id)
-                                }
-                                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium py-2 rounded-lg transition-colors"
-                              >
-                                Agregar al pedido
-                              </button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Pedido */}
-              <div className="border-t border-slate-200 pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  Completa tu pedido
-                </h3>
-
-                {orderError && (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {orderError}
-                  </p>
-                )}
-                {orderMsg && (
-                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    {orderMsg}
-                  </p>
-                )}
-
-                <div className="grid gap-6 md:grid-cols-[1.2fr,1fr] items-start">
-                  <div className="space-y-3">
-                    {orderItems.length === 0 ? (
-                      <p className="text-sm text-slate-500">
-                        Aún no has agregado productos.
-                      </p>
-                    ) : (
-                      <>
-                        <ul className="space-y-2">
-                          {orderItems.map((item) => (
-                            <li
-                              key={item.productId}
-                              className="flex items-center justify-between gap-3 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50"
-                            >
-                              <div>
-                                <p className="text-sm font-medium text-slate-800">
-                                  {item.name}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {item.quantity} x{" "}
-                                  {currencyFormatter.format(
-                                    item.price || 0
-                                  )}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <p className="text-sm font-semibold text-slate-800">
-                                  {currencyFormatter.format(
-                                    (item.price || 0) *
-                                      item.quantity
-                                  )}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    removeOrderItem(item.productId)
-                                  }
-                                  className="text-xs text-red-500 hover:text-red-600"
-                                >
-                                  Quitar
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 mt-2">
-                          <span className="text-sm font-medium text-slate-700">
-                            Total estimado
-                          </span>
-                          <span className="text-lg font-semibold text-emerald-600">
-                            {currencyFormatter.format(orderTotal)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <form
-                    onSubmit={submitOrder}
-                    className="space-y-3 text-sm"
-                  >
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Nombre completo
-                      </label>
-                      <input
-                        name="customerName"
-                        value={orderForm.customerName}
-                        onChange={onOrderFormChange}
-                        className="w-full border rounded-lg px-3 py-2"
-                        placeholder="Tu nombre"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Correo electrónico
-                      </label>
-                      <input
-                        name="customerEmail"
-                        value={orderForm.customerEmail}
-                        onChange={onOrderFormChange}
-                        className="w-full border rounded-lg px-3 py-2"
-                        placeholder="tucorreo@example.com"
-                        type="email"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Teléfono
-                      </label>
-                      <input
-                        name="customerPhone"
-                        value={orderForm.customerPhone}
-                        onChange={onOrderFormChange}
-                        className="w-full border rounded-lg px-3 py-2"
-                        placeholder="+56 9 ..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Dirección (si aplica)
-                      </label>
-                      <input
-                        name="customerAddress"
-                        value={orderForm.customerAddress}
-                        onChange={onOrderFormChange}
-                        className="w-full border rounded-lg px-3 py-2"
-                        placeholder="Calle, número, comuna"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Comentarios
-                      </label>
-                      <textarea
-                        name="notes"
-                        value={orderForm.notes}
-                        onChange={onOrderFormChange}
-                        rows={3}
-                        className="w-full border rounded-lg px-3 py-2"
-                        placeholder="Detalles de tu pedido"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={
-                        orderSubmitting || orderItems.length === 0
-                      }
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-60"
-                    >
-                      {orderSubmitting
-                        ? "Enviando pedido…"
-                        : "Enviar pedido"}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </section>
+            <ModernProductsStore store={store} appearance={appearance} />
           )}
 
           <div className="flex justify-end">
