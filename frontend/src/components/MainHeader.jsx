@@ -21,12 +21,10 @@ export default function MainHeader({
 
   const isStore = variant === "store";
 
-  // Fondo por defecto de Vitrinex
   const vitrInexStyle = {
     background: "linear-gradient(90deg, #f3e8ff 0%, #e9d5ff 40%, #ddd6fe 100%)",
   };
 
-  // Fondo por defecto para tiendas (si no se pasa headerStyle)
   const defaultStoreStyle = {
     backgroundImage:
       "linear-gradient(90deg, #0f172a 0%, #1d4ed8 50%, #0f172a 100%)",
@@ -50,7 +48,7 @@ export default function MainHeader({
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo + subtítulo */}
         <div className="flex items-center gap-5">
-          <Link to={isStore ? "/" : "/"} className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img
               src={finalLogoSrc}
               alt={isStore ? "Logo del negocio" : "Vitrinex"}
@@ -88,8 +86,9 @@ export default function MainHeader({
             </div>
           ) : (
             <>
-              <button
-                type="button"
+              {/* PERFIL → Página pública */}
+              <Link
+                to={`/usuario/${user?._id || user?.id}`}
                 className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-white/90 hover:bg-white transition"
               >
                 {user?.avatarUrl ? (
@@ -107,7 +106,7 @@ export default function MainHeader({
                 <span className="text-slate-800 font-medium">
                   {user?.username}
                 </span>
-              </button>
+              </Link>
 
               {/* Menú desplegable */}
               <div className="relative">
