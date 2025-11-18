@@ -13,6 +13,7 @@ import {
   getAvailabilityByDate,
   createAppointmentWithService,
 } from "../api/services";
+import { getStoreAppearance } from "../api/appearance"; // 🎨 Personalización visual
 import MainHeader from "../components/MainHeader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -139,13 +140,225 @@ function buildPatternStyle(store) {
   return null;
 }
 
-function buildStoreHeaderStyle(store) {
-  const primary = store?.primaryColor || "#2563eb";
-  const accent = store?.accentColor || "#0f172a";
+function buildStoreHeaderStyle(store, appearance) {
+  const primary = appearance?.colors?.primary || store?.primaryColor || "#2563eb";
+  const accent = appearance?.colors?.secondary || store?.accentColor || "#0f172a";
 
-  return {
+  const headerStyles = {
     backgroundImage: `linear-gradient(90deg, ${primary} 0%, ${accent} 50%, ${primary} 100%)`,
   };
+
+  // Aplicar efectos de blur si están configurados
+  if (appearance?.background?.headerBlur && appearance.background.headerBlur > 0) {
+    headerStyles.backdropFilter = `blur(${appearance.background.headerBlur}px)`;
+    headerStyles.WebkitBackdropFilter = `blur(${appearance.background.headerBlur}px)`;
+  }
+
+  // Aplicar opacidad si está configurada
+  if (appearance?.background?.headerOpacity && appearance.background.headerOpacity < 1) {
+    // Convertir hex a rgba
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    };
+
+    const rgb1 = hexToRgb(primary);
+    const rgb2 = hexToRgb(accent);
+    
+    if (rgb1 && rgb2) {
+      headerStyles.backgroundImage = `linear-gradient(90deg, rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${appearance.background.headerOpacity}) 0%, rgba(${rgb2.r}, ${rgb2.g}, ${rgb2.b}, ${appearance.background.headerOpacity}) 50%, rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${appearance.background.headerOpacity}) 100%)`;
+    }
+  }
+
+  return headerStyles;
+}
+
+// 🎨 Nuevas funciones para aplicar personalización visual
+function getAppearanceColors(appearance, store) {
+  if (!appearance?.colors) {
+    // Fallback a colores legacy del store
+    return {
+      primary: store?.primaryColor || "#2563eb",
+      secondary: store?.accentColor || "#0f172a",
+      accent: store?.primaryColor || "#2563eb",
+      background: store?.bgColorTop || "#ffffff",
+      surface: "#ffffff",
+      text: "#1e293b",
+      textSecondary: "#64748b",
+      border: "#e2e8f0",
+      success: "#10b981",
+      error: "#ef4444",
+      warning: "#f59e0b",
+    };
+  }
+  return appearance.colors;
+}
+
+function buildAppearanceBackground(appearance, store) {
+  if (!appearance?.background) {
+    // Fallback a sistema legacy
+    return buildBackgroundStyle(store);
+  }
+
+  const { mode, solid, gradient, image, pattern } = appearance.background;
+
+  if (mode === "solid") {
+    return {
+      backgroundColor: solid?.color || "#ffffff",
+      backgroundAttachment: "fixed",
+    };
+  }
+
+  if (mode === "gradient" && gradient) {
+    const { type, direction, colors, stops } = gradient;
+    const gradientColors = colors?.map((c, i) => 
+      `${c} ${stops?.[i] || (i * 100 / (colors.length - 1))}%`
+    ).join(", ");
+
+    return {
+      backgroundImage: type === "radial"
+        ? `radial-gradient(circle, ${gradientColors})`
+        : `linear-gradient(${direction || "to bottom"}, ${gradientColors})`,
+      backgroundAttachment: "fixed",
+    };
+  }
+
+  if (mode === "image" && image?.url) {
+    return {
+      backgroundImage: `linear-gradient(to bottom, ${hexToRgba("#000", image.opacity || 0.5)} 0%, ${hexToRgba("#000", (image.opacity || 0.5) * 1.2)} 60%), url(${image.url})`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: image.size || "cover",
+      backgroundPosition: image.position || "center",
+      backgroundAttachment: "fixed",
+    };
+  }
+
+  if (mode === "pattern" && pattern) {
+    const patternColor = hexToRgba(pattern.color || "#000000", pattern.opacity || 0.1);
+    const scale = pattern.scale || 1;
+    
+    let patternImage = "";
+    switch (pattern.type) {
+      case "dots":
+        patternImage = `radial-gradient(${patternColor} ${scale}px, transparent ${scale}px)`;
+        break;
+      case "waves":
+        patternImage = `repeating-linear-gradient(45deg, ${patternColor}, ${patternColor} ${10 * scale}px, transparent ${10 * scale}px, transparent ${20 * scale}px)`;
+        break;
+      case "grid":
+        patternImage = `linear-gradient(${patternColor} ${scale}px, transparent ${scale}px), linear-gradient(90deg, ${patternColor} ${scale}px, transparent ${scale}px)`;
+        break;
+      default:
+        patternImage = `radial-gradient(${patternColor} ${scale}px, transparent ${scale}px)`;
+    }
+
+    return {
+      backgroundColor: appearance.colors?.background || "#ffffff",
+      backgroundImage: patternImage,
+      backgroundSize: pattern.type === "grid" ? `${30 * scale}px ${30 * scale}px` : `${20 * scale}px ${20 * scale}px`,
+      backgroundAttachment: "fixed",
+    };
+  }
+
+  // Fallback
+  return buildBackgroundStyle(store);
+}
+
+function getButtonStyle(appearance, colors, variant = "primary") {
+  if (!appearance?.components?.buttons) {
+    // Fallback clásico
+    return variant === "primary" 
+      ? { backgroundColor: colors.primary, color: "#ffffff" }
+      : { backgroundColor: colors.surface, color: colors.text, border: `1px solid ${colors.border}` };
+  }
+
+  const { style, roundness, size } = appearance.components.buttons;
+  
+  const radiusMap = {
+    none: "0px",
+    sm: "0.375rem",
+    md: "0.5rem",
+    lg: "0.75rem",
+    full: "9999px",
+  };
+
+  const sizeMap = {
+    sm: { padding: "0.5rem 1rem", fontSize: "0.875rem" },
+    md: { padding: "0.625rem 1.25rem", fontSize: "1rem" },
+    lg: { padding: "0.75rem 1.5rem", fontSize: "1.125rem" },
+  };
+
+  let baseStyle = {
+    borderRadius: radiusMap[roundness] || radiusMap.md,
+    ...sizeMap[size || "md"],
+  };
+
+  if (variant === "primary") {
+    switch (style) {
+      case "solid":
+        return { ...baseStyle, backgroundColor: colors.primary, color: "#ffffff" };
+      case "outline":
+        return { ...baseStyle, backgroundColor: "transparent", color: colors.primary, border: `2px solid ${colors.primary}` };
+      case "ghost":
+        return { ...baseStyle, backgroundColor: hexToRgba(colors.primary, 0.1), color: colors.primary };
+      case "gradient":
+        return { ...baseStyle, backgroundImage: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`, color: "#ffffff" };
+      default:
+        return { ...baseStyle, backgroundColor: colors.primary, color: "#ffffff" };
+    }
+  } else {
+    return { ...baseStyle, backgroundColor: colors.surface, color: colors.text, border: `1px solid ${colors.border}` };
+  }
+}
+
+function getCardStyle(appearance, colors) {
+  if (!appearance?.components?.cards) {
+    return {
+      backgroundColor: colors.surface,
+      borderRadius: "0.75rem",
+      boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)",
+    };
+  }
+
+  const { style, roundness, shadow } = appearance.components.cards;
+
+  const radiusMap = {
+    none: "0px",
+    sm: "0.375rem",
+    md: "0.75rem",
+    lg: "1rem",
+    xl: "1.5rem",
+  };
+
+  const shadowMap = {
+    none: "none",
+    sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    md: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+    lg: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+    xl: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+  };
+
+  let baseStyle = {
+    borderRadius: radiusMap[roundness] || radiusMap.md,
+    boxShadow: shadowMap[shadow] || shadowMap.md,
+  };
+
+  switch (style) {
+    case "elevated":
+      return { ...baseStyle, backgroundColor: colors.surface };
+    case "outline":
+      return { ...baseStyle, backgroundColor: colors.surface, border: `1px solid ${colors.border}` };
+    case "filled":
+      return { ...baseStyle, backgroundColor: hexToRgba(colors.primary, 0.05) };
+    case "gradient":
+      return { ...baseStyle, backgroundImage: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.1)}, ${hexToRgba(colors.secondary, 0.1)})` };
+    default:
+      return { ...baseStyle, backgroundColor: colors.surface };
+  }
 }
 
 export default function StorePublicPage() {
@@ -160,6 +373,9 @@ export default function StorePublicPage() {
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // 🎨 Personalización visual
+  const [appearance, setAppearance] = useState(null);
 
   const [availability, setAvailability] = useState([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
@@ -245,6 +461,15 @@ export default function StorePublicPage() {
         setError("");
         const { data } = await getStoreById(id);
         setStore(data);
+
+        // 🎨 Cargar personalización visual (silently, no bloquea la tienda)
+        try {
+          const appearanceData = await getStoreAppearance(id);
+          setAppearance(appearanceData);
+          console.log('✅ Apariencia cargada:', appearanceData);
+        } catch (err) {
+          console.log("No hay personalización visual configurada, usando valores por defecto");
+        }
       } catch (err) {
         console.error(err);
         setError("No se pudo cargar la información del negocio.");
@@ -610,8 +835,8 @@ export default function StorePublicPage() {
   };
 
   // --------- Colores ----------
-  const primaryColor = store?.primaryColor || "#2563eb";
-  const accentColor = store?.accentColor || "#0f172a";
+  // NOTA: primaryColor y accentColor ya no se usan directamente
+  // Ahora se usa el objeto 'colors' de getAppearanceColors()
 
   // --------- Estados iniciales ----------
   if (loading) {
@@ -641,12 +866,23 @@ export default function StorePublicPage() {
     );
   }
 
-  const patternStyle = buildPatternStyle(store);
-  const bgStyle = buildBackgroundStyle(store);
-  const headerStyle = buildStoreHeaderStyle(store);
+  // 🎨 Aplicar estilos de personalización visual
+  const colors = getAppearanceColors(appearance, store);
+  const bgStyle = buildAppearanceBackground(appearance, store);
+  const patternStyle = appearance?.background?.mode === "pattern" ? null : buildPatternStyle(store);
+  const headerStyle = buildStoreHeaderStyle(store, appearance);
+  
+  // Aplicar tipografía si está configurada
+  const fontFamily = appearance?.typography?.fontFamily || "Inter, system-ui, sans-serif";
 
   return (
-    <div className="relative min-h-screen flex flex-col" style={bgStyle}>
+    <div 
+      className="relative min-h-screen flex flex-col" 
+      style={{ 
+        ...bgStyle,
+        fontFamily
+      }}
+    >
       {/* patrón */}
       {patternStyle && <div aria-hidden style={patternStyle} />}
 
@@ -661,8 +897,11 @@ export default function StorePublicPage() {
         <main className="flex-1 max-w-5xl mx-auto px-4 py-8 space-y-6">
           {/* HERO */}
           <section
-            className="bg-white/90 backdrop-blur rounded-2xl shadow-sm border p-6 flex flex-col md:flex-row gap-6 items-start"
-            style={{ borderColor: primaryColor }}
+            className="backdrop-blur p-6 flex flex-col md:flex-row gap-6 items-start"
+            style={{ 
+              ...getCardStyle(appearance, colors),
+              borderColor: colors.border 
+            }}
           >
             <div className="flex-shrink-0">
               {store.logoUrl ? (
@@ -682,7 +921,7 @@ export default function StorePublicPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2
                   className="text-2xl md:text-3xl font-semibold"
-                  style={{ color: accentColor }}
+                  style={{ color: colors.text }}
                 >
                   {store.name}
                 </h2>
@@ -690,8 +929,8 @@ export default function StorePublicPage() {
                   <span
                     className="inline-flex text-[11px] uppercase tracking-wide px-3 py-1 rounded-full"
                     style={{
-                      backgroundColor: `${primaryColor}20`,
-                      color: primaryColor,
+                      backgroundColor: hexToRgba(colors.primary, 0.15),
+                      color: colors.primary,
                     }}
                   >
                     {store.mode === "bookings"
@@ -739,7 +978,7 @@ export default function StorePublicPage() {
                   {store.highlight1 && (
                     <span
                       className="px-2 py-1 rounded-full border text-slate-700"
-                      style={{ borderColor: primaryColor }}
+                      style={{ borderColor: colors.primary }}
                     >
                       {store.highlight1}
                     </span>
@@ -747,7 +986,7 @@ export default function StorePublicPage() {
                   {store.highlight2 && (
                     <span
                       className="px-2 py-1 rounded-full border text-slate-700"
-                      style={{ borderColor: primaryColor }}
+                      style={{ borderColor: colors.primary }}
                     >
                       {store.highlight2}
                     </span>
@@ -787,8 +1026,8 @@ export default function StorePublicPage() {
                   <button
                     type="button"
                     onClick={() => scrollToSection(bookingSectionRef)}
-                    className="px-4 py-2 rounded-lg text-xs md:text-sm font-medium text-white shadow-sm"
-                    style={{ backgroundColor: primaryColor }}
+                    className="px-4 py-2 rounded-lg text-xs md:text-sm font-medium shadow-sm"
+                    style={getButtonStyle(appearance, colors, 'primary')}
                   >
                     Agendar cita
                   </button>
@@ -797,8 +1036,8 @@ export default function StorePublicPage() {
                   <button
                     type="button"
                     onClick={() => scrollToSection(productsSectionRef)}
-                    className="px-4 py-2 rounded-lg text-xs md:text-sm font-medium text-white shadow-sm"
-                    style={{ backgroundColor: primaryColor }}
+                    className="px-4 py-2 rounded-lg text-xs md:text-sm font-medium shadow-sm"
+                    style={getButtonStyle(appearance, colors, 'primary')}
                   >
                     Ver catálogo
                   </button>
@@ -818,7 +1057,8 @@ export default function StorePublicPage() {
           {store.mode === "bookings" && (
             <section
               ref={bookingSectionRef}
-              className="bg-white rounded-2xl shadow-sm border p-6 space-y-6"
+              className="rounded-2xl p-6 space-y-6"
+              style={getCardStyle(appearance, colors)}
             >
               {/* Header */}
               <div className="text-center">
@@ -835,21 +1075,23 @@ export default function StorePublicPage() {
                 {[1, 2, 3, 4].map((step) => (
                   <div key={step} className="flex items-center gap-2">
                     <div
-                      className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${ 
+                      className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all`}
+                      style={
                         bookingStep === step
-                          ? "bg-blue-600 text-white border-blue-600 scale-110"
+                          ? { backgroundColor: colors.primary, color: '#fff', borderColor: colors.primary, transform: 'scale(1.1)' }
                           : bookingStep > step
-                          ? "bg-green-500 text-white border-green-500"
-                          : "bg-slate-100 text-slate-400 border-slate-200"
-                      }`}
+                          ? { backgroundColor: colors.success, color: '#fff', borderColor: colors.success }
+                          : { backgroundColor: '#f1f5f9', color: '#94a3b8', borderColor: '#e2e8f0' }
+                      }
                     >
                       {bookingStep > step ? "✓" : step}
                     </div>
                     {step < 4 && (
                       <div
-                        className={`h-1 w-8 md:w-16 rounded-full transition-all ${
-                          bookingStep > step ? "bg-green-500" : "bg-slate-200"
-                        }`}
+                        className={`h-1 w-8 md:w-16 rounded-full transition-all`}
+                        style={{
+                          backgroundColor: bookingStep > step ? colors.success : '#e2e8f0'
+                        }}
                       />
                     )}
                   </div>
@@ -899,11 +1141,11 @@ export default function StorePublicPage() {
               {/* PASO 1: SELECCIÓN DE SERVICIO */}
               {bookingStep === 1 && (
                 <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 text-base">
+                  <div className="rounded-lg p-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <h4 className="font-semibold text-base" style={{ color: colors.primary }}>
                       Paso 1: Elige un servicio
                     </h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <p className="text-sm mt-1" style={{ color: colors.text }}>
                       Selecciona el servicio que necesitas
                     </p>
                   </div>
@@ -963,11 +1205,11 @@ export default function StorePublicPage() {
               {/* PASO 2: SELECCIÓN DE FECHA */}
               {bookingStep === 2 && (
                 <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 text-base">
+                  <div className="rounded-lg p-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <h4 className="font-semibold text-base" style={{ color: colors.primary }}>
                       Paso 2: Elige una fecha
                     </h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <p className="text-sm mt-1" style={{ color: colors.text }}>
                       Servicio: <strong>{selectedService?.name}</strong> ({selectedService?.duration} min)
                     </p>
                   </div>
@@ -1002,11 +1244,11 @@ export default function StorePublicPage() {
               {/* PASO 3: SELECCIÓN DE HORA */}
               {bookingStep === 3 && (
                 <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 text-base">
+                  <div className="rounded-lg p-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <h4 className="font-semibold text-base" style={{ color: colors.primary }}>
                       Paso 3: Elige tu horario
                     </h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <p className="text-sm mt-1" style={{ color: colors.text }}>
                       Fecha: <strong>{new Date(bookingForm.date + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong>
                     </p>
                   </div>
@@ -1028,14 +1270,14 @@ export default function StorePublicPage() {
                           <li>Todos los horarios están ocupados</li>
                           <li>El día está marcado como cerrado</li>
                         </ul>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                          <p className="font-semibold text-blue-800 mb-1">💡 Consejo</p>
-                          <p className="text-blue-700 text-xs">
+                        <div className="rounded-lg p-3 mt-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                          <p className="font-semibold mb-1" style={{ color: colors.primary }}>💡 Consejo</p>
+                          <p className="text-xs" style={{ color: colors.text }}>
                             Si eres el dueño: ve a "Horarios y Excepciones" y crea bloques de tiempo más largos 
                             (por ejemplo, 09:00-18:00) para que se generen más horarios automáticamente.
                           </p>
                         </div>
-                        <p className="font-medium text-blue-600 mt-3">
+                        <p className="font-medium mt-3" style={{ color: colors.primary }}>
                           Intenta con otra fecha
                         </p>
                       </div>
@@ -1049,9 +1291,14 @@ export default function StorePublicPage() {
                           onClick={() => handleSlotSelect(slot)}
                           className={`px-4 py-3 rounded-lg text-sm font-semibold border-2 transition-all ${
                             bookingForm.slot === slot
-                              ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105"
-                              : "bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:shadow-md"
+                              ? "shadow-lg"
+                              : "hover:shadow-md"
                           }`}
+                          style={
+                            bookingForm.slot === slot
+                              ? { backgroundColor: colors.primary, color: '#fff', borderColor: colors.primary, transform: 'scale(1.05)' }
+                              : { backgroundColor: '#fff', color: colors.text, borderColor: colors.border }
+                          }
                         >
                           {slot}
                         </button>
@@ -1077,22 +1324,27 @@ export default function StorePublicPage() {
               {/* PASO 4: DATOS DEL CLIENTE Y CONFIRMACIÓN */}
               {bookingStep === 4 && (
                 <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 text-base">
+                  <div className="rounded-lg p-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
+                    <h4 className="font-semibold text-base" style={{ color: colors.primary }}>
                       Paso 4: Confirma tu reserva
                     </h4>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <p className="text-sm mt-1" style={{ color: colors.text }}>
                       Completa tus datos para finalizar
                     </p>
                   </div>
 
                   {/* Resumen de la reserva */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
-                    <h5 className="font-bold text-slate-800 mb-3">📋 Resumen de tu cita</h5>
+                  <div className="rounded-xl p-5" style={{ 
+                    backgroundImage: `linear-gradient(to right, ${hexToRgba(colors.primary, 0.1)}, ${hexToRgba(colors.secondary, 0.1)})`,
+                    borderColor: colors.border,
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
+                  }}>
+                    <h5 className="font-bold mb-3" style={{ color: colors.text }}>📋 Resumen de tu cita</h5>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Servicio:</span>
-                        <span className="font-semibold text-slate-800">{selectedService?.name}</span>
+                        <span style={{ color: colors.textSecondary }}>Servicio:</span>
+                        <span className="font-semibold" style={{ color: colors.text }}>{selectedService?.name}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Duración:</span>
@@ -1187,14 +1439,16 @@ export default function StorePublicPage() {
                           setBookingStep(3);
                           setBookingForm(prev => ({ ...prev, slot: "" }));
                         }}
-                        className="flex-1 px-6 py-3 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                        className="flex-1 px-6 py-3 text-sm font-medium transition-all"
+                        style={getButtonStyle(appearance, colors, "secondary")}
                       >
                         ← Cambiar horario
                       </button>
                       <button
                         type="submit"
                         disabled={bookingSubmitting}
-                        className="flex-1 px-6 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                        className="flex-1 text-sm font-bold shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                        style={getButtonStyle(appearance, colors, "primary")}
                       >
                         {bookingSubmitting ? "Confirmando..." : "✅ Confirmar Reserva"}
                       </button>
@@ -1209,7 +1463,8 @@ export default function StorePublicPage() {
           {store.mode === "products" && (
             <section
               ref={productsSectionRef}
-              className="bg-white rounded-2xl shadow-sm border p-6 space-y-8"
+              className="rounded-2xl p-6 space-y-8"
+              style={getCardStyle(appearance, colors)}
             >
               <div className="space-y-4">
                 <div>

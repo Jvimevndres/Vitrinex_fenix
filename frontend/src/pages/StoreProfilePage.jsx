@@ -15,6 +15,7 @@ import ProductManager from "../components/ProductManager";
 import OrdersList from "../components/OrdersList";
 import StoreCalendarManager from "../components/StoreCalendarManager";
 import SmartInsights from "../components/SmartInsights"; // 👈 IMPORTANTE
+import StoreVisualBuilder from "../components/StoreVisualBuilder"; // 🎨 CONSTRUCTOR VISUAL
 
 /* ========= Helpers =========== */
 const buildBg = (f) => {
@@ -85,6 +86,9 @@ export default function StoreProfilePage() {
   // pestañas internas
   const [productsPanel, setProductsPanel] = useState("catalog"); // catalog | orders | insights
   const [bookingsPanel, setBookingsPanel] = useState("services"); // services | weeklySchedule | monthlyView | appointments | insights
+  
+  // 🎨 Constructor visual
+  const [showVisualBuilder, setShowVisualBuilder] = useState(false);
 
   // ========= Cargar tienda ===========
   useEffect(() => {
@@ -342,6 +346,15 @@ export default function StoreProfilePage() {
                 {effectiveMode === "bookings"
                   ? "Agendamiento"
                   : "Productos / pedidos"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowVisualBuilder(true)}
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200 flex items-center gap-2"
+              >
+                <span>🎨</span>
+                <span>Personalizar Apariencia</span>
               </button>
             </div>
           </aside>
@@ -936,6 +949,14 @@ export default function StoreProfilePage() {
           </section>
         </div>
       </main>
+
+      {/* 🎨 Constructor Visual - Pantalla completa cuando está abierto */}
+      {showVisualBuilder && (
+        <StoreVisualBuilder 
+          storeId={id} 
+          onClose={() => setShowVisualBuilder(false)} 
+        />
+      )}
     </div>
   );
 }

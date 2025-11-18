@@ -12,6 +12,7 @@ import taskRoutes from "./routes/tasks.routes.js";
 import storeRoutes from "./routes/store.routes.js";
 import servicesRoutes from "./routes/services.routes.js"; // 🆕 NUEVO
 import messagesRoutes from "./routes/messages.routes.js"; // 🆕 CHAT
+import appearanceRoutes from "./routes/appearance.routes.js"; // 🆕 APARIENCIA
 import uploadRoutes from "./routes/upload.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import { ensureStoreIndexes } from "./models/store.model.js";
@@ -51,6 +52,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/stores", servicesRoutes); // 🆕 NUEVO: Rutas de servicios (usa mismo prefijo)
 app.use("/api", messagesRoutes); // 🆕 CHAT: Rutas de mensajes para reservas
+app.use("/api", appearanceRoutes); // 🆕 APARIENCIA: Sistema de personalización visual
 app.use("/api/upload", uploadRoutes);
 
 // Middleware global de manejo de errores (debe ir después de todas las rutas)

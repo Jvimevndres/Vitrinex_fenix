@@ -28,6 +28,18 @@ const storeSchema = new mongoose.Schema(
     lat: { type: Number },
     lng: { type: Number },
 
+    // Contacto
+    email: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    whatsapp: { type: String, trim: true },
+    website: { type: String, trim: true },
+
+    // Imágenes adicionales
+    coverImageUrl: { type: String, default: "" }, // Imagen hero/portada
+
+    // Horario simple (texto libre)
+    scheduleText: { type: String, default: "" },
+
     // Activación suave
     isActive: { type: Boolean, default: true },
 
