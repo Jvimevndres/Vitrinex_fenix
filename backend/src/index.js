@@ -10,9 +10,13 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/tasks.routes.js";
 import storeRoutes from "./routes/store.routes.js";
+import servicesRoutes from "./routes/services.routes.js"; // 🆕 NUEVO
+import messagesRoutes from "./routes/messages.routes.js"; // 🆕 CHAT
 import uploadRoutes from "./routes/upload.routes.js";
+import healthRoutes from "./routes/health.routes.js";
 import { ensureStoreIndexes } from "./models/store.model.js";
 import helmet from "helmet";
+import multer from "multer";
 
 const app = express();
 
@@ -41,10 +45,39 @@ app.use(helmet());
 // 📂 Servir archivos estáticos subidos (avatars, logos, etc.)
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
+app.use("/api", healthRoutes); // Health checks
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/stores", storeRoutes);
+app.use("/api/stores", servicesRoutes); // 🆕 NUEVO: Rutas de servicios (usa mismo prefijo)
+app.use("/api", messagesRoutes); // 🆕 CHAT: Rutas de mensajes para reservas
 app.use("/api/upload", uploadRoutes);
+
+// Middleware global de manejo de errores (debe ir después de todas las rutas)
+app.use((err, req, res, next) => {
+  // Error de validación de archivo (esperado, no crítico)
+  if (err.message && err.message.includes('Tipo de archivo no permitido')) {
+    console.log('⚠️  Archivo rechazado:', err.message);
+    return res.status(400).json({ 
+      message: 'Tipo de archivo no permitido. Solo se aceptan imágenes (JPEG, PNG, WebP, GIF)' 
+    });
+  }
+  
+  // Error de Multer (archivos)
+  if (err instanceof multer.MulterError) {
+    console.log('⚠️  Error Multer:', err.code);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'Archivo demasiado grande. Máximo 5MB' });
+    }
+    return res.status(400).json({ message: `Error al subir archivo: ${err.message}` });
+  }
+  
+  // Errores reales (estos sí son preocupantes)
+  console.error('❌ Error crítico:', err);
+  
+  if (res.headersSent) return next(err);
+  res.status(500).json({ message: err.message || 'Error interno del servidor' });
+});
 
 (async () => {
   try {

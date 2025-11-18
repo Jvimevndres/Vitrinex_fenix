@@ -64,14 +64,40 @@ VITRINEX/
 ## ⚙️ Configuración del Entorno
 
 ### 🔑 Backend (.env)
+Copia el archivo `.env.example` y renómbralo a `.env`:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Configura las siguientes variables:
+
 ```env
 PORT=3000
 MONGODB_URI=mongodb://127.0.0.1:27017/vitrinex
-JWT_SECRET=clave_super_segura_y_larga
-CLIENT_URL=http://localhost:5173
+JWT_SECRET=clave_super_segura_y_larga_cambiar_en_produccion
+FRONTEND_ORIGIN=http://localhost:5173
+API_PUBLIC_URL=http://localhost:3000
+NODE_ENV=development
+```
 
-🌐 Frontend (.env)
+⚠️ **IMPORTANTE:** En producción, genera un JWT_SECRET seguro:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 🌐 Frontend (.env)
+Copia el archivo `.env.example`:
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+```env
 VITE_API_URL=http://localhost:3000/api
+```
 
 ▶️ Instrucciones de Ejecución
 1️⃣ Clonar el repositorio
@@ -110,29 +136,103 @@ Login → /api/auth/login
 Perfil → /api/auth/profile
 
 Logout → /api/auth/logout
-🧩 Funcionalidades Actuales
+## 🧩 Funcionalidades Actuales
 
-✅ Registro de usuarios
+### 🔐 Autenticación y Seguridad
+✅ Registro/login con JWT en cookies HTTPOnly  
+✅ Rate limiting (6 intentos/15min) en rutas de auth  
+✅ Hashing bcrypt (10 rounds)  
+✅ Helmet para headers HTTP seguros  
+✅ Validación de tipos de archivo en uploads (solo imágenes)  
+✅ Límite de tamaño de archivos (5MB máximo)  
+✅ CORS configurado correctamente  
+✅ Validación Zod en schemas  
 
-✅ Inicio y cierre de sesión
+### 🏪 Sistema de Tiendas
+✅ Dos modos: **productos** o **agendamiento**  
+✅ Geolocalización con mapa Leaflet interactivo  
+✅ Personalización visual completa  
+✅ Upload de logos y productos  
+✅ Filtros por comuna y tipo de negocio  
+✅ Paginación optimizada  
 
-✅ Validación de contraseñas
+### 🛒 E-commerce
+✅ CRUD completo de productos  
+✅ Sistema de pedidos  
+✅ Control de inventario  
+✅ Insights y analytics  
 
-✅ Rutas protegidas con Context + ProtectedRoute
+### 📅 Sistema de Agendamiento
+✅ Configuración de horarios  
+✅ Reservas con validación  
+✅ Métricas de ocupación  
 
-✅ Persistencia de sesión mediante cookies JWT
+---
 
-✅ Integración completa con backend Express y MongoDB
-📈 Próximas Mejoras
+## 🔒 Seguridad Implementada
 
- Panel de administración de tiendas
+- ✅ **JWT Obligatorio en Producción:** Validación de JWT_SECRET
+- ✅ **Validación de Archivos:** Solo imágenes permitidas (JPEG, PNG, WebP, GIF)
+- ✅ **Límite de Tamaño:** Máximo 5MB por archivo
+- ✅ **Rate Limiting:** Protección contra fuerza bruta
+- ✅ **Helmet:** Headers HTTP seguros
+- ✅ **Validación Zod:** Schemas para datos críticos
+- ✅ **Índices MongoDB:** Queries optimizadas
+- ✅ **Paginación:** Máximo 100 registros por página
+- ✅ **Manejo de Errores Global:** Middleware centralizado
 
- Integración de estadísticas de ventas
+---
 
- Subida de imágenes de productos
+## 🚀 Despliegue en Producción
 
- Módulo de recomendaciones inteligentes (IA)
- 👨‍💻 Autores
+### Checklist antes de desplegar:
+
+1. **Variables de entorno:**
+   - ✅ JWT_SECRET único y seguro
+   - ✅ MONGODB_URI apuntando a Atlas
+   - ✅ NODE_ENV=production
+   - ✅ FRONTEND_ORIGIN con dominio real
+
+2. **Base de datos:**
+   - ✅ MongoDB Atlas configurado
+   - ✅ IP whitelist configurada
+   - ✅ Usuario con permisos mínimos
+
+3. **Backend:**
+   ```bash
+   npm run build  # Si tienes script de build
+   npm start      # O usar PM2
+   ```
+
+4. **Frontend:**
+   ```bash
+   npm run build
+   # Servir dist/ con Nginx, Vercel, Netlify, etc.
+   ```
+
+---
+
+## 📊 Performance
+
+- **Índices MongoDB:** Compuestos para geolocalización y filtros
+- **Paginación:** Limita carga de datos
+- **Validación:** Reduce procesamiento innecesario
+- **CORS:** Configurado para dominios específicos
+
+---
+
+## 🧪 Testing
+
+```bash
+cd backend
+npm test
+```
+
+Actualmente hay tests para:
+- Insights de productos
+- Insights de bookings
+
+---👨‍💻 Autores
 
 Maximiliano Inostroza
 Jaime Herrera

@@ -8,6 +8,11 @@ import {
   listStoreProducts,
   createStoreOrder,
 } from "../api/store";
+import {
+  getStoreServices,
+  getAvailabilityByDate,
+  createAppointmentWithService,
+} from "../api/services";
 import MainHeader from "../components/MainHeader";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -160,6 +165,14 @@ export default function StorePublicPage() {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
 
+  // 🆕 SERVICIOS Y FLUJO PASO A PASO
+  const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [bookingStep, setBookingStep] = useState(1); // 1=servicio, 2=fecha, 3=hora, 4=datos
+  const [selectedService, setSelectedService] = useState(null);
+  const [dateSlots, setDateSlots] = useState([]);
+  const [dateSlotsLoading, setDateSlotsLoading] = useState(false);
+
   const [bookingForm, setBookingForm] = useState({
     customerName: "",
     customerEmail: "",
@@ -171,6 +184,7 @@ export default function StorePublicPage() {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [bookingMsg, setBookingMsg] = useState("");
+  const [createdBookingId, setCreatedBookingId] = useState(null); // 🆕 Para mostrar link al chat
 
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -245,7 +259,10 @@ export default function StorePublicPage() {
   // cargar según modo
   useEffect(() => {
     if (!store?.mode) return;
-    if (store.mode === "bookings") loadAvailability();
+    if (store.mode === "bookings") {
+      loadAvailability();
+      loadServices(); // 🆕 Cargar servicios
+    }
     if (store.mode === "products") loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.mode, id]);
@@ -255,9 +272,11 @@ export default function StorePublicPage() {
       setAvailabilityLoading(true);
       setAvailabilityError("");
       const { data } = await getStoreAvailability(id);
-      setAvailability(
-        Array.isArray(data?.availability) ? data.availability : []
-      );
+      const av = Array.isArray(data?.availability) ? data.availability : [];
+      setAvailability(av);
+      
+      console.log("📅 Availability cargado:", av.length, "días");
+      console.log("📅 Días configurados:", av.map(a => `${a.dayOfWeek}${a.isClosed ? ' (cerrado)' : ''} - ${a.timeBlocks?.length || 0} bloques`));
     } catch (err) {
       console.error(err);
       setAvailability([]);
@@ -287,6 +306,52 @@ export default function StorePublicPage() {
     }
   };
 
+  // 🆕 CARGAR SERVICIOS
+  const loadServices = async () => {
+    try {
+      setServicesLoading(true);
+      const { data } = await getStoreServices(id);
+      const activeServices = Array.isArray(data) ? data.filter(s => s.isActive) : [];
+      console.log("🛎️ Servicios activos cargados:", activeServices.length, activeServices);
+      setServices(activeServices);
+    } catch (err) {
+      console.error("❌ Error al cargar servicios:", err);
+      setServices([]);
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  // 🆕 CARGAR SLOTS POR FECHA Y SERVICIO
+  const loadSlotsForDate = async (date, serviceId) => {
+    console.log("🚀 loadSlotsForDate iniciado - fecha:", date, "serviceId:", serviceId);
+    if (!date || !serviceId) {
+      console.warn("⚠️ loadSlotsForDate cancelado - faltan parámetros");
+      return;
+    }
+    try {
+      setDateSlotsLoading(true);
+      console.log("📡 Llamando a API getAvailabilityByDate...");
+      const { data } = await getAvailabilityByDate(id, date, serviceId);
+      
+      console.log("📅 Disponibilidad recibida:", data);
+      console.log("📊 availableSlots:", data.availableSlots);
+      console.log("📊 Cantidad de slots:", data.availableSlots?.length || 0);
+      
+      // El backend devuelve "availableSlots", no "slots"
+      const slots = Array.isArray(data.availableSlots) ? data.availableSlots : [];
+      setDateSlots(slots);
+      
+      console.log("✅ dateSlots actualizado con", slots.length, "slots");
+    } catch (err) {
+      console.error("❌ Error al cargar slots:", err);
+      console.error("❌ Error details:", err.response?.data);
+      setDateSlots([]);
+    } finally {
+      setDateSlotsLoading(false);
+    }
+  };
+
   // --------- AGENDAMIENTO ----------
   const onBookingChange = (e) => {
     const { name, value } = e.target;
@@ -295,12 +360,96 @@ export default function StorePublicPage() {
     setBookingMsg("");
   };
 
+  // 🆕 MANEJO DE PASOS
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    setBookingStep(2);
+    setBookingForm(prev => ({ ...prev, slot: "", date: "" }));
+    setDateSlots([]);
+  };
+
   const handleCalendarChange = (value) => {
     if (!value) return;
     const iso = value.toISOString().slice(0, 10);
+    console.log("📅 Fecha seleccionada:", iso, "Servicio:", selectedService?._id);
+    
     setBookingForm((p) => ({ ...p, date: iso, slot: "" }));
     setBookingError("");
     setBookingMsg("");
+    
+    // 🆕 Cargar slots para esta fecha y servicio
+    if (selectedService?._id) {
+      console.log("🔍 Cargando slots para fecha:", iso, "servicio:", selectedService._id);
+      loadSlotsForDate(iso, selectedService._id);
+      setBookingStep(3);
+    } else {
+      console.warn("⚠️ No hay servicio seleccionado, no se cargan slots");
+    }
+  };
+
+  // 🆕 Función para deshabilitar días sin configurar
+  const isDayDisabled = ({ date, view }) => {
+    if (view !== "month") return false;
+    
+    // Obtener día de la semana
+    const dayOfWeek = DAY_FROM_INDEX[date.getDay()];
+    
+    // Buscar configuración para ese día
+    const dayConfig = availability.find(a => a.dayOfWeek === dayOfWeek);
+    
+    console.log(`🔍 isDayDisabled para ${date.toLocaleDateString('es-ES')} (${dayOfWeek}):`, 
+      dayConfig ? `Encontrado - cerrado:${dayConfig.isClosed} bloques:${dayConfig.timeBlocks?.length || 0}` : 'No encontrado');
+    
+    // Deshabilitar si:
+    // 1. No hay configuración
+    // 2. Está marcado como cerrado
+    // 3. No tiene timeBlocks ni slots
+    if (!dayConfig) return true;
+    if (dayConfig.isClosed) return true;
+    if ((!dayConfig.timeBlocks || dayConfig.timeBlocks.length === 0) && 
+        (!dayConfig.slots || dayConfig.slots.length === 0)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // 🆕 Función para marcar días disponibles visualmente
+  const getTileClassName = ({ date, view }) => {
+    if (view !== "month") return null;
+    if (date < new Date()) return null;
+    
+    const dayOfWeek = DAY_FROM_INDEX[date.getDay()];
+    const dayConfig = availability.find(a => a.dayOfWeek === dayOfWeek);
+    
+    if (dayConfig && !dayConfig.isClosed && 
+        (dayConfig.timeBlocks?.length > 0 || dayConfig.slots?.length > 0)) {
+      return "available-day";
+    }
+    
+    return null;
+  };
+
+  const handleSlotSelect = (slot) => {
+    setBookingForm(prev => ({ ...prev, slot }));
+    setBookingStep(4);
+  };
+
+  const resetBookingFlow = () => {
+    setBookingStep(1);
+    setSelectedService(null);
+    setDateSlots([]);
+    setBookingForm({
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      date: "",
+      slot: "",
+      notes: "",
+    });
+    setBookingError("");
+    setBookingMsg("");
+    setCreatedBookingId(null); // 🆕 Reset bookingId
   };
 
   const calendarValue = useMemo(() => {
@@ -309,35 +458,17 @@ export default function StorePublicPage() {
     return Number.isNaN(d.getTime()) ? new Date() : d;
   }, [bookingForm.date]);
 
-  const selectedDayKey = useMemo(() => {
-    if (!bookingForm.date) return null;
-    const date = new Date(bookingForm.date);
-    if (Number.isNaN(date.getTime())) return null;
-    return DAY_FROM_INDEX[date.getUTCDay()] || null;
-  }, [bookingForm.date]);
-
-  const sortedAvailability = useMemo(() => {
-    const order = Object.fromEntries(
-      DAY_ORDER.map((day, idx) => [day, idx])
-    );
-    return [...availability].sort(
-      (a, b) =>
-        (order[a.dayOfWeek] || 0) - (order[b.dayOfWeek] || 0)
-    );
-  }, [availability]);
-
+  // 🆕 Slots para el día seleccionado (ahora vienen de dateSlots)
   const slotsForSelectedDay = useMemo(() => {
-    if (!selectedDayKey) return [];
-    const entry = availability.find(
-      (it) => it.dayOfWeek === selectedDayKey
-    );
-    return entry ? entry.slots || [] : [];
-  }, [availability, selectedDayKey]);
+    return dateSlots;
+  }, [dateSlots]);
 
   const submitBooking = async (e) => {
     e.preventDefault();
     setBookingError("");
     setBookingMsg("");
+    
+    if (!selectedService) return setBookingError("Selecciona un servicio");
     if (!bookingForm.customerName.trim())
       return setBookingError("Ingresa tu nombre para agendar");
     if (!bookingForm.date)
@@ -347,7 +478,10 @@ export default function StorePublicPage() {
 
     try {
       setBookingSubmitting(true);
-      await createAppointment(id, {
+      
+      // 🆕 Usar endpoint con servicio
+      const response = await createAppointmentWithService(id, {
+        serviceId: selectedService._id,
         customerName: bookingForm.customerName.trim(),
         customerEmail: bookingForm.customerEmail,
         customerPhone: bookingForm.customerPhone,
@@ -355,17 +489,16 @@ export default function StorePublicPage() {
         slot: bookingForm.slot,
         notes: bookingForm.notes,
       });
+      
+      // 🆕 Guardar ID para mostrar enlace al chat
+      setCreatedBookingId(response.data._id);
+      
       setBookingMsg(
-        "Tu solicitud fue enviada. El negocio se pondrá en contacto para confirmar la cita."
+        `¡Listo! Tu cita para ${selectedService.name} ha sido solicitada. El negocio confirmará pronto.`
       );
-      setBookingForm({
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        date: "",
-        slot: "",
-        notes: "",
-      });
+      
+      // Reset completo después de 10 segundos (más tiempo para ver el enlace)
+      setTimeout(() => resetBookingFlow(), 10000);
     } catch (err) {
       console.error(err);
       setBookingError(
@@ -375,19 +508,6 @@ export default function StorePublicPage() {
     } finally {
       setBookingSubmitting(false);
     }
-  };
-
-  const hasAvailabilityForDate = (date) => {
-    const key = DAY_FROM_INDEX[date.getUTCDay()];
-    const entry = availability.find((item) => item.dayOfWeek === key);
-    return entry && entry.slots && entry.slots.length > 0;
-  };
-
-  const getCalendarTileClass = ({ date, view }) => {
-    if (view !== "month") return null;
-    return hasAvailabilityForDate(date)
-      ? "react-calendar__tile--has-availability"
-      : "react-calendar__tile--no-availability";
   };
 
   // --------- PEDIDOS ----------
@@ -694,191 +814,394 @@ export default function StorePublicPage() {
             </div>
           </section>
 
-          {/* AGENDAMIENTO */}
+          {/* 🆕 AGENDAMIENTO MEJORADO - FLUJO PASO A PASO */}
           {store.mode === "bookings" && (
             <section
               ref={bookingSectionRef}
-              className="bg-white rounded-2xl shadow-sm border p-6 grid gap-6 md:grid-cols-[1.1fr,1.4fr]"
+              className="bg-white rounded-2xl shadow-sm border p-6 space-y-6"
             >
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  Horarios disponibles esta semana
+              {/* Header */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-slate-800">
+                  📅 Agenda tu Cita
                 </h3>
-                {availabilityLoading ? (
-                  <p className="text-sm text-slate-500">
-                    Cargando horarios…
-                  </p>
-                ) : availabilityError ? (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {availabilityError}
-                  </p>
-                ) : sortedAvailability.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    El negocio aún no ha publicado horarios disponibles.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {sortedAvailability.map((entry) => (
-                      <div
-                        key={entry.dayOfWeek}
-                        className="border border-slate-200 rounded-xl px-4 py-3 bg-slate-50/60"
-                      >
-                        <h4 className="font-semibold text-slate-700 mb-2">
-                          {DAY_LABELS[entry.dayOfWeek] ||
-                            entry.dayOfWeek}
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {(entry.slots || []).map((slot) => (
-                            <span
-                              key={`${entry.dayOfWeek}-${slot}`}
-                              className="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full"
-                            >
-                              {slot}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-sm text-slate-500 mt-2">
+                  Sigue los pasos para reservar tu servicio
+                </p>
               </div>
 
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  Agenda tu cita
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Elige una fecha y un horario disponible.
-                </p>
-
-                {bookingError && (
-                  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    {bookingError}
-                  </p>
-                )}
-                {bookingMsg && (
-                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    {bookingMsg}
-                  </p>
-                )}
-
-                <form
-                  onSubmit={submitBooking}
-                  className="space-y-4 text-sm"
-                >
-                  <div className="grid gap-4 md:grid-cols-2 items-start">
-                    <div className="space-y-2">
-                      <Calendar
-                        onChange={handleCalendarChange}
-                        value={calendarValue}
-                        tileClassName={getCalendarTileClass}
-                        className="rounded-2xl border border-slate-200 shadow-sm p-2 bg-slate-50/60"
-                      />
+              {/* Indicador de pasos */}
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3, 4].map((step) => (
+                  <div key={step} className="flex items-center gap-2">
+                    <div
+                      className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${ 
+                        bookingStep === step
+                          ? "bg-blue-600 text-white border-blue-600 scale-110"
+                          : bookingStep > step
+                          ? "bg-green-500 text-white border-green-500"
+                          : "bg-slate-100 text-slate-400 border-slate-200"
+                      }`}
+                    >
+                      {bookingStep > step ? "✓" : step}
                     </div>
+                    {step < 4 && (
+                      <div
+                        className={`h-1 w-8 md:w-16 rounded-full transition-all ${
+                          bookingStep > step ? "bg-green-500" : "bg-slate-200"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
 
-                    <div className="space-y-3">
+              {/* Etiquetas de pasos */}
+              <div className="grid grid-cols-4 gap-2 text-xs text-center text-slate-600">
+                <div className={bookingStep === 1 ? "font-bold text-blue-600" : ""}>
+                  Servicio
+                </div>
+                <div className={bookingStep === 2 ? "font-bold text-blue-600" : ""}>
+                  Fecha
+                </div>
+                <div className={bookingStep === 3 ? "font-bold text-blue-600" : ""}>
+                  Hora
+                </div>
+                <div className={bookingStep === 4 ? "font-bold text-blue-600" : ""}>
+                  Tus Datos
+                </div>
+              </div>
+
+              {/* Mensajes */}
+              {bookingError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <span className="text-xl">⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-800">Error</p>
+                    <p className="text-sm text-red-600 mt-1">{bookingError}</p>
+                  </div>
+                </div>
+              )}
+
+              {bookingMsg && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+                  <span className="text-xl">✅</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-800">¡Éxito!</p>
+                    <p className="text-sm text-green-600 mt-1">{bookingMsg}</p>
+                    <p className="text-xs text-green-600 mt-2">
+                      💡 Puedes gestionar tus reservas y chatear con el negocio desde tu perfil
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* PASO 1: SELECCIÓN DE SERVICIO */}
+              {bookingStep === 1 && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 text-base">
+                      Paso 1: Elige un servicio
+                    </h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Selecciona el servicio que necesitas
+                    </p>
+                  </div>
+
+                  {servicesLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                      <p className="text-sm text-slate-500 mt-2">Cargando servicios...</p>
+                    </div>
+                  ) : services.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-4xl mb-4">🛎️</div>
+                      <p className="text-slate-600 font-medium">No hay servicios disponibles</p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        El negocio aún no ha publicado sus servicios
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {services.map((service) => (
+                        <button
+                          key={service._id}
+                          type="button"
+                          onClick={() => handleServiceSelect(service)}
+                          className="text-left border-2 border-slate-200 rounded-xl p-5 hover:border-blue-500 hover:shadow-lg transition-all group"
+                        >
+                          {service.imageUrl && (
+                            <img
+                              src={service.imageUrl}
+                              alt={service.name}
+                              className="w-full h-32 object-cover rounded-lg mb-3"
+                            />
+                          )}
+                          <h5 className="font-bold text-slate-800 text-base group-hover:text-blue-600 transition-colors">
+                            {service.name}
+                          </h5>
+                          {service.description && (
+                            <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                              {service.description}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                              <span>⏱️ {service.duration} min</span>
+                            </div>
+                            <div className="text-lg font-bold text-blue-600">
+                              ${service.price.toLocaleString("es-CL")}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PASO 2: SELECCIÓN DE FECHA */}
+              {bookingStep === 2 && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 text-base">
+                      Paso 2: Elige una fecha
+                    </h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Servicio: <strong>{selectedService?.name}</strong> ({selectedService?.duration} min)
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-center">
+                    <Calendar
+                      onChange={handleCalendarChange}
+                      value={calendarValue}
+                      minDate={new Date()}
+                      tileDisabled={isDayDisabled}
+                      tileClassName={getTileClassName}
+                      className="rounded-2xl border-2 border-slate-200 shadow-lg p-3 max-w-md mx-auto"
+                      locale="es-ES"
+                    />
+                    <p className="text-xs text-slate-500 mt-3 text-center">
+                      💡 Los días en verde están disponibles para reservar
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setBookingStep(1)}
+                      className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      ← Cambiar servicio
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* PASO 3: SELECCIÓN DE HORA */}
+              {bookingStep === 3 && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 text-base">
+                      Paso 3: Elige tu horario
+                    </h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Fecha: <strong>{new Date(bookingForm.date + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong>
+                    </p>
+                  </div>
+
+                  {dateSlotsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                      <p className="text-sm text-slate-500 mt-2">Cargando horarios disponibles...</p>
+                    </div>
+                  ) : slotsForSelectedDay.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-4xl mb-4">📅</div>
+                      <p className="text-slate-600 font-medium mb-2">No hay horarios disponibles</p>
+                      <div className="max-w-md mx-auto space-y-2 text-sm text-slate-500">
+                        <p>Esto puede ocurrir porque:</p>
+                        <ul className="text-left list-disc list-inside space-y-1">
+                          <li>El negocio no tiene horarios configurados para este día</li>
+                          <li>Los bloques de tiempo son muy cortos para este servicio</li>
+                          <li>Todos los horarios están ocupados</li>
+                          <li>El día está marcado como cerrado</li>
+                        </ul>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                          <p className="font-semibold text-blue-800 mb-1">💡 Consejo</p>
+                          <p className="text-blue-700 text-xs">
+                            Si eres el dueño: ve a "Horarios y Excepciones" y crea bloques de tiempo más largos 
+                            (por ejemplo, 09:00-18:00) para que se generen más horarios automáticamente.
+                          </p>
+                        </div>
+                        <p className="font-medium text-blue-600 mt-3">
+                          Intenta con otra fecha
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                      {slotsForSelectedDay.map((slot) => (
+                        <button
+                          type="button"
+                          key={slot}
+                          onClick={() => handleSlotSelect(slot)}
+                          className={`px-4 py-3 rounded-lg text-sm font-semibold border-2 transition-all ${
+                            bookingForm.slot === slot
+                              ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:shadow-md"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBookingStep(2);
+                        setDateSlots([]);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      ← Cambiar fecha
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* PASO 4: DATOS DEL CLIENTE Y CONFIRMACIÓN */}
+              {bookingStep === 4 && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 text-base">
+                      Paso 4: Confirma tu reserva
+                    </h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Completa tus datos para finalizar
+                    </p>
+                  </div>
+
+                  {/* Resumen de la reserva */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+                    <h5 className="font-bold text-slate-800 mb-3">📋 Resumen de tu cita</h5>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Servicio:</span>
+                        <span className="font-semibold text-slate-800">{selectedService?.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Duración:</span>
+                        <span className="font-semibold text-slate-800">{selectedService?.duration} minutos</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Precio:</span>
+                        <span className="font-semibold text-blue-600 text-lg">
+                          ${selectedService?.price.toLocaleString("es-CL")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Fecha:</span>
+                        <span className="font-semibold text-slate-800">
+                          {new Date(bookingForm.date + "T00:00:00").toLocaleDateString("es-CL", { 
+                            day: "numeric", 
+                            month: "long", 
+                            year: "numeric" 
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Hora:</span>
+                        <span className="font-semibold text-slate-800 text-lg">{bookingForm.slot}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Formulario de datos */}
+                  <form onSubmit={submitBooking} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Nombre completo
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Nombre completo *
                         </label>
                         <input
                           name="customerName"
                           value={bookingForm.customerName}
                           onChange={onBookingChange}
-                          className="w-full border rounded-lg px-3 py-2"
-                          placeholder="Tu nombre"
+                          required
+                          className="w-full border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-4 py-3 text-sm transition-all"
+                          placeholder="Juan Pérez"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Correo electrónico
-                        </label>
-                        <input
-                          name="customerEmail"
-                          value={bookingForm.customerEmail}
-                          onChange={onBookingChange}
-                          className="w-full border rounded-lg px-3 py-2"
-                          placeholder="tucorreo@example.com"
-                          type="email"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Teléfono
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Teléfono *
                         </label>
                         <input
                           name="customerPhone"
                           value={bookingForm.customerPhone}
                           onChange={onBookingChange}
-                          className="w-full border rounded-lg px-3 py-2"
-                          placeholder="+56 9 ..."
+                          required
+                          className="w-full border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-4 py-3 text-sm transition-all"
+                          placeholder="+56 9 1234 5678"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Horarios disponibles para el día elegido
-                    </label>
-                    {bookingForm.date ? (
-                      slotsForSelectedDay.length === 0 ? (
-                        <p className="text-xs text-slate-500">
-                          No hay horarios configurados.
-                        </p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {slotsForSelectedDay.map((slot) => (
-                            <button
-                              type="button"
-                              key={slot}
-                              onClick={() =>
-                                setBookingForm((p) => ({
-                                  ...p,
-                                  slot,
-                                }))
-                              }
-                              className={`px-3 py-1 rounded-full text-xs border transition-all ${
-                                bookingForm.slot === slot
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
-                      )
-                    ) : (
-                      <p className="text-xs text-slate-500">
-                        Elige primero una fecha.
-                      </p>
-                    )}
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Correo electrónico
+                      </label>
+                      <input
+                        name="customerEmail"
+                        value={bookingForm.customerEmail}
+                        onChange={onBookingChange}
+                        type="email"
+                        className="w-full border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-4 py-3 text-sm transition-all"
+                        placeholder="juan@example.com"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Comentarios
-                    </label>
-                    <textarea
-                      name="notes"
-                      value={bookingForm.notes}
-                      onChange={onBookingChange}
-                      rows={3}
-                      className="w-full border rounded-lg px-3 py-2"
-                      placeholder="Cuéntanos qué necesitas"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Comentarios adicionales
+                      </label>
+                      <textarea
+                        name="notes"
+                        value={bookingForm.notes}
+                        onChange={onBookingChange}
+                        rows={3}
+                        className="w-full border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-4 py-3 text-sm transition-all"
+                        placeholder="Cuéntanos si tienes alguna solicitud especial..."
+                      />
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={bookingSubmitting}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-60"
-                  >
-                    {bookingSubmitting ? "Enviando…" : "Solicitar cita"}
-                  </button>
-                </form>
-              </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingStep(3);
+                          setBookingForm(prev => ({ ...prev, slot: "" }));
+                        }}
+                        className="flex-1 px-6 py-3 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                      >
+                        ← Cambiar horario
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={bookingSubmitting}
+                        className="flex-1 px-6 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                      >
+                        {bookingSubmitting ? "Confirmando..." : "✅ Confirmar Reserva"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </section>
           )}
 
@@ -1135,6 +1458,30 @@ export default function StorePublicPage() {
           </div>
         </main>
       </div>
+
+      {/* Estilos para el calendario */}
+      <style>{`
+        .available-day {
+          background-color: #86efac !important;
+          color: #166534 !important;
+          font-weight: 600;
+        }
+        
+        .available-day:hover {
+          background-color: #4ade80 !important;
+        }
+
+        .react-calendar__tile:disabled {
+          background-color: #f1f5f9 !important;
+          color: #cbd5e1 !important;
+          cursor: not-allowed !important;
+        }
+
+        .react-calendar__tile--active {
+          background-color: #3b82f6 !important;
+          color: white !important;
+        }
+      `}</style>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import CustomerProfilePage from "./pages/CustomerProfilePage";
 import CustomerPublicPage from "./pages/CustomerPublicPage";
 import ExploreStoresPage from "./pages/ExploreStoresPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import BookingChatPage from "./pages/BookingChatPage";
 
 // Ruta protegida
 function ProtectedRoute({ children }) {
@@ -59,6 +60,9 @@ export default function App() {
         }
       />
       <Route path="/tienda/:id" element={<StorePublicPage />} />
+
+      {/* Chat público de reserva */}
+      <Route path="/reserva/:bookingId/chat" element={<BookingChatPage />} />
 
       <Route
         path="/onboarding"

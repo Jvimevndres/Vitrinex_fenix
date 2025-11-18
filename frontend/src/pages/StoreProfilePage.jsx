@@ -5,6 +5,11 @@ import MainHeader from "../components/MainHeader";
 import { getStoreById, updateMyStore } from "../api/store";
 
 import BookingAvailabilityManager from "../components/BookingAvailabilityManager";
+import WeeklyScheduleEditor from "../components/WeeklyScheduleEditor";
+import ServicesManager from "../components/ServicesManager"; // 🆕 NUEVO
+import MonthlyCalendarEditor from "../components/MonthlyCalendarEditor"; // 🆕 NUEVO
+import WeeklyScheduleManager from "../components/WeeklyScheduleManager"; // 🆕 EDITOR SEMANAL
+import MonthlyCalendarViewer from "../components/MonthlyCalendarViewer"; // 🆕 VISTA MENSUAL
 import AppointmentsList from "../components/AppointmentsList";
 import ProductManager from "../components/ProductManager";
 import OrdersList from "../components/OrdersList";
@@ -79,7 +84,7 @@ export default function StoreProfilePage() {
 
   // pestañas internas
   const [productsPanel, setProductsPanel] = useState("catalog"); // catalog | orders | insights
-  const [bookingsPanel, setBookingsPanel] = useState("availability"); // availability | calendar | appointments | insights
+  const [bookingsPanel, setBookingsPanel] = useState("services"); // services | weeklySchedule | monthlyView | appointments | insights
 
   // ========= Cargar tienda ===========
   useEffect(() => {
@@ -395,25 +400,36 @@ export default function StoreProfilePage() {
                   </p>
 
                   <button
-                    onClick={() => setBookingsPanel("availability")}
+                    onClick={() => setBookingsPanel("services")}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
-                      bookingsPanel === "availability"
+                      bookingsPanel === "services"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Disponibilidad de horarios
+                    📋 Servicios
                   </button>
 
                   <button
-                    onClick={() => setBookingsPanel("calendar")}
+                    onClick={() => setBookingsPanel("weeklySchedule")}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
-                      bookingsPanel === "calendar"
+                      bookingsPanel === "weeklySchedule"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Calendario
+                    ⏰ Horario Semanal
+                  </button>
+
+                  <button
+                    onClick={() => setBookingsPanel("monthlyView")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                      bookingsPanel === "monthlyView"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    📆 Vista de Calendario
                   </button>
 
                   <button
@@ -424,7 +440,7 @@ export default function StoreProfilePage() {
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Reservas / citas
+                    📝 Gestión de Reservas
                   </button>
 
                   {/* 👇 NUEVO: botón de análisis inteligente (agendamiento) */}
@@ -874,12 +890,16 @@ export default function StoreProfilePage() {
                 {/* Herramientas AGENDAMIENTO */}
                 {!modePendingChange && effectiveMode === "bookings" && (
                   <>
-                    {bookingsPanel === "availability" && (
-                      <BookingAvailabilityManager storeId={id} />
+                    {bookingsPanel === "services" && (
+                      <ServicesManager storeId={id} />
                     )}
 
-                    {bookingsPanel === "calendar" && (
-                      <StoreCalendarManager storeId={id} />
+                    {bookingsPanel === "weeklySchedule" && (
+                      <WeeklyScheduleManager storeId={id} />
+                    )}
+
+                    {bookingsPanel === "monthlyView" && (
+                      <MonthlyCalendarViewer storeId={id} />
                     )}
 
                     {bookingsPanel === "appointments" && (

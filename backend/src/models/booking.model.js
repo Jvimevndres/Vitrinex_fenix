@@ -8,6 +8,13 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    // 🆕 NUEVO: Servicio asociado (opcional para backward compatibility)
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service",
+      default: null,
+      index: true,
+    },
     customerName: {
       type: String,
       required: true,
@@ -30,6 +37,17 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // 🆕 NUEVO: Duración de la cita (en minutos)
+    // Se calcula del servicio o default 30
+    duration: {
+      type: Number,
+      default: 30,
+    },
+    // 🆕 NUEVO: Precio pagado (snapshot del precio del servicio al momento de reservar)
+    price: {
+      type: Number,
+      default: 0,
+    },
     notes: {
       type: String,
       default: "",
@@ -39,6 +57,19 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "confirmed", "cancelled"],
       default: "pending",
+    },
+    // 🆕 CHAT: Contadores de mensajes no leídos
+    unreadMessagesOwner: {
+      type: Number,
+      default: 0,
+    },
+    unreadMessagesCustomer: {
+      type: Number,
+      default: 0,
+    },
+    lastMessageAt: {
+      type: Date,
+      default: null,
     },
   },
   {

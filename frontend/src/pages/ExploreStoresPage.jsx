@@ -77,7 +77,15 @@ export default function ExploreStoresPage() {
       if (filters.mode) params.mode = filters.mode;
 
       const { data } = await listPublicStores(params);
-      setStores(Array.isArray(data) ? data : []);
+      
+      // Manejar respuesta con o sin paginación (retrocompatibilidad)
+      if (data.stores && Array.isArray(data.stores)) {
+        setStores(data.stores);
+      } else if (Array.isArray(data)) {
+        setStores(data);
+      } else {
+        setStores([]);
+      }
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los negocios.");

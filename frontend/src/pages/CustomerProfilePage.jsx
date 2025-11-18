@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
+import CustomerBookingsList from "../components/CustomerBookingsList";
 import { getProfile, updateProfile } from "../api/user";
 import { listMyStores } from "../api/store";
 
@@ -237,7 +238,18 @@ export default function CustomerProfilePage() {
                     : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                Perfil
+                👤 Perfil
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("reservas")}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                  activeTab === "reservas"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                📅 Mis Reservas
               </button>
             </div>
           </aside>
@@ -586,6 +598,9 @@ export default function CustomerProfilePage() {
                 </form>
               </section>
             )}
+
+            {/* 🆕 TAB: MIS RESERVAS */}
+            {activeTab === "reservas" && <CustomerBookingsList />}
           </section>
         </div>
 

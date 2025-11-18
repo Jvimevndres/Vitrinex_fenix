@@ -1,8 +1,19 @@
-// src/controllers/store.controller.js
 import Store from "../models/store.model.js";
 import Product from "../models/product.model.js";
 import Booking from "../models/booking.model.js";
 import Order from "../models/order.model.js";
+import Service from "../models/service.model.js";
+import {
+  normalizeAvailability,
+  validateTimeBlock,
+  detectOverlaps,
+  generateSlotsFromBlocks,
+  migrateOldFormat,
+  normalizeDateOnly,
+  getAvailabilityForDate,
+  getAvailableSlotsForDate,
+  normalizeSpecialDays,
+} from "../helpers/availability.helper.js";
 
 /* =================== Helpers =================== */
 
@@ -28,38 +39,7 @@ const DAY_FROM_INDEX = {
 
 const SLOT_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-const normalizeAvailability = (availability = []) => {
-  if (!Array.isArray(availability)) return [];
-  const map = new Map();
-
-  availability.forEach((entry) => {
-    const day = entry?.dayOfWeek;
-    const slots = Array.isArray(entry?.slots) ? entry.slots : [];
-    if (!DAY_ORDER.includes(day)) return;
-
-    const cleanSlots = Array.from(
-      new Set(
-        slots
-          .filter((slot) => typeof slot === "string" && SLOT_REGEX.test(slot.trim()))
-          .map((slot) => slot.trim())
-      )
-    ).sort();
-
-    map.set(day, cleanSlots);
-  });
-
-  return DAY_ORDER.filter((day) => map.has(day)).map((day) => ({
-    dayOfWeek: day,
-    slots: map.get(day),
-  }));
-};
-
-const normalizeDateOnly = (dateString) => {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setUTCHours(0, 0, 0, 0);
-  return date;
-};
+// normalizeDateOnly se importa desde availability.helper.js
 
 const findStoreForOwner = async (storeId, userId) => {
   const store = await Store.findById(storeId);
@@ -107,18 +87,28 @@ const mapProductResponse = (product) => ({
 
 export const listPublicStores = async (req, res) => {
   try {
-    const { comuna, tipoNegocio, mode } = req.query;
+    const { comuna, tipoNegocio, mode, page = 1, limit = 50 } = req.query;
     const query = { isActive: true };
     if (comuna) query.comuna = comuna;
     if (tipoNegocio) query.tipoNegocio = tipoNegocio;
     if (mode) query.mode = mode;
 
-    const stores = await Store.find(query)
-      .populate("owner", "username avatarUrl")
-      .lean();
+    // Paginación
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Máximo 100
+    const skip = (pageNum - 1) * limitNum;
 
-    res.json(
-      stores.map((s) => ({
+    const [stores, total] = await Promise.all([
+      Store.find(query)
+        .populate("owner", "username avatarUrl")
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Store.countDocuments(query)
+    ]);
+
+    res.json({
+      stores: stores.map((s) => ({
         _id: s._id,
         name: s.name,
         description: s.description,
@@ -132,8 +122,14 @@ export const listPublicStores = async (req, res) => {
         isActive: s.isActive,
         ownerName: s.owner?.username || null,
         ownerAvatar: s.owner?.avatarUrl || null,
-      }))
-    );
+      })),
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (err) {
     console.error("Error listando tiendas públicas:", err);
     res.status(500).json({ message: "Error al listar las tiendas" });
@@ -383,23 +379,42 @@ export const getStoreById = async (req, res) => {
   }
 };
 
-/* =============== BOOKINGS =============== */
+/* =============== BOOKINGS / AVAILABILITY =============== */
 
+/**
+ * GET /api/stores/:id/availability
+ * Obtiene la disponibilidad horaria de una tienda (público y owner)
+ */
 export const getStoreAvailability = async (req, res) => {
   try {
     const { id } = req.params;
     const store = await Store.findById(id).lean();
-    if (!store) return res.status(404).json({ message: "Tienda no encontrada" });
-    if (store.mode !== "bookings")
+    
+    if (!store) {
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+    
+    if (store.mode !== "bookings") {
       return res.status(400).json({ message: "Esta tienda no permite agendar citas" });
+    }
 
-    res.json({ availability: store.bookingAvailability || [] });
+    // Migrar formato antiguo si es necesario
+    let availability = store.bookingAvailability || [];
+    if (availability.length > 0 && !availability[0].timeBlocks) {
+      availability = migrateOldFormat(availability);
+    }
+
+    res.json({ availability });
   } catch (err) {
     console.error("Error obteniendo disponibilidad:", err);
     res.status(500).json({ message: "Error al obtener la disponibilidad" });
   }
 };
 
+/**
+ * PUT /api/stores/:id/availability
+ * Actualiza toda la disponibilidad de la tienda (solo owner)
+ */
 export const updateStoreAvailability = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
@@ -408,19 +423,181 @@ export const updateStoreAvailability = async (req, res) => {
     const { store, error } = await findStoreForOwner(id, userId);
     if (error) return res.status(error.status).json({ message: error.message });
 
-    if (store.mode !== "bookings")
+    if (store.mode !== "bookings") {
       return res.status(400).json({ message: "Esta tienda no es de agendamiento" });
+    }
 
     const normalized = normalizeAvailability(req.body?.availability);
+    
+    // 🆕 La normalización ya limpia traslapes automáticamente
+    // No necesitamos validar porque se fusionan los bloques traslapados
+
     store.bookingAvailability = normalized;
     await store.save();
 
-    res.json({ availability: store.bookingAvailability });
+    res.json({ 
+      message: "Disponibilidad actualizada correctamente",
+      availability: store.bookingAvailability 
+    });
   } catch (err) {
     console.error("Error al actualizar disponibilidad:", err);
     res.status(500).json({ message: "Error al actualizar la disponibilidad" });
   }
 };
+
+/**
+ * PUT /api/stores/:id/availability/:day
+ * Actualiza la disponibilidad de un día específico (solo owner)
+ */
+export const updateDayAvailability = async (req, res) => {
+  const { id, day } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    if (store.mode !== "bookings") {
+      return res.status(400).json({ message: "Esta tienda no es de agendamiento" });
+    }
+
+    const validDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    if (!validDays.includes(day)) {
+      return res.status(400).json({ message: "Día inválido" });
+    }
+
+    const { isClosed, timeBlocks, slots } = req.body;
+    
+    // Validar timeBlocks si no está cerrado
+    if (!isClosed && timeBlocks && Array.isArray(timeBlocks)) {
+      for (const block of timeBlocks) {
+        const errors = validateTimeBlock(block);
+        if (errors.length > 0) {
+          return res.status(400).json({
+            message: "Bloque horario inválido",
+            errors,
+          });
+        }
+      }
+      
+      const overlaps = detectOverlaps(timeBlocks);
+      if (overlaps.length > 0) {
+        return res.status(400).json({
+          message: "Los bloques horarios se traslapan",
+          overlaps,
+        });
+      }
+    }
+
+    // Actualizar o crear entrada para el día
+    const availability = store.bookingAvailability || [];
+    const dayIndex = availability.findIndex(e => e.dayOfWeek === day);
+    
+    const dayEntry = {
+      dayOfWeek: day,
+      isClosed: !!isClosed,
+      timeBlocks: !isClosed && timeBlocks ? timeBlocks : [],
+      slots: slots || [],
+    };
+
+    if (dayIndex >= 0) {
+      availability[dayIndex] = dayEntry;
+    } else {
+      availability.push(dayEntry);
+    }
+
+    store.bookingAvailability = normalizeAvailability(availability);
+    await store.save();
+
+    res.json({
+      message: `Disponibilidad de ${day} actualizada`,
+      dayAvailability: store.bookingAvailability.find(e => e.dayOfWeek === day),
+    });
+  } catch (err) {
+    console.error("Error al actualizar día:", err);
+    res.status(500).json({ message: "Error al actualizar el día" });
+  }
+};
+
+/**
+ * DELETE /api/stores/:id/availability/:day
+ * Elimina la disponibilidad de un día completo (solo owner)
+ */
+export const deleteDayAvailability = async (req, res) => {
+  const { id, day } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const availability = store.bookingAvailability || [];
+    store.bookingAvailability = availability.filter(e => e.dayOfWeek !== day);
+    await store.save();
+
+    res.json({
+      message: `Disponibilidad de ${day} eliminada`,
+      availability: store.bookingAvailability,
+    });
+  } catch (err) {
+    console.error("Error al eliminar día:", err);
+    res.status(500).json({ message: "Error al eliminar el día" });
+  }
+};
+
+/**
+ * POST /api/stores/:id/availability/:day/copy
+ * Copia la disponibilidad de un día a otros días (solo owner)
+ */
+export const copyDayAvailability = async (req, res) => {
+  const { id, day } = req.params;
+  const { targetDays } = req.body; // array de días destino
+  const userId = req.user.id;
+
+  try {
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    if (!Array.isArray(targetDays) || targetDays.length === 0) {
+      return res.status(400).json({ message: "Debes especificar días destino" });
+    }
+
+    const availability = store.bookingAvailability || [];
+    const sourceDay = availability.find(e => e.dayOfWeek === day);
+    
+    if (!sourceDay) {
+      return res.status(404).json({ message: `No hay configuración para ${day}` });
+    }
+
+    // Copiar a cada día destino
+    for (const targetDay of targetDays) {
+      const targetIndex = availability.findIndex(e => e.dayOfWeek === targetDay);
+      const copied = {
+        ...sourceDay,
+        dayOfWeek: targetDay,
+      };
+      
+      if (targetIndex >= 0) {
+        availability[targetIndex] = copied;
+      } else {
+        availability.push(copied);
+      }
+    }
+
+    store.bookingAvailability = normalizeAvailability(availability);
+    await store.save();
+
+    res.json({
+      message: `Horario de ${day} copiado a ${targetDays.length} día(s)`,
+      availability: store.bookingAvailability,
+    });
+  } catch (err) {
+    console.error("Error al copiar día:", err);
+    res.status(500).json({ message: "Error al copiar el horario" });
+  }
+};
+
+/* =============== APPOINTMENTS / BOOKINGS =============== */
 
 export const listStoreAppointments = async (req, res) => {
   const { id } = req.params;
@@ -456,63 +633,7 @@ export const listStoreAppointments = async (req, res) => {
   }
 };
 
-export const createAppointment = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const store = await Store.findById(id).lean();
-    if (!store) return res.status(404).json({ message: "Tienda no encontrada" });
-    if (store.mode !== "bookings")
-      return res.status(400).json({ message: "Esta tienda no permite agendar citas" });
-
-    const { customerName, customerEmail, customerPhone, date, slot, notes } = req.body || {};
-    if (!customerName || !date || !slot) {
-      return res.status(400).json({ message: "Nombre del cliente, fecha y horario son obligatorios" });
-    }
-
-    const normalizedDate = normalizeDateOnly(date);
-    if (!normalizedDate) return res.status(400).json({ message: "La fecha proporcionada no es válida" });
-    if (!SLOT_REGEX.test(slot)) return res.status(400).json({ message: "El horario no es válido" });
-
-    const dayKey = DAY_FROM_INDEX[normalizedDate.getUTCDay()];
-    const dayAvailability = (store.bookingAvailability || []).find((e) => e.dayOfWeek === dayKey);
-
-    if (!dayAvailability || !dayAvailability.slots.includes(slot)) {
-      return res.status(400).json({ message: "El horario seleccionado no está disponible" });
-    }
-
-    try {
-      const booking = await Booking.create({
-        store: store._id,
-        customerName,
-        customerEmail,
-        customerPhone,
-        date: normalizedDate,
-        slot,
-        notes: notes || "",
-      });
-
-      res.status(201).json({
-        _id: booking._id,
-        customerName: booking.customerName,
-        customerEmail: booking.customerEmail,
-        customerPhone: booking.customerPhone,
-        date: booking.date,
-        slot: booking.slot,
-        status: booking.status,
-        notes: booking.notes,
-      });
-    } catch (err) {
-      if (err?.code === 11000) {
-        return res.status(409).json({ message: "Ese horario ya fue reservado. Elige otro." });
-      }
-      throw err;
-    }
-  } catch (err) {
-    console.error("Error al crear reserva:", err);
-    res.status(500).json({ message: "Error al reservar la cita" });
-  }
-};
+// NOTA: createAppointment ahora está al final del archivo (versión mejorada con soporte de serviceId)
 
 export const updateAppointmentStatus = async (req, res) => {
   const { id, bookingId } = req.params;
@@ -551,6 +672,60 @@ export const updateAppointmentStatus = async (req, res) => {
   } catch (err) {
     console.error("Error al actualizar estado de reserva:", err);
     return res.status(500).json({ message: "Error al actualizar el estado de la reserva" });
+  }
+};
+
+// 🆕 Eliminar una cita
+export const deleteAppointment = async (req, res) => {
+  const { id, bookingId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    if (store.mode !== "bookings")
+      return res.status(400).json({ message: "Esta tienda no es de agendamiento" });
+
+    const booking = await Booking.findOne({ _id: bookingId, store: store._id });
+    if (!booking) return res.status(404).json({ message: "Reserva no encontrada" });
+
+    await Booking.deleteOne({ _id: bookingId });
+
+    console.log(`🗑️ Reserva eliminada: ${bookingId}`);
+
+    return res.json({ message: "Reserva eliminada correctamente" });
+  } catch (err) {
+    console.error("Error al eliminar reserva:", err);
+    return res.status(500).json({ message: "Error al eliminar la reserva" });
+  }
+};
+
+// 🆕 Obtener reservas del cliente por email
+export const getCustomerBookings = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email requerido" });
+    }
+
+    console.log('📋 Buscando reservas para email:', email);
+
+    const bookings = await Booking.find({ 
+      customerEmail: email
+    })
+      .populate('store', 'name logoUrl category phone address')
+      .populate('service', 'name duration price')
+      .sort({ date: -1, slot: -1 })
+      .limit(100);
+
+    console.log(`✅ Encontradas ${bookings.length} reservas`);
+
+    return res.json(bookings);
+  } catch (err) {
+    console.error("Error al obtener reservas del cliente:", err);
+    return res.status(500).json({ message: "Error al obtener las reservas" });
   }
 };
 
@@ -853,5 +1028,350 @@ export const createStoreOrder = async (req, res) => {
   } catch (err) {
     console.error("Error al crear pedido:", err);
     res.status(500).json({ message: "Error al crear el pedido" });
+  }
+};
+
+// =================== NUEVOS ENDPOINTS: SPECIAL DAYS ===================
+
+/**
+ * GET /api/stores/:id/special-days
+ * Obtener días especiales de una tienda (público)
+ */
+export const getSpecialDays = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const store = await Store.findById(id);
+    
+    if (!store) {
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+
+    const specialDays = normalizeSpecialDays(store.specialDays || []);
+    return res.json(specialDays);
+  } catch (error) {
+    console.error("❌ Error al obtener special days:", error);
+    return res.status(500).json({ message: "Error al obtener días especiales" });
+  }
+};
+
+/**
+ * POST /api/stores/:id/special-days
+ * Crear o actualizar un día especial (auth)
+ */
+export const upsertSpecialDay = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { date, isClosed, reason, timeBlocks } = req.body;
+
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    // Validar fecha
+    const normalizedDate = normalizeDateOnly(date);
+    if (!normalizedDate) {
+      return res.status(400).json({ message: "Fecha inválida" });
+    }
+
+    // Validar timeBlocks si no está cerrado
+    if (!isClosed && Array.isArray(timeBlocks)) {
+      for (const block of timeBlocks) {
+        const errors = validateTimeBlock(block);
+        if (errors.length > 0) {
+          return res.status(400).json({ 
+            message: "Bloque horario inválido", 
+            errors 
+          });
+        }
+      }
+
+      const overlaps = detectOverlaps(timeBlocks);
+      if (overlaps.length > 0) {
+        return res.status(400).json({
+          message: "Se detectaron traslapes entre bloques",
+          overlaps,
+        });
+      }
+    }
+
+    // Buscar si ya existe un specialDay para esa fecha
+    const specialDays = store.specialDays || [];
+    const existingIndex = specialDays.findIndex(sd => {
+      const sdDate = normalizeDateOnly(sd.date);
+      return sdDate && sdDate.getTime() === normalizedDate.getTime();
+    });
+
+    const newSpecialDay = {
+      date: normalizedDate,
+      isClosed: !!isClosed,
+      reason: (reason || "").trim(),
+      timeBlocks: !isClosed && Array.isArray(timeBlocks) ? timeBlocks : [],
+    };
+
+    if (existingIndex >= 0) {
+      // Actualizar existente
+      specialDays[existingIndex] = newSpecialDay;
+    } else {
+      // Crear nuevo
+      specialDays.push(newSpecialDay);
+    }
+
+    store.specialDays = specialDays;
+    await store.save();
+
+    return res.json({
+      message: "Día especial guardado",
+      specialDay: newSpecialDay,
+    });
+  } catch (error) {
+    console.error("❌ Error al guardar special day:", error);
+    return res.status(500).json({ message: "Error al guardar día especial" });
+  }
+};
+
+/**
+ * DELETE /api/stores/:id/special-days/:date
+ * Eliminar un día especial (auth)
+ */
+export const deleteSpecialDay = async (req, res) => {
+  try {
+    const { id, date } = req.params;
+    const userId = req.user.id;
+
+    const { store, error } = await findStoreForOwner(id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const normalizedDate = normalizeDateOnly(date);
+    if (!normalizedDate) {
+      return res.status(400).json({ message: "Fecha inválida" });
+    }
+
+    const specialDays = store.specialDays || [];
+    store.specialDays = specialDays.filter(sd => {
+      const sdDate = normalizeDateOnly(sd.date);
+      return !sdDate || sdDate.getTime() !== normalizedDate.getTime();
+    });
+
+    await store.save();
+
+    return res.json({
+      message: "Día especial eliminado",
+    });
+  } catch (error) {
+    console.error("❌ Error al eliminar special day:", error);
+    return res.status(500).json({ message: "Error al eliminar día especial" });
+  }
+};
+
+// =================== NUEVO ENDPOINT: AVAILABILITY POR FECHA ===================
+
+/**
+ * GET /api/stores/:id/availability/date/:date
+ * Obtener disponibilidad para una fecha específica (público)
+ * Considera specialDays y bookings existentes
+ * Query params: serviceId (opcional) - para considerar duración del servicio
+ */
+export const getAvailabilityByDate = async (req, res) => {
+  try {
+    const { id, date } = req.params;
+    const { serviceId } = req.query;
+
+    console.log("📅 getAvailabilityByDate llamado:", { storeId: id, date, serviceId });
+
+    const store = await Store.findById(id);
+    if (!store) {
+      console.log("❌ Tienda no encontrada:", id);
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+
+    const targetDate = normalizeDateOnly(date);
+    if (!targetDate) {
+      console.log("❌ Fecha inválida:", date);
+      return res.status(400).json({ message: "Fecha inválida" });
+    }
+
+    console.log("✅ Fecha normalizada:", targetDate.toISOString());
+
+    // Obtener duración del servicio si se especifica
+    let serviceDuration = 30; // default
+    let serviceData = null;
+
+    if (serviceId) {
+      const service = await Service.findOne({ _id: serviceId, store: id, isActive: true });
+      if (service) {
+        serviceDuration = service.duration;
+        serviceData = {
+          _id: service._id,
+          name: service.name,
+          duration: service.duration,
+          price: service.price,
+        };
+        console.log("🛎️ Servicio encontrado:", serviceData);
+      } else {
+        console.log("⚠️ Servicio no encontrado o inactivo:", serviceId);
+      }
+    }
+
+    console.log("📊 bookingAvailability:", store.bookingAvailability?.length || 0, "días");
+    console.log("📊 specialDays:", store.specialDays?.length || 0, "días");
+
+    // Obtener availability para la fecha
+    const availability = getAvailabilityForDate(
+      targetDate,
+      store.bookingAvailability || [],
+      store.specialDays || []
+    );
+
+    console.log("📋 Availability obtenida:", availability);
+
+    if (availability.isClosed) {
+      console.log("🚫 Día cerrado:", availability.reason);
+      return res.json({
+        date: targetDate,
+        isClosed: true,
+        reason: availability.reason,
+        availableSlots: [],
+        service: serviceData,
+      });
+    }
+
+    // Obtener bookings existentes para esa fecha
+    const startOfDay = new Date(targetDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const existingBookings = await Booking.find({
+      store: id,
+      date: { $gte: startOfDay, $lte: endOfDay },
+      status: { $ne: "cancelled" },
+    }).select("slot duration");
+
+    console.log("📅 Bookings existentes:", existingBookings.length);
+
+    // Calcular slots disponibles
+    const availableSlots = getAvailableSlotsForDate(
+      targetDate,
+      store.bookingAvailability || [],
+      store.specialDays || [],
+      existingBookings,
+      serviceDuration
+    );
+
+    console.log("✅ Slots disponibles calculados:", availableSlots.length, availableSlots);
+
+    return res.json({
+      date: targetDate,
+      isClosed: false,
+      reason: availability.reason,
+      isSpecialDay: availability.isSpecialDay,
+      timeBlocks: availability.timeBlocks,
+      availableSlots,
+      bookedSlots: existingBookings.map(b => b.slot),
+      service: serviceData,
+    });
+  } catch (error) {
+    console.error("❌ Error al obtener availability por fecha:", error);
+    return res.status(500).json({ message: "Error al obtener disponibilidad" });
+  }
+};
+
+// =================== NUEVO ENDPOINT: CREAR BOOKING CON SERVICIO ===================
+
+/**
+ * POST /api/stores/:id/appointments
+ * Crear una cita/booking (público)
+ * Ahora soporta serviceId
+ */
+export const createAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { serviceId, date, slot, customerName, customerEmail, customerPhone, notes } = req.body;
+
+    // Validaciones básicas
+    if (!customerName || !date || !slot) {
+      return res.status(400).json({ 
+        message: "Faltan campos requeridos: customerName, date, slot" 
+      });
+    }
+
+    // Verificar tienda
+    const store = await Store.findById(id);
+    if (!store) {
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+
+    // Validar servicio si se especifica
+    let service = null;
+    let duration = 30;
+    let price = 0;
+
+    if (serviceId) {
+      service = await Service.findOne({ _id: serviceId, store: id, isActive: true });
+      if (!service) {
+        return res.status(404).json({ message: "Servicio no encontrado o inactivo" });
+      }
+      duration = service.duration;
+      price = service.price;
+    }
+
+    // Normalizar fecha
+    const normalizedDate = normalizeDateOnly(date);
+    if (!normalizedDate) {
+      return res.status(400).json({ message: "Fecha inválida" });
+    }
+
+    // Verificar si el slot está disponible
+    const startOfDay = new Date(normalizedDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(normalizedDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const existingBooking = await Booking.findOne({
+      store: id,
+      date: { $gte: startOfDay, $lte: endOfDay },
+      slot,
+      status: { $ne: "cancelled" },
+    });
+
+    if (existingBooking) {
+      return res.status(409).json({ 
+        message: "Este horario ya está reservado" 
+      });
+    }
+
+    // Crear booking
+    const booking = new Booking({
+      store: id,
+      service: service?._id || null,
+      date: normalizedDate,
+      slot,
+      duration,
+      price,
+      customerName: customerName.trim(),
+      customerEmail: customerEmail?.trim() || "",
+      customerPhone: customerPhone?.trim() || "",
+      notes: notes?.trim() || "",
+      status: "pending",
+    });
+
+    await booking.save();
+
+    // Popular servicio si existe
+    await booking.populate("service", "name duration price");
+
+    return res.status(201).json(booking);
+  } catch (error) {
+    console.error("❌ Error al crear appointment:", error);
+    
+    if (error.code === 11000) {
+      return res.status(409).json({ 
+        message: "Este horario ya está reservado" 
+      });
+    }
+
+    return res.status(500).json({ message: "Error al crear la cita" });
   }
 };

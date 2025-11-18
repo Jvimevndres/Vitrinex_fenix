@@ -13,6 +13,13 @@ export const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
 // Token secreto (JWT)
+if (!process.env.JWT_SECRET && !process.env.TOKEN_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET o TOKEN_SECRET debe estar definido en producción');
+  }
+  console.warn('⚠️  ADVERTENCIA: Usando JWT_SECRET por defecto. Configura JWT_SECRET en .env');
+}
+
 export const JWT_SECRET =
   process.env.JWT_SECRET || process.env.TOKEN_SECRET || "dev-secret";
 

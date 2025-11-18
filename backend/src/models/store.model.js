@@ -31,7 +31,7 @@ const storeSchema = new mongoose.Schema(
     // Activación suave
     isActive: { type: Boolean, default: true },
 
-    // Disponibilidad de agendamiento
+    // Disponibilidad de agendamiento (mejorada v2)
     bookingAvailability: {
       type: [
         {
@@ -48,7 +48,45 @@ const storeSchema = new mongoose.Schema(
             ],
             required: true,
           },
+          // Indica si el día está cerrado completamente
+          isClosed: { type: Boolean, default: false },
+          // Bloques horarios (múltiples rangos permitidos)
+          timeBlocks: {
+            type: [
+              {
+                startTime: { type: String, required: true }, // "09:00"
+                endTime: { type: String, required: true },   // "13:00"
+                slotDuration: { type: Number, default: 30 }, // minutos
+              },
+            ],
+            default: [],
+          },
+          // Compatibilidad con formato antiguo (slots)
           slots: { type: [String], default: [] },
+        },
+      ],
+      default: [],
+    },
+
+    // 📅 NUEVO: Días especiales / Excepciones de calendario
+    // Para manejar días festivos, cierres temporales, horarios especiales
+    specialDays: {
+      type: [
+        {
+          date: { type: Date, required: true, index: true }, // Fecha específica (sin hora)
+          isClosed: { type: Boolean, default: false }, // Si está cerrado ese día
+          reason: { type: String, default: "" }, // "Feriado", "Vacaciones", etc.
+          // Horarios especiales para ese día (override del horario semanal)
+          timeBlocks: {
+            type: [
+              {
+                startTime: { type: String, required: true },
+                endTime: { type: String, required: true },
+                slotDuration: { type: Number, default: 30 },
+              },
+            ],
+            default: [],
+          },
         },
       ],
       default: [],
@@ -78,6 +116,11 @@ const storeSchema = new mongoose.Schema(
 // Índices útiles
 storeSchema.index({ owner: 1 });
 storeSchema.index({ user: 1 });
+
+// Índices compuestos para queries optimizadas
+storeSchema.index({ lat: 1, lng: 1, isActive: 1 }); // Búsqueda geográfica
+storeSchema.index({ comuna: 1, tipoNegocio: 1, isActive: 1 }); // Filtros
+storeSchema.index({ mode: 1, isActive: 1 }); // Por tipo de negocio
 
 const Store = mongoose.model("Store", storeSchema);
 

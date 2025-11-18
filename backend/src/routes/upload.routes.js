@@ -24,6 +24,23 @@ function ensureDir(dir) {
 const baseUploadDir = path.join(__dirname, "..", "..", "uploads");
 ensureDir(baseUploadDir);
 
+// Validación de tipos de archivo permitidos
+const imageFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif'
+  ];
+  
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Solo se aceptan imágenes (JPEG, PNG, WebP, GIF)'), false);
+  }
+};
+
 function createStorage(subfolder) {
   const dir = path.join(baseUploadDir, subfolder);
   ensureDir(dir);
@@ -38,10 +55,17 @@ function createStorage(subfolder) {
   });
 }
 
-const avatarUpload = multer({ storage: createStorage("avatars") });
-const storeLogoUpload = multer({ storage: createStorage("stores") });
-// 👇 nuevo: carpeta para imágenes de productos
-const productImageUpload = multer({ storage: createStorage("products") });
+// Configuración con límites y validación
+const uploadConfig = {
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB máximo
+  },
+  fileFilter: imageFileFilter,
+};
+
+const avatarUpload = multer({ storage: createStorage("avatars"), ...uploadConfig });
+const storeLogoUpload = multer({ storage: createStorage("stores"), ...uploadConfig });
+const productImageUpload = multer({ storage: createStorage("products"), ...uploadConfig });
 
 const getBaseUrl = () => process.env.API_PUBLIC_URL || "http://localhost:3000";
 

@@ -91,6 +91,11 @@ export const updateAppointmentStatus = async (id, bookingId, status) => {
   return res;
 };
 
+export const deleteAppointment = async (id, bookingId) => {
+  const res = await api.delete(`/stores/${id}/appointments/${bookingId}`);
+  return res;
+};
+
 /* =====================================
  * 🔹 PRODUCTOS (products)
  * ===================================== */

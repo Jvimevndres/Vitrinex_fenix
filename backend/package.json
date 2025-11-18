@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "health": "curl http://localhost:3000/api/health || echo 'Server not responding'",
+    "check-env": "node -e \"if(!process.env.JWT_SECRET || !process.env.MONGODB_URI) { console.error('❌ Faltan variables críticas'); process.exit(1); } else { console.log('✅ Variables OK'); }\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
