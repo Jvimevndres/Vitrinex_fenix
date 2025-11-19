@@ -17,6 +17,7 @@ import {
 import { getStoreAppearance } from "../api/appearance"; // 🎨 Personalización visual
 import MainHeader from "../components/MainHeader";
 import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tienda moderna
+import PromotionalBanner from "../components/PromotionalBanner"; // 📢 Banners promocionales
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -1058,6 +1059,11 @@ export default function StorePublicPage() {
           logoSrc={store.logoUrl}
         />
 
+        {/* Banner Superior */}
+        <div className="max-w-5xl mx-auto px-4 pt-4">
+          <PromotionalBanner position="top" store={store} />
+        </div>
+
         <main className="flex-1 max-w-5xl mx-auto px-4 py-8 space-y-6">
           {/* HERO */}
           <section
@@ -1216,6 +1222,9 @@ export default function StorePublicPage() {
               </div>
             </div>
           </section>
+
+          {/* Banner Entre Secciones */}
+          <PromotionalBanner position="betweenSections" store={store} />
 
           {/* 🆕 AGENDAMIENTO MEJORADO - FLUJO PASO A PASO */}
           {store.mode === "bookings" && (
@@ -1643,6 +1652,9 @@ export default function StorePublicPage() {
               ← Volver al inicio
             </button>
           </div>
+
+          {/* Banner Footer */}
+          <PromotionalBanner position="footer" store={store} className="mt-8" />
         </main>
       </div>
 

@@ -1,0 +1,25 @@
+**PASOS PARA ACCEDER AL PANEL ADMIN:**
+
+1. **Cerrar sesión actual:**
+   - Haz clic en tu avatar/nombre arriba a la derecha (donde dice "aylenee")
+   - Selecciona "Cerrar Sesión" o "Logout"
+
+2. **Limpiar cookies (IMPORTANTE):**
+   - Presiona F12 para abrir DevTools
+   - Ve a la pestaña "Application" (o "Aplicación")
+   - En el menú izquierdo: Storage → Cookies → http://localhost:5173
+   - Haz clic derecho en la cookie "token" → Delete
+   - Cierra DevTools
+
+3. **Iniciar sesión como Admin:**
+   - Ve a: http://localhost:5173/login
+   - Email: admin@vitrinex.com
+   - Password: admin123
+   - Haz clic en "Iniciar Sesión"
+
+4. **Acceder al panel:**
+   - Deberías ser redirigido automáticamente a /admin
+   - Si no, ve manualmente a: http://localhost:5173/admin
+
+NOTA: El error 403 (Forbidden) aparece porque estás logueado como usuario normal (aylenee), 
+NO como administrador. El panel admin requiere role='admin' para acceder.

@@ -18,8 +18,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      await signin(form);
-      navigate("/", { replace: true });
+      const userData = await signin(form);
+      // Redirigir a /admin si es admin, sino a home
+      if (userData.role === 'admin') {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err) {
       if (err?.response?.status === 429) {
         setError("Demasiados intentos. Espera un momento y vuelve a intentar.");

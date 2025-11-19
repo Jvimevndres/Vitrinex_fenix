@@ -216,6 +216,7 @@ export default function StoreVisualBuilder({ storeId, onClose }) {
                 { id: 'layout', icon: '📐', label: 'Layout' },
                 { id: 'components', icon: '🧩', label: 'Componentes' },
                 { id: 'sections', icon: '📋', label: 'Secciones' },
+                { id: 'promo', icon: '📢', label: 'Promocionales' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -294,6 +295,16 @@ export default function StoreVisualBuilder({ storeId, onClose }) {
                 onChange={(sections) => handleUpdate('sections', sections)}
               />
             )}
+
+            {activeTab === 'promo' && (
+              <PromotionalSpacesTab
+                storeData={storeData}
+                onChange={(updates) => {
+                  setStoreData({ ...storeData, ...updates });
+                  setHasChanges(true);
+                }}
+              />
+            )}
           </div>
         </aside>
 
@@ -313,6 +324,9 @@ export default function StoreVisualBuilder({ storeId, onClose }) {
 // ==================== TAB COMPONENTS ====================
 
 function InfoTab({ storeData, onChange }) {
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  
   if (!storeData) return <div className="text-slate-500">Cargando datos...</div>;
 
   return (
@@ -350,37 +364,77 @@ function InfoTab({ storeData, onChange }) {
         />
       </div>
 
-      {/* Logo URL */}
+      {/* Logo Upload */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-700">
-          URL del Logo
+          Logo de la Tienda
         </label>
         <input
-          type="text"
-          value={storeData.logoUrl || ''}
-          onChange={(e) => onChange({ logoUrl: e.target.value })}
-          placeholder="https://ejemplo.com/logo.png"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            setUploadingLogo(true);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              onChange({ logoUrl: reader.result });
+              setUploadingLogo(false);
+            };
+            reader.readAsDataURL(file);
+          }}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          disabled={uploadingLogo}
         />
+        {uploadingLogo && <p className="text-xs text-blue-600">Subiendo logo...</p>}
         {storeData.logoUrl && (
-          <img src={storeData.logoUrl} alt="Logo preview" className="w-20 h-20 object-cover rounded-lg border" />
+          <div className="relative inline-block">
+            <img src={storeData.logoUrl} alt="Logo preview" className="w-20 h-20 object-cover rounded-lg border" />
+            <button
+              type="button"
+              onClick={() => onChange({ logoUrl: '' })}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Cover Image URL */}
+      {/* Cover Image Upload */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-700">
-          URL de Imagen de Portada / Hero
+          Imagen de Portada / Hero
         </label>
         <input
-          type="text"
-          value={storeData.coverImageUrl || ''}
-          onChange={(e) => onChange({ coverImageUrl: e.target.value })}
-          placeholder="https://ejemplo.com/portada.jpg"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            setUploadingCover(true);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              onChange({ coverImageUrl: reader.result });
+              setUploadingCover(false);
+            };
+            reader.readAsDataURL(file);
+          }}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          disabled={uploadingCover}
         />
+        {uploadingCover && <p className="text-xs text-blue-600">Subiendo imagen...</p>}
         {storeData.coverImageUrl && (
-          <img src={storeData.coverImageUrl} alt="Cover preview" className="w-full h-32 object-cover rounded-lg border" />
+          <div className="relative inline-block w-full">
+            <img src={storeData.coverImageUrl} alt="Cover preview" className="w-full h-32 object-cover rounded-lg border" />
+            <button
+              type="button"
+              onClick={() => onChange({ coverImageUrl: '' })}
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
 
@@ -692,6 +746,7 @@ function TypographyTab({ typography, onChange }) {
 
 function BackgroundTab({ background, onChange }) {
   const [gradientColorIndex, setGradientColorIndex] = useState(0);
+  const [uploadingBgImage, setUploadingBgImage] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -828,16 +883,39 @@ function BackgroundTab({ background, onChange }) {
       {background.mode === 'image' && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">URL de Imagen</label>
+            <label className="block text-sm font-medium text-slate-700">Imagen de Fondo</label>
             <input
-              type="text"
-              value={background.image?.url || ''}
-              onChange={(e) => onChange({ 
-                image: { ...background.image, url: e.target.value }
-              })}
-              placeholder="https://ejemplo.com/imagen.jpg"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                setUploadingBgImage(true);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  onChange({ 
+                    image: { ...background.image, url: reader.result }
+                  });
+                  setUploadingBgImage(false);
+                };
+                reader.readAsDataURL(file);
+              }}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              disabled={uploadingBgImage}
             />
+            {uploadingBgImage && <p className="text-xs text-blue-600">Subiendo imagen...</p>}
+            {background.image?.url && (
+              <div className="relative inline-block">
+                <img src={background.image.url} alt="Background preview" className="w-full h-32 object-cover rounded-lg border" />
+                <button
+                  type="button"
+                  onClick={() => onChange({ image: { ...background.image, url: '' } })}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -1539,6 +1617,198 @@ function StorePreview({ appearance, storeData }) {
           </span>
         </div>
       </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== PROMOTIONAL SPACES TAB ====================
+
+function PromotionalSpacesTab({ storeData, onChange }) {
+  const [uploadingBanner, setUploadingBanner] = useState(null);
+  const plan = storeData.plan || 'free';
+  const isPremium = plan === 'pro' || plan === 'premium';
+  
+  if (!storeData.promotionalSpaces) {
+    storeData.promotionalSpaces = {
+      top: { enabled: false, imageUrl: '', link: '' },
+      sidebarLeft: { enabled: false, imageUrl: '', link: '' },
+      sidebarRight: { enabled: false, imageUrl: '', link: '' },
+      betweenSections: { enabled: false, imageUrl: '', link: '' },
+      footer: { enabled: false, imageUrl: '', link: '' },
+    };
+  }
+
+  const handleImageUpload = (position, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingBanner(position);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onChange({
+        promotionalSpaces: {
+          ...storeData.promotionalSpaces,
+          [position]: {
+            ...storeData.promotionalSpaces[position],
+            imageUrl: reader.result,
+          },
+        },
+      });
+      setUploadingBanner(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleToggle = (position) => {
+    onChange({
+      promotionalSpaces: {
+        ...storeData.promotionalSpaces,
+        [position]: {
+          ...storeData.promotionalSpaces[position],
+          enabled: !storeData.promotionalSpaces[position].enabled,
+        },
+      },
+    });
+  };
+
+  const handleLinkChange = (position, link) => {
+    onChange({
+      promotionalSpaces: {
+        ...storeData.promotionalSpaces,
+        [position]: {
+          ...storeData.promotionalSpaces[position],
+          link,
+        },
+      },
+    });
+  };
+
+  const positions = [
+    { key: 'top', label: 'Banner Superior', icon: '⬆️', desc: 'Encima del hero' },
+    { key: 'sidebarLeft', label: 'Lateral Izquierdo', icon: '⬅️', desc: 'Sidebar izquierdo' },
+    { key: 'sidebarRight', label: 'Lateral Derecho', icon: '➡️', desc: 'Sidebar derecho' },
+    { key: 'betweenSections', label: 'Entre Secciones', icon: '↕️', desc: 'Entre contenido' },
+    { key: 'footer', label: 'Banner Footer', icon: '⬇️', desc: 'Pie de página' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-semibold text-slate-900 mb-2">Espacios Promocionales</h3>
+        <p className="text-xs text-slate-600 mb-4">
+          Configura banners personalizados para promocionar ofertas y productos
+        </p>
+
+        {!isPremium && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-amber-800 font-medium mb-2">
+              🔒 Plan Free: Espacios limitados
+            </p>
+            <p className="text-xs text-amber-700">
+              En el plan gratuito, se mostrarán anuncios de nuestros auspiciadores.
+              Actualiza a Pro o Premium para personalizar tus espacios promocionales.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {positions.map((pos) => {
+        const space = storeData.promotionalSpaces[pos.key];
+        return (
+          <div key={pos.key} className="border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{pos.icon}</span>
+                <div>
+                  <h4 className="font-medium text-slate-900">{pos.label}</h4>
+                  <p className="text-xs text-slate-500">{pos.desc}</p>
+                </div>
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={space.enabled}
+                  onChange={() => handleToggle(pos.key)}
+                  disabled={!isPremium}
+                  className="rounded"
+                />
+                <span className="text-sm text-slate-600">Activar</span>
+              </label>
+            </div>
+
+            {space.enabled && isPremium && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Subir Imagen
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(pos.key, e)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    disabled={uploadingBanner === pos.key}
+                  />
+                  {uploadingBanner === pos.key && (
+                    <p className="text-xs text-blue-600 mt-1">Subiendo...</p>
+                  )}
+                  {space.imageUrl && (
+                    <div className="mt-2 relative inline-block">
+                      <img
+                        src={space.imageUrl}
+                        alt="Banner preview"
+                        className="w-full h-24 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChange({
+                            promotionalSpaces: {
+                              ...storeData.promotionalSpaces,
+                              [pos.key]: { ...space, imageUrl: '' },
+                            },
+                          })
+                        }
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Link (opcional)
+                  </label>
+                  <input
+                    type="url"
+                    value={space.link}
+                    onChange={(e) => handleLinkChange(pos.key, e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </>
+            )}
+
+            {space.enabled && !isPremium && (
+              <p className="text-xs text-slate-500 italic">
+                Actualiza tu plan para configurar este espacio
+              </p>
+            )}
+          </div>
+        );
+      })}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-900 font-medium mb-2">💡 Consejos:</p>
+        <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+          <li>Usa imágenes de alta calidad (mínimo 1200px ancho)</li>
+          <li>Los banners laterales funcionan mejor con formato vertical</li>
+          <li>Añade links para dirigir tráfico a productos o servicios</li>
+          <li>Mantén diseño coherente con tu marca</li>
+        </ul>
       </div>
     </div>
   );

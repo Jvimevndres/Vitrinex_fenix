@@ -43,6 +43,43 @@ const storeSchema = new mongoose.Schema(
     // Activación suave
     isActive: { type: Boolean, default: true },
 
+    // Plan de suscripción
+    plan: {
+      type: String,
+      enum: ['free', 'pro', 'premium'],
+      default: 'free',
+    },
+    planExpiresAt: { type: Date },
+
+    // Espacios promocionales (banners configurables)
+    promotionalSpaces: {
+      top: {
+        enabled: { type: Boolean, default: false },
+        imageUrl: { type: String, default: '' },
+        link: { type: String, default: '' },
+      },
+      sidebarLeft: {
+        enabled: { type: Boolean, default: false },
+        imageUrl: { type: String, default: '' },
+        link: { type: String, default: '' },
+      },
+      sidebarRight: {
+        enabled: { type: Boolean, default: false },
+        imageUrl: { type: String, default: '' },
+        link: { type: String, default: '' },
+      },
+      betweenSections: {
+        enabled: { type: Boolean, default: false },
+        imageUrl: { type: String, default: '' },
+        link: { type: String, default: '' },
+      },
+      footer: {
+        enabled: { type: Boolean, default: false },
+        imageUrl: { type: String, default: '' },
+        link: { type: String, default: '' },
+      },
+    },
+
     // Disponibilidad de agendamiento (mejorada v2)
     bookingAvailability: {
       type: [

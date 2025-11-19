@@ -16,6 +16,13 @@ const userSchema = new mongoose.Schema(
 
     password: { type: String, required: true, minlength: 6 },
 
+    // Rol del usuario (para panel de administrador)
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
+
     // Datos extra del usuario
     rut: { type: String, trim: true },
     phone: { type: String, trim: true },

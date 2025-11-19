@@ -167,27 +167,13 @@ export default function UserProfilePage() {
                 <div className="flex-1 space-y-2">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Imagen de perfil (URL opcional)
-                    </label>
-                    <input
-                      type="text"
-                      name="avatarUrl"
-                      value={profile.avatarUrl}
-                      onChange={onChange}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                      placeholder="https://…"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      O sube una imagen
+                      Imagen de perfil
                     </label>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarFileChange}
-                      className="w-full text-sm"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
                     {uploadingAvatar && (
                       <p className="text-xs text-slate-500 mt-1">

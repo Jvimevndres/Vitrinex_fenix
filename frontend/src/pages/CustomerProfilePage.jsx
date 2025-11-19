@@ -398,22 +398,37 @@ export default function CustomerProfilePage() {
                     />
                   </div>
 
-                  {/* Avatar URL */}
+                  {/* Avatar Upload */}
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Foto de perfil (URL de imagen)
+                      Foto de perfil
                     </label>
                     <input
-                      name="avatarUrl"
-                      value={form.avatarUrl}
-                      onChange={onChange}
-                      placeholder="https://..."
-                      className="w-full border rounded-lg px-3 py-2"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          onChange({ target: { name: 'avatarUrl', value: reader.result } });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Pega aquí la URL de tu imagen, igual que el logo de la
-                      tienda.
-                    </p>
+                    {form.avatarUrl && (
+                      <div className="mt-2 relative inline-block">
+                        <img src={form.avatarUrl} alt="Avatar preview" className="w-20 h-20 object-cover rounded-full border-2" />
+                        <button
+                          type="button"
+                          onClick={() => onChange({ target: { name: 'avatarUrl', value: '' } })}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -565,15 +580,34 @@ export default function CustomerProfilePage() {
                       {form.bgMode === "image" && (
                         <div className="md:col-span-2">
                           <label className="block text-xs font-medium text-slate-600 mb-1">
-                            URL de imagen de fondo
+                            Imagen de fondo
                           </label>
                           <input
-                            name="bgImageUrl"
-                            value={form.bgImageUrl}
-                            onChange={onChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                            placeholder="https://..."
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                onChange({ target: { name: 'bgImageUrl', value: reader.result } });
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                            className="w-full border rounded-lg px-3 py-2 text-sm"
                           />
+                          {form.bgImageUrl && (
+                            <div className="mt-2 relative inline-block w-full">
+                              <img src={form.bgImageUrl} alt="Background preview" className="w-full h-32 object-cover rounded-lg border" />
+                              <button
+                                type="button"
+                                onClick={() => onChange({ target: { name: 'bgImageUrl', value: '' } })}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -12,6 +12,14 @@ import ExploreStoresPage from "./pages/ExploreStoresPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import BookingChatPage from "./pages/BookingChatPage";
 
+// Admin Panel
+import AdminLayout from "./components/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminStoresManager from "./pages/AdminStoresManager";
+import AdminUsersManager from "./pages/AdminUsersManager";
+import AdminSponsorsManager from "./pages/AdminSponsorsManager";
+import AdminCommentsViewer from "./pages/AdminCommentsViewer";
+
 // Ruta protegida
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -72,6 +80,22 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Admin Panel */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="stores" element={<AdminStoresManager />} />
+        <Route path="users" element={<AdminUsersManager />} />
+        <Route path="sponsors" element={<AdminSponsorsManager />} />
+        <Route path="comments" element={<AdminCommentsViewer />} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

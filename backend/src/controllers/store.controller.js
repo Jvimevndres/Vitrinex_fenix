@@ -278,7 +278,6 @@ export const updateMyStore = async (req, res) => {
   try {
     const baseUpdate = {
       name,
-      mode: mode === "bookings" ? "bookings" : "products",
       description,
       logoUrl,
       coverImageUrl: coverImageUrl || "",
@@ -308,6 +307,11 @@ export const updateMyStore = async (req, res) => {
       bgPattern: ["none", "dots", "grid", "noise"].includes(bgPattern) ? bgPattern : "none",
       bgImageUrl: bgImageUrl || "",
     };
+
+    // Solo actualizar el modo si se proporciona explícitamente
+    if (mode !== undefined) {
+      baseUpdate.mode = mode === "bookings" ? "bookings" : "products";
+    }
 
     const store = await Store.findOneAndUpdate(
       { _id: id, $or: [{ owner: userId }, { user: userId }] },

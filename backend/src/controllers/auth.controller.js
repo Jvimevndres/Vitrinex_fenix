@@ -37,6 +37,7 @@ export const register = async (req, res) => {
       id: newUser._id,
       username: newUser.username,
       email: newUser.email,
+      role: newUser.role || 'user',
       avatarUrl: newUser.avatarUrl || null,
       bio: newUser.bio || "",
       rut: newUser.rut || "",
@@ -75,13 +76,17 @@ export const login = async (req, res) => {
     }
 
     const isMatch = await userFound.comparePassword(password);
+    
     if (!isMatch) {
+      console.log('❌ Password incorrecta');
       return res
         .status(401)
         .json({ message: "Credenciales inválidas" });
     }
 
+    console.log('🎫 Creando token...');
     const token = await createAccessToken({ id: userFound._id });
+    console.log('✅ Token creado');
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: isProd ? "none" : "lax",
@@ -89,10 +94,12 @@ export const login = async (req, res) => {
       path: "/",
     });
 
+    console.log('📦 Preparando respuesta...');
     return res.json({
       id: userFound._id,
       username: userFound.username,
       email: userFound.email,
+      role: userFound.role || 'user',
       avatarUrl: userFound.avatarUrl || null,
       bio: userFound.bio || "",
       rut: userFound.rut || "",
