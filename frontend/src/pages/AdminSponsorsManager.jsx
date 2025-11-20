@@ -168,9 +168,9 @@ export default function AdminSponsorsManager() {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="top">Superior</option>
-                  <option value="sidebar-left">Lateral Izquierdo</option>
-                  <option value="sidebar-right">Lateral Derecho</option>
-                  <option value="between-sections">Entre Secciones</option>
+                  <option value="sidebarLeft">Lateral Izquierdo</option>
+                  <option value="sidebarRight">Lateral Derecho</option>
+                  <option value="betweenSections">Entre Secciones</option>
                   <option value="footer">Footer</option>
                 </select>
               </div>

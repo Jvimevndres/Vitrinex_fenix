@@ -18,6 +18,7 @@ import StoreCalendarManager from "../components/StoreCalendarManager";
 import SmartInsights from "../components/SmartInsights"; // 👈 IMPORTANTE
 import StoreVisualBuilder from "../components/StoreVisualBuilder"; // 🎨 CONSTRUCTOR VISUAL (LEGACY)
 import EnhancedStoreCustomizer from "../components/EnhancedStoreCustomizer"; // 🎨 CONSTRUCTOR MEJORADO
+import PromotionalSpacesManager from "../components/PromotionalSpacesManager"; // 📢 ANUNCIOS
 
 /* ========= Helpers =========== */
 const buildBg = (f) => {
@@ -91,6 +92,7 @@ export default function StoreProfilePage() {
   
   // 🎨 Constructor visual
   const [showVisualBuilder, setShowVisualBuilder] = useState(false);
+  const [showAdsManager, setShowAdsManager] = useState(false); // 📢 Gestor de anuncios
 
   // ========= Cargar tienda ===========
   useEffect(() => {
@@ -346,6 +348,15 @@ export default function StoreProfilePage() {
                 <span>🎨</span>
                 <span>Personalizar Apariencia</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAdsManager(true)}
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center gap-2"
+              >
+                <span>📢</span>
+                <span>Gestionar Anuncios</span>
+              </button>
             </div>
           </aside>
 
@@ -517,6 +528,31 @@ export default function StoreProfilePage() {
           storeId={id} 
           onClose={() => setShowVisualBuilder(false)} 
         />
+      )}
+
+      {/* 📢 Gestor de Anuncios - Modal fullscreen */}
+      {showAdsManager && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8">
+            <div className="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-xl font-bold">📢 Gestión de Espacios Publicitarios</h2>
+              <button
+                onClick={() => setShowAdsManager(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <PromotionalSpacesManager 
+                storeId={id} 
+                storePlan={storeData?.plan || 'free'}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

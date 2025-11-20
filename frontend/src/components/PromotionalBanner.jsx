@@ -9,6 +9,15 @@ export default function PromotionalBanner({ position, store, className = '' }) {
   const customBanner = store?.promotionalSpaces?.[position];
   const hasCustomBanner = isPremium && customBanner?.enabled && customBanner?.imageUrl;
 
+  console.log('📢 PromotionalBanner', {
+    position,
+    isPremium,
+    storePlan: store?.plan,
+    customBanner,
+    hasCustomBanner,
+    promotionalSpaces: store?.promotionalSpaces
+  });
+
   useEffect(() => {
     // Si no tiene plan premium o no tiene banner personalizado, cargar ads de auspiciadores
     if (!hasCustomBanner) {
@@ -18,10 +27,12 @@ export default function PromotionalBanner({ position, store, className = '' }) {
 
   const loadSponsorAds = async () => {
     try {
+      console.log(`📢 Cargando anuncios de Vitrinex para posición: ${position}`);
       const res = await getActiveAdsByPosition(position);
+      console.log(`✅ Anuncios recibidos:`, res.data.ads);
       setAds(res.data.ads || []);
     } catch (error) {
-      console.error('Error cargando anuncios:', error);
+      console.error('❌ Error cargando anuncios:', error);
     }
   };
 
@@ -48,6 +59,24 @@ export default function PromotionalBanner({ position, store, className = '' }) {
   // Si tiene banner personalizado, mostrarlo
   if (hasCustomBanner) {
     const banner = customBanner;
+    
+    // Dimensiones según posición
+    const getDimensions = () => {
+      switch(position) {
+        case 'top':
+          return 'w-full max-h-32 md:max-h-40'; // Banner horizontal superior
+        case 'sidebarLeft':
+        case 'sidebarRight':
+          return 'w-full max-h-96 aspect-[3/4]'; // Banners verticales laterales
+        case 'betweenSections':
+          return 'w-full max-h-48'; // Banner horizontal entre secciones
+        case 'footer':
+          return 'w-full max-h-24'; // Banner footer más pequeño
+        default:
+          return 'w-full max-h-40';
+      }
+    };
+
     return (
       <div className={`promotional-banner ${className}`}>
         {banner.link ? (
@@ -55,29 +84,66 @@ export default function PromotionalBanner({ position, store, className = '' }) {
             href={banner.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="block"
+            className="block overflow-hidden rounded-lg"
           >
             <img
               src={banner.imageUrl}
               alt="Banner promocional"
-              className="w-full h-auto object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow"
+              className={`${getDimensions()} object-cover shadow-sm hover:shadow-md transition-shadow`}
             />
           </a>
         ) : (
-          <img
-            src={banner.imageUrl}
-            alt="Banner promocional"
-            className="w-full h-auto object-cover rounded-lg shadow-sm"
-          />
+          <div className="overflow-hidden rounded-lg">
+            <img
+              src={banner.imageUrl}
+              alt="Banner promocional"
+              className={`${getDimensions()} object-cover shadow-sm`}
+            />
+          </div>
         )}
       </div>
     );
   }
 
-  // Si no hay banners de auspiciadores, no mostrar nada
-  if (ads.length === 0) return null;
+  // Si no hay banners de auspiciadores, mostrar placeholder en desarrollo
+  if (ads.length === 0) {
+    // Mostrar placeholder solo en modo desarrollo
+    const isDev = import.meta.env.DEV;
+    if (isDev) {
+      return (
+        <div className={`promotional-banner ${className}`}>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
+            <p className="text-xs text-gray-400">
+              📢 Espacio publicitario: <strong>{position}</strong>
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {isPremium ? 'Configura tu anuncio en "Gestionar Anuncios"' : 'Plan Free - Esperando anuncios de Vitrinex'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   const currentAd = ads[currentAdIndex];
+
+  // Dimensiones según posición para anuncios de Vitrinex
+  const getAdDimensions = () => {
+    switch(position) {
+      case 'top':
+        return 'w-full max-h-32 md:max-h-40'; // Banner horizontal superior
+      case 'sidebarLeft':
+      case 'sidebarRight':
+        return 'w-full max-h-96 aspect-[3/4]'; // Banners verticales laterales
+      case 'betweenSections':
+        return 'w-full max-h-48'; // Banner horizontal entre secciones
+      case 'footer':
+        return 'w-full max-h-24'; // Banner footer más pequeño
+      default:
+        return 'w-full max-h-40';
+    }
+  };
 
   return (
     <div className={`promotional-banner ${className}`}>
@@ -87,23 +153,23 @@ export default function PromotionalBanner({ position, store, className = '' }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => handleClick(currentAd._id)}
-          className="block relative group"
+          className="block relative group overflow-hidden rounded-lg"
         >
           <img
             src={currentAd.imageUrl}
             alt={currentAd.name}
-            className="w-full h-auto object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
+            className={`${getAdDimensions()} object-cover shadow-sm group-hover:shadow-md transition-shadow`}
           />
           <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
             Publicidad
           </div>
         </a>
       ) : (
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-lg">
           <img
             src={currentAd.imageUrl}
             alt={currentAd.name}
-            className="w-full h-auto object-cover rounded-lg shadow-sm"
+            className={`${getAdDimensions()} object-cover shadow-sm`}
           />
           <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
             Publicidad

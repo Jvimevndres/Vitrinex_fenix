@@ -1507,11 +1507,22 @@ export default function StorePublicPage() {
         />
 
         {/* Banner Superior */}
-        <div className="max-w-5xl mx-auto px-4 pt-4">
+        <div className="max-w-7xl mx-auto px-4 pt-4">
           <PromotionalBanner position="top" store={store} />
         </div>
 
-        <main className="flex-1 max-w-5xl mx-auto px-4 py-8 space-y-6">
+        {/* Layout con Sidebars */}
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex gap-6">
+            {/* Sidebar Izquierda */}
+            <aside className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-4">
+                <PromotionalBanner position="sidebarLeft" store={store} />
+              </div>
+            </aside>
+
+            {/* Contenido Principal */}
+            <main className="flex-1 min-w-0 space-y-6">
           {/* HERO */}
           {appearance?.sections?.hero !== false && (
           <section
@@ -2361,6 +2372,15 @@ export default function StorePublicPage() {
           {/* Banner Footer */}
           <PromotionalBanner position="footer" store={store} className="mt-8" />
         </main>
+
+            {/* Sidebar Derecha */}
+            <aside className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-4">
+                <PromotionalBanner position="sidebarRight" store={store} />
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
 
       {/* Estilos para el calendario */}

@@ -18,7 +18,7 @@ const sponsorAdSchema = new mongoose.Schema(
     },
     position: {
       type: String,
-      enum: ['top', 'sidebar-left', 'sidebar-right', 'between-sections', 'footer'],
+      enum: ['top', 'sidebarLeft', 'sidebarRight', 'betweenSections', 'footer'],
       required: true,
     },
     priority: {

@@ -45,10 +45,17 @@ export const getAllSponsorAds = async (req, res) => {
 export const getActiveAdsByPosition = async (req, res) => {
   try {
     const { position } = req.params;
+    
+    console.log(`📢 Buscando anuncios para posición: ${position}`);
 
     const ads = await SponsorAd.find({ position, active: true })
       .sort({ priority: -1 })
       .limit(3);
+
+    console.log(`✅ Encontrados ${ads.length} anuncios activos para ${position}`);
+    ads.forEach(ad => {
+      console.log(`   - ${ad.name} (priority: ${ad.priority})`);
+    });
 
     // Incrementar impressions
     if (ads.length > 0) {
@@ -60,7 +67,7 @@ export const getActiveAdsByPosition = async (req, res) => {
 
     res.json({ ads });
   } catch (error) {
-    console.error('Error obteniendo anuncios:', error);
+    console.error('❌ Error obteniendo anuncios:', error);
     res.status(500).json({ message: 'Error obteniendo anuncios', error: error.message });
   }
 };

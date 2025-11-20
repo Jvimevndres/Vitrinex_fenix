@@ -273,20 +273,40 @@ export const updateMyStore = async (req, res) => {
     aboutTitle,
     aboutDescription,
     customBoxes,
+    promotionalSpaces, // 🆕 Espacios promocionales/anuncios
   } = req.body;
 
-  if (!name) return res.status(400).json({ message: "El nombre es obligatorio" });
+  // ✅ Solo validar nombre si se está actualizando (no para promotionalSpaces únicamente)
+  if (name !== undefined && !name) {
+    return res.status(400).json({ message: "El nombre es obligatorio" });
+  }
 
   console.log('📥 Backend recibió campos personalizados:', {
     aboutTitle,
     aboutDescription,
     address,
-    customBoxes: customBoxes ? customBoxes.length : 0
+    customBoxes: customBoxes ? customBoxes.length : 0,
+    promotionalSpaces: promotionalSpaces ? 'recibido' : 'no recibido'
   });
 
   const userId = req.user.id;
 
   try {
+    // 🆕 Si solo se envían espacios promocionales, hacer actualización parcial
+    if (promotionalSpaces && Object.keys(req.body).length === 1) {
+      console.log('📢 Actualización solo de espacios promocionales:', JSON.stringify(promotionalSpaces, null, 2));
+      
+      const store = await Store.findOneAndUpdate(
+        { _id: id, $or: [{ owner: userId }, { user: userId }] },
+        { promotionalSpaces: promotionalSpaces },
+        { new: true }
+      );
+
+      if (!store) return res.status(404).json({ message: "Tienda no encontrada" });
+      return res.status(200).json(store);
+    }
+
+    // 🔄 Actualización completa con todos los campos
     const baseUpdate = {
       name,
       description,
@@ -322,6 +342,12 @@ export const updateMyStore = async (req, res) => {
       bgPattern: ["none", "dots", "grid", "noise"].includes(bgPattern) ? bgPattern : "none",
       bgImageUrl: bgImageUrl || "",
     };
+
+    // 🆕 Agregar espacios promocionales si se envían
+    if (promotionalSpaces) {
+      console.log('📢 Guardando espacios promocionales:', JSON.stringify(promotionalSpaces, null, 2));
+      baseUpdate.promotionalSpaces = promotionalSpaces;
+    }
 
     // Solo actualizar el modo si se proporciona explícitamente
     if (mode !== undefined) {
@@ -403,6 +429,9 @@ export const getStoreById = async (req, res) => {
       bgColorBottom: store.bgColorBottom || "#ffffff",
       bgPattern: store.bgPattern || "none",
       bgImageUrl: store.bgImageUrl || "",
+      plan: store.plan || "free", // 🆕 Plan de suscripción
+      planExpiresAt: store.planExpiresAt || null, // 🆕 Fecha de expiración
+      promotionalSpaces: store.promotionalSpaces || {}, // 🆕 Espacios publicitarios
       ownerName: store.owner?.username || null,
       ownerAvatar: store.owner?.avatarUrl || null,
       ownerEmail: store.owner?.email || null,

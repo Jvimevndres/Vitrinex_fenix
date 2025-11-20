@@ -234,4 +234,37 @@ router.post(
   }
 );
 
+/**
+ * 🆕 Imagen de anuncio patrocinado
+ */
+const sponsorAdUpload = multer({ storage: createStorage("sponsors"), ...uploadConfig });
+
+router.post(
+  "/sponsor-ad",
+  authRequired,
+  sponsorAdUpload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ message: "No se recibió ningún archivo" });
+      }
+
+      const baseUrl = getBaseUrl();
+      const imageUrl = `${baseUrl}/uploads/sponsors/${req.file.filename}`;
+
+      return res.json({
+        message: "Imagen de anuncio subida correctamente",
+        imageUrl,
+      });
+    } catch (err) {
+      console.error("Error subiendo imagen de anuncio:", err);
+      return res
+        .status(500)
+        .json({ message: "Error al subir la imagen del anuncio" });
+    }
+  }
+);
+
 export default router;
