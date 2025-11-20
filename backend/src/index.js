@@ -6,6 +6,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import logger from "./utils/logger.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import taskRoutes from "./routes/tasks.routes.js";
@@ -70,7 +71,7 @@ app.use("/api/upload", uploadRoutes);
 app.use((err, req, res, next) => {
   // Error de validación de archivo (esperado, no crítico)
   if (err.message && err.message.includes('Tipo de archivo no permitido')) {
-    console.log('⚠️  Archivo rechazado:', err.message);
+    logger.log('Archivo rechazado:', err.message);
     return res.status(400).json({ 
       message: 'Tipo de archivo no permitido. Solo se aceptan imágenes (JPEG, PNG, WebP, GIF)' 
     });
@@ -78,7 +79,7 @@ app.use((err, req, res, next) => {
   
   // Error de Multer (archivos)
   if (err instanceof multer.MulterError) {
-    console.log('⚠️  Error Multer:', err.code);
+    logger.log('Error Multer:', err.code);
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ message: 'Archivo demasiado grande. Máximo 5MB' });
     }
@@ -86,7 +87,7 @@ app.use((err, req, res, next) => {
   }
   
   // Errores reales (estos sí son preocupantes)
-  console.error('❌ Error crítico:', err);
+  logger.error('Error crítico:', err);
   
   if (res.headersSent) return next(err);
   res.status(500).json({ message: err.message || 'Error interno del servidor' });
@@ -99,22 +100,22 @@ app.use((err, req, res, next) => {
     }
 
     await mongoose.connect(MONGODB_URI);
-    console.log("✅ MongoDB conectado a Atlas");
+    logger.success("MongoDB conectado a Atlas");
 
     await ensureStoreIndexes();
 
     app.listen(PORT, () => {
-      console.log(`✅ API escuchando en http://localhost:${PORT}`);
+      logger.success(`API escuchando en http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Error al iniciar el servidor:", err.message || err);
+    logger.error("Error al iniciar el servidor:", err.message || err);
     process.exit(1);
   }
 })();
 
 process.on("unhandledRejection", (e) => {
-  console.error("UNHANDLED REJECTION:", e);
+  logger.error("UNHANDLED REJECTION:", e);
 });
 process.on("uncaughtException", (e) => {
-  console.error("UNCAUGHT EXCEPTION:", e);
+  logger.error("UNCAUGHT EXCEPTION:", e);
 });

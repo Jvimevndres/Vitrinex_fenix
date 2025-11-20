@@ -4,12 +4,22 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import rateLimit from "express-rate-limit";
 
 import { authRequired } from "../middlewares/authRequired.js";
 import User from "../models/user.model.js";
 import Store from "../models/store.model.js";
 
 const router = Router();
+
+// Rate limiter para uploads (prevenir abuso)
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20, // máximo 20 uploads por IP en la ventana
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Demasiados uploads. Intenta más tarde." },
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +84,7 @@ const getBaseUrl = () => process.env.API_PUBLIC_URL || "http://localhost:3000";
  */
 router.post(
   "/avatar",
+  uploadLimiter,
   authRequired,
   avatarUpload.single("file"),
   async (req, res) => {
@@ -110,6 +121,7 @@ router.post(
  */
 router.post(
   "/store-logo",
+  uploadLimiter,
   authRequired,
   storeLogoUpload.single("file"),
   async (req, res) => {
@@ -158,6 +170,7 @@ router.post(
  */
 router.post(
   "/product-image",
+  uploadLimiter,
   authRequired,
   productImageUpload.single("file"),
   async (req, res) => {
@@ -208,6 +221,7 @@ const backgroundUpload = multer({ storage: createStorage("backgrounds"), ...uplo
 
 router.post(
   "/background",
+  uploadLimiter,
   authRequired,
   backgroundUpload.single("file"),
   async (req, res) => {
@@ -241,6 +255,7 @@ const sponsorAdUpload = multer({ storage: createStorage("sponsors"), ...uploadCo
 
 router.post(
   "/sponsor-ad",
+  uploadLimiter,
   authRequired,
   sponsorAdUpload.single("file"),
   async (req, res) => {
