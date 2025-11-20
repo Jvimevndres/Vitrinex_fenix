@@ -126,6 +126,21 @@ export default function CustomerBookingsList() {
         </button>
       </div>
 
+      {/* Notificación de mensajes nuevos */}
+      {bookings.some(b => b.unreadMessagesCustomer > 0) && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 flex items-center gap-3">
+          <span className="text-xl">📝</span>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-blue-900">
+              {bookings.filter(b => b.unreadMessagesCustomer > 0).length} reserva(s) con mensajes nuevos
+            </p>
+            <p className="text-xs text-blue-700 mt-0.5">
+              Haz clic en "💬 Chat" para ver los mensajes
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap">
         <button
@@ -249,11 +264,15 @@ export default function CustomerBookingsList() {
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => openChat(booking)}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  className={`flex-1 sm:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                    booking.unreadMessagesCustomer > 0
+                      ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-300'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   💬 Chat
                   {booking.unreadMessagesCustomer > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
                       {booking.unreadMessagesCustomer}
                     </span>
                   )}

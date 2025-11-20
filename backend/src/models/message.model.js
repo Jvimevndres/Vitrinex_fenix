@@ -3,10 +3,22 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+      index: true,
+    },
     booking: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      default: null,
+      index: true,
+    },
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
       index: true,
     },
     sender: {
@@ -19,6 +31,14 @@ const messageSchema = new mongoose.Schema(
       type: String,
       enum: ["owner", "customer"],
       required: true,
+    },
+    senderName: {
+      type: String,
+      trim: true,
+    },
+    senderEmail: {
+      type: String,
+      trim: true,
     },
     content: {
       type: String,
@@ -41,6 +61,8 @@ const messageSchema = new mongoose.Schema(
 
 // Índice compuesto para consultas eficientes
 messageSchema.index({ booking: 1, createdAt: 1 });
+messageSchema.index({ order: 1, createdAt: 1 });
+messageSchema.index({ store: 1, isRead: 1 });
 
 // Virtual para formatear tiempo
 messageSchema.virtual("timeAgo").get(function () {

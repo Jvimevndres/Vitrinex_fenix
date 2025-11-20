@@ -48,6 +48,11 @@ const bookingSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // 🆕 NUEVO: Nombre del servicio (para reportes cuando el servicio se elimine)
+    serviceName: {
+      type: String,
+      trim: true,
+    },
     notes: {
       type: String,
       default: "",

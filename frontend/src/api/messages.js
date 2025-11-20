@@ -66,3 +66,40 @@ export const sendMessagePublic = async (bookingId, email, content) => {
   });
   return response.data;
 };
+
+// ============================================
+// ORDERS ENDPOINTS (Pedidos)
+// ============================================
+
+/**
+ * Obtener mensajes de un pedido (owner)
+ * @param {string} orderId - ID del pedido
+ * @returns {Promise<Array>} Lista de mensajes
+ */
+export const getOrderMessages = async (orderId) => {
+  const response = await axios.get(`/orders/${orderId}/messages`);
+  return response.data;
+};
+
+/**
+ * Enviar mensaje a un pedido (owner)
+ * @param {string} orderId - ID del pedido
+ * @param {string} content - Contenido del mensaje
+ * @returns {Promise<Object>} Mensaje creado
+ */
+export const sendOrderMessage = async (orderId, content) => {
+  const response = await axios.post(`/orders/${orderId}/messages`, { content });
+  return response.data;
+};
+
+/**
+ * Enviar mensaje a un pedido (cliente público)
+ * @param {string} orderId - ID del pedido
+ * @param {Object} data - { content, customerName, customerEmail }
+ * @returns {Promise<Object>} Mensaje creado
+ */
+export const sendOrderMessagePublic = async (orderId, data) => {
+  const response = await axios.post(`/public/orders/${orderId}/messages`, data);
+  return response.data;
+};
+

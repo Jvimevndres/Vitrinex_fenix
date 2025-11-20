@@ -19,6 +19,7 @@ import MainHeader from "../components/MainHeader";
 import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tienda moderna
 import PromotionalBanner from "../components/PromotionalBanner"; // 📢 Banners promocionales
 import ParticlesBackground from "../components/ParticlesBackground"; // 🎨 Partículas animadas
+import CustomerChatModal from "../components/CustomerChatModal"; // 💬 Chat con la tienda
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -474,6 +475,12 @@ export default function StorePublicPage() {
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [orderMsg, setOrderMsg] = useState("");
+  const [createdOrderId, setCreatedOrderId] = useState(null); // 🆕 Para mostrar link al chat
+  
+  // 💬 Estados para modal de chat
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatType, setChatType] = useState(""); // "order" | "booking"
+  const [chatId, setChatId] = useState(null);
 
   // reset al cambiar tienda
   useEffect(() => {
@@ -1395,7 +1402,7 @@ export default function StorePublicPage() {
 
     try {
       setOrderSubmitting(true);
-      await createStoreOrder(id, {
+      const response = await createStoreOrder(id, {
         customerName: orderForm.customerName.trim(),
         customerEmail: orderForm.customerEmail,
         customerPhone: orderForm.customerPhone,
@@ -1406,17 +1413,26 @@ export default function StorePublicPage() {
           quantity: i.quantity,
         })),
       });
+      
+      // 🆕 Guardar ID del pedido para mostrar enlace al chat
+      setCreatedOrderId(response.data._id);
+      
       setOrderMsg(
         "Tu pedido fue enviado. El negocio se pondrá en contacto para coordinar el pago y la entrega."
       );
       setOrderItems([]);
-      setOrderForm({
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        customerAddress: "",
-        notes: "",
-      });
+      // No resetear orderForm inmediatamente para poder usar los datos en el chat
+      // Se reseteará después de 10 segundos
+      setTimeout(() => {
+        setOrderForm({
+          customerName: "",
+          customerEmail: "",
+          customerPhone: "",
+          customerAddress: "",
+          notes: "",
+        });
+        setCreatedOrderId(null);
+      }, 10000);
     } catch (err) {
       console.error(err);
       setOrderError(
@@ -1891,9 +1907,20 @@ export default function StorePublicPage() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">¡Éxito!</p>
                     <p className="text-sm text-green-600 mt-1">{bookingMsg}</p>
-                    <p className="text-xs text-green-600 mt-2">
-                      💡 Puedes gestionar tus reservas y chatear con el negocio desde tu perfil
-                    </p>
+                    {createdBookingId && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => {
+                            setChatType("booking");
+                            setChatId(createdBookingId);
+                            setShowChatModal(true);
+                          }}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                          💬 Chatear con la tienda
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2406,6 +2433,21 @@ export default function StorePublicPage() {
           color: white !important;
         }
       `}</style>
+
+      {/* Modal de Chat */}
+      {showChatModal && chatId && (
+        <CustomerChatModal
+          type={chatType}
+          id={chatId}
+          customerEmail={chatType === "booking" ? bookingForm.customerEmail : orderForm.customerEmail}
+          customerName={chatType === "booking" ? bookingForm.customerName : orderForm.customerName}
+          onClose={() => {
+            setShowChatModal(false);
+            setChatId(null);
+            setChatType("");
+          }}
+        />
+      )}
     </div>
   );
 }

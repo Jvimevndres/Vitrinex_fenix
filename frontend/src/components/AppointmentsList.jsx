@@ -5,7 +5,6 @@ import {
   updateAppointmentStatus,
   deleteAppointment,
 } from "../api/store";
-import ChatBox from "./ChatBox";
 
 const STATUS_LABELS = {
   pending: "Pendiente",
@@ -36,20 +35,6 @@ export default function AppointmentsList({ storeId }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all | pending | confirmed | cancelled
   const [dateFilter, setDateFilter] = useState("upcoming"); // all | upcoming | past
-  
-  // 🆕 CHAT
-  const [chatOpen, setChatOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-
-  const openChat = (booking) => {
-    setSelectedBooking(booking);
-    setChatOpen(true);
-  };
-
-  const closeChat = () => {
-    setChatOpen(false);
-    setSelectedBooking(null);
-  };
 
   const load = async () => {
     try {
@@ -444,20 +429,6 @@ export default function AppointmentsList({ storeId }) {
 
                         {/* Botones de acción */}
                         <div className="flex flex-wrap gap-2">
-                          {/* 🆕 Botón de Chat */}
-                          <button
-                            type="button"
-                            onClick={() => openChat(appt)}
-                            className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center gap-1"
-                          >
-                            💬 Chat
-                            {appt.unreadMessagesOwner > 0 && (
-                              <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                {appt.unreadMessagesOwner}
-                              </span>
-                            )}
-                          </button>
-
                           {appt.status !== "confirmed" && (
                             <button
                               type="button"
@@ -524,16 +495,6 @@ export default function AppointmentsList({ storeId }) {
             </article>
           ))}
         </div>
-      )}
-
-      {/* 🆕 Chat Modal */}
-      {chatOpen && selectedBooking && (
-        <ChatBox
-          bookingId={selectedBooking._id}
-          mode="owner"
-          onClose={closeChat}
-          bookingInfo={selectedBooking}
-        />
       )}
     </section>
   );

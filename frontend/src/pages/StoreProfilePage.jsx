@@ -14,6 +14,8 @@ import AppointmentsList from "../components/AppointmentsList";
 import ProductManager from "../components/ProductManager";
 import ModernProductManager from "../components/ModernProductManager"; // 🆕 GESTOR MODERNO
 import OrdersList from "../components/OrdersList";
+import ModernOrdersManager from "../components/ModernOrdersManager"; // 🆕 GESTOR MODERNO DE PEDIDOS
+import UnifiedChatManager from "../components/UnifiedChatManager"; // 💬 GESTOR DE CHATS UNIFICADO
 import StoreCalendarManager from "../components/StoreCalendarManager";
 import SmartInsights from "../components/SmartInsights"; // 👈 IMPORTANTE
 import StoreVisualBuilder from "../components/StoreVisualBuilder"; // 🎨 CONSTRUCTOR VISUAL (LEGACY)
@@ -87,8 +89,8 @@ export default function StoreProfilePage() {
   const [activeTab, setActiveTab] = useState("ventas"); // Cambiar default a ventas
 
   // pestañas internas
-  const [productsPanel, setProductsPanel] = useState("catalog"); // catalog | orders | insights
-  const [bookingsPanel, setBookingsPanel] = useState("services"); // services | weeklySchedule | monthlyView | appointments | insights
+  const [productsPanel, setProductsPanel] = useState("catalog"); // catalog | orders | messages | insights
+  const [bookingsPanel, setBookingsPanel] = useState("services"); // services | weeklySchedule | monthlyView | appointments | messages | insights
   
   // 🎨 Constructor visual
   const [showVisualBuilder, setShowVisualBuilder] = useState(false);
@@ -368,41 +370,51 @@ export default function StoreProfilePage() {
               {isProductsToolsView && (
                 <>
                   <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                    Gestión de productos
+                    🛍️ Gestión de productos
                   </p>
 
                   <button
                     onClick={() => setProductsPanel("catalog")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       productsPanel === "catalog"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Catálogo de productos
+                    📋 Catálogo
                   </button>
 
                   <button
                     onClick={() => setProductsPanel("orders")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       productsPanel === "orders"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Pedidos
+                    📦 Pedidos
                   </button>
 
-                  {/* 👇 NUEVO: botón de análisis inteligente (productos) */}
+                  <button
+                    onClick={() => setProductsPanel("messages")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      productsPanel === "messages"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    💬 Mensajes
+                  </button>
+
                   <button
                     onClick={() => setProductsPanel("insights")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       productsPanel === "insights"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Análisis inteligente
+                    📊 Análisis
                   </button>
                 </>
               )}
@@ -410,52 +422,62 @@ export default function StoreProfilePage() {
               {isBookingsToolsView && (
                 <>
                   <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                    Gestión de agendamiento
+                    📅 Gestión de agendamiento
                   </p>
 
                   <button
                     onClick={() => setBookingsPanel("services")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       bookingsPanel === "services"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    📋 Servicios
+                    🔧 Servicios
                   </button>
 
                   <button
                     onClick={() => setBookingsPanel("weeklySchedule")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       bookingsPanel === "weeklySchedule"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    📅 Configurar Horarios
+                    ⏰ Horarios
                   </button>
 
                   <button
                     onClick={() => setBookingsPanel("appointments")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       bookingsPanel === "appointments"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    📝 Gestión de Reservas
+                    📋 Reservas
                   </button>
 
-                  {/* 👇 NUEVO: botón de análisis inteligente (agendamiento) */}
+                  <button
+                    onClick={() => setBookingsPanel("messages")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "messages"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    💬 Mensajes
+                  </button>
+
                   <button
                     onClick={() => setBookingsPanel("insights")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                       bookingsPanel === "insights"
                         ? "bg-blue-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    Análisis inteligente
+                    📊 Análisis
                   </button>
                 </>
               )}
@@ -494,6 +516,10 @@ export default function StoreProfilePage() {
                       <AppointmentsList storeId={id} />
                     )}
 
+                    {bookingsPanel === "messages" && (
+                      <UnifiedChatManager storeId={id} storeMode="bookings" />
+                    )}
+
                     {bookingsPanel === "insights" && (
                       <SmartInsights storeId={id} mode="bookings" />
                     )}
@@ -508,7 +534,11 @@ export default function StoreProfilePage() {
                     )}
 
                     {productsPanel === "orders" && (
-                      <OrdersList storeId={id} />
+                      <ModernOrdersManager storeId={id} />
+                    )}
+
+                    {productsPanel === "messages" && (
+                      <UnifiedChatManager storeId={id} storeMode="products" />
                     )}
 
                     {productsPanel === "insights" && (

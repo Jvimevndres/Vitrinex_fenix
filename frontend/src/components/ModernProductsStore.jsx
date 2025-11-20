@@ -1,6 +1,7 @@
 // src/components/ModernProductsStore.jsx
 import { useState, useEffect, useMemo } from "react";
 import { listStoreProductsPublic, createStoreOrder } from "../api/store";
+import CustomerChatModal from "./CustomerChatModal";
 
 export default function ModernProductsStore({ store, appearance }) {
   const [products, setProducts] = useState([]);
@@ -23,6 +24,8 @@ export default function ModernProductsStore({ store, appearance }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState(null); // 🆕 ID del pedido creado
+  const [showChatModal, setShowChatModal] = useState(false); // 🆕 Modal de chat
 
   useEffect(() => {
     loadProducts();
@@ -136,17 +139,22 @@ export default function ModernProductsStore({ store, appearance }) {
         quantity: item.quantity,
       }));
 
-      await createStoreOrder(store._id, {
+      const response = await createStoreOrder(store._id, {
         ...checkoutForm,
         items: orderItems,
         total: cartTotal,
       });
 
+      // 🆕 Guardar ID del pedido creado
+      setCreatedOrderId(response.data._id);
       setOrderSuccess(true);
       setCart([]);
+      
+      // Reset después de 15 segundos para dar tiempo a abrir el chat
       setTimeout(() => {
         setShowCheckout(false);
         setOrderSuccess(false);
+        setCreatedOrderId(null);
         setCheckoutForm({
           customerName: "",
           customerEmail: "",
@@ -154,7 +162,7 @@ export default function ModernProductsStore({ store, appearance }) {
           customerAddress: "",
           notes: "",
         });
-      }, 3000);
+      }, 15000);
     } catch (error) {
       console.error("Error al crear orden:", error);
       alert(error.response?.data?.message || "Error al procesar la orden");
@@ -324,6 +332,8 @@ export default function ModernProductsStore({ store, appearance }) {
           submitting={submitting}
           success={orderSuccess}
           primaryColor={primaryColor}
+          orderId={createdOrderId}
+          onOpenChat={() => setShowChatModal(true)}
         />
       )}
 
@@ -334,6 +344,17 @@ export default function ModernProductsStore({ store, appearance }) {
           onClose={() => setSelectedProduct(null)}
           onAddToCart={addToCart}
           primaryColor={primaryColor}
+        />
+      )}
+
+      {/* Modal de Chat */}
+      {showChatModal && createdOrderId && (
+        <CustomerChatModal
+          type="order"
+          id={createdOrderId}
+          customerEmail={checkoutForm.customerEmail}
+          customerName={checkoutForm.customerName}
+          onClose={() => setShowChatModal(false)}
         />
       )}
     </div>
@@ -575,16 +596,24 @@ function CartItem({ item, onUpdateQuantity, onRemove }) {
   );
 }
 
-function CheckoutModal({ cart, total, form, setForm, onSubmit, onClose, submitting, success, primaryColor }) {
+function CheckoutModal({ cart, total, form, setForm, onSubmit, onClose, submitting, success, primaryColor, orderId, onOpenChat }) {
   if (success) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">✅</div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Pedido Realizado!</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             Hemos recibido tu pedido. Te contactaremos pronto.
           </p>
+          {orderId && onOpenChat && (
+            <button
+              onClick={onOpenChat}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+            >
+              💬 Chatear con la tienda
+            </button>
+          )}
         </div>
       </div>
     );

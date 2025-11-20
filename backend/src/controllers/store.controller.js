@@ -1140,6 +1140,50 @@ export const createStoreOrder = async (req, res) => {
   }
 };
 
+// 🆕 Actualizar estado de pedido
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const userId = req.user.id;
+
+    // Validar estado
+    const validStatuses = ["pending", "confirmed", "fulfilled", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+
+    // Buscar el pedido
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Pedido no encontrado" });
+    }
+
+    // Verificar que el usuario es dueño de la tienda
+    const store = await Store.findById(order.store);
+    if (!store) {
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+
+    if (store.owner.toString() !== userId && store.user.toString() !== userId) {
+      return res.status(403).json({ message: "No tienes permiso para actualizar este pedido" });
+    }
+
+    // Actualizar estado
+    order.status = status;
+    await order.save();
+
+    res.json({
+      _id: order._id,
+      status: order.status,
+      message: "Estado actualizado correctamente"
+    });
+  } catch (err) {
+    console.error("Error actualizando estado del pedido:", err);
+    res.status(500).json({ message: "Error al actualizar el estado" });
+  }
+};
+
 // =================== NUEVOS ENDPOINTS: SPECIAL DAYS ===================
 
 /**

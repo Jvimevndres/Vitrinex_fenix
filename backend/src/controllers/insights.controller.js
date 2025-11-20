@@ -2,6 +2,7 @@
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import Booking from "../models/booking.model.js"; // 👈 AQUÍ EL CAMBIO
+import Service from "../models/service.model.js"; // 🆕 Para obtener nombres de servicios
 import mongoose from "mongoose";
 
 // ---------------------------------------------------------------------
@@ -122,6 +123,14 @@ export const getProductInsightsForStore = async (req, res) => {
     const totalRevenue = Object.values(revenueByProduct).reduce((s, v) => s + v, 0) || 0;
     const uniqueProducts = Object.keys(salesByProduct).length || 0;
 
+    // 🆕 Métricas adicionales mejoradas
+    const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+    const avgItemsPerOrder = totalOrders > 0 ? (totalItemsSold / totalOrders).toFixed(1) : 0;
+    
+    // Calcular tasa de conversión de productos (productos con ventas vs total productos)
+    const productsWithSales = productStats.filter(p => p.sold > 0).length;
+    const conversionRate = products.length > 0 ? Math.round((productsWithSales / products.length) * 100) : 0;
+
     // Formato esperado por frontend
     const topProducts = bestSellers.map((p) => ({
       productId: p.id || String(p._id || ""),
@@ -165,6 +174,9 @@ export const getProductInsightsForStore = async (req, res) => {
         totalItemsSold,
         totalRevenue,
         uniqueProducts,
+        avgOrderValue, // 🆕
+        avgItemsPerOrder, // 🆕
+        conversionRate, // 🆕
       },
       topProducts,
       lowProducts,
@@ -216,13 +228,24 @@ export const getBookingInsightsForStore = async (req, res) => {
           totalAppointments: 0,
           confirmed: 0,
           cancelled: 0,
+          pending: 0,
           completionRate: 0,
+          cancelRate: 0,
+          avgDailyBookings: 0,
         },
         busySlots: [],
         services: [],
         suggestions: ["Aún no se registran reservas en tu tienda."],
       });
     }
+
+    // 🆕 Obtener todos los servicios de la tienda para mapear IDs a nombres
+    const serviceIds = [...new Set(bookings.map(b => b.service).filter(s => s))];
+    const serviceRecords = await Service.find({ _id: { $in: serviceIds } }).lean();
+    const serviceMap = {};
+    serviceRecords.forEach(s => {
+      serviceMap[String(s._id)] = s.name || s.title || "Servicio sin nombre";
+    });
 
     let confirmed = 0;
     let cancelled = 0;
@@ -252,9 +275,16 @@ export const getBookingInsightsForStore = async (req, res) => {
         byHour[hourKey] = (byHour[hourKey] || 0) + 1;
       }
 
-      // servicio: si no hay campo, usamos "Servicio"
-      const serviceKey = b.serviceName || b.service || "Servicio";
-      byService[serviceKey] = (byService[serviceKey] || 0) + 1;
+      // 🆕 Mejorado: obtener nombre del servicio desde el mapa
+      let serviceName = "Servicio sin especificar";
+      if (b.serviceName) {
+        serviceName = b.serviceName;
+      } else if (b.service) {
+        const serviceId = String(b.service);
+        serviceName = serviceMap[serviceId] || `Servicio (${serviceId.substring(0, 8)}...)`;
+      }
+      
+      byService[serviceName] = (byService[serviceName] || 0) + 1;
     }
 
     const peakHours = Object.entries(byHour)
@@ -297,6 +327,11 @@ export const getBookingInsightsForStore = async (req, res) => {
 
     const totalAppointments = bookings.length || 0;
     const completionRate = totalAppointments === 0 ? 0 : Math.round((confirmed / totalAppointments) * 100);
+    
+    // 🆕 Métricas adicionales mejoradas para agendamiento
+    const pending = bookings.filter(b => b.status === 'pending').length;
+    const cancelRate = totalAppointments > 0 ? Math.round((cancelled / totalAppointments) * 100) : 0;
+    const avgDailyBookings = days > 0 ? (totalAppointments / days).toFixed(1) : 0;
 
     // If we have bookings but no busySlots (e.g. missing slot info), provide a helpful suggestion
     if (bookings.length > 0 && busySlots.length === 0) {
@@ -309,7 +344,10 @@ export const getBookingInsightsForStore = async (req, res) => {
         totalAppointments,
         confirmed,
         cancelled,
+        pending, // 🆕
         completionRate,
+        cancelRate, // 🆕
+        avgDailyBookings, // 🆕
       },
       busySlots,
       services,

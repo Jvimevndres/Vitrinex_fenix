@@ -20,6 +20,7 @@ import {
   // pedidos
   listStoreOrders,
   createStoreOrder,
+  updateOrderStatus,
 
   // agendamiento
   getStoreAvailability,
@@ -107,6 +108,7 @@ router.delete("/:id/products/:productId", authRequired, deleteStoreProduct);
  */
 router.get("/:id/orders", authRequired, listStoreOrders);
 router.post("/:id/orders", createStoreOrder);
+router.patch("/orders/:orderId/status", authRequired, updateOrderStatus);
 
 /**
  * 🔹 INSIGHTS / ANÁLISIS INTELIGENTE

@@ -142,4 +142,9 @@ export const createStoreOrder = async (id, payload) => {
   return res;
 };
 
+export const updateOrderStatus = async (orderId, status) => {
+  const res = await api.patch(`/orders/${orderId}/status`, { status });
+  return res;
+};
+
 export default api;
