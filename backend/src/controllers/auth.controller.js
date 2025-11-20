@@ -146,6 +146,21 @@ export const updateProfile = async (req, res) => {
       rut,
       phone,
       address,
+      // User Persona fields
+      title,
+      quote,
+      age,
+      status,
+      location,
+      archetype,
+      rating,
+      personality,
+      motivations,
+      goals,
+      frustrations,
+      favoriteBrands,
+      archetypes,
+      // Visual customization
       primaryColor,
       accentColor,
       bgMode,
@@ -181,6 +196,22 @@ export const updateProfile = async (req, res) => {
     if (phone !== undefined) user.phone = phone;
     if (address !== undefined) user.address = address;
 
+    // User Persona fields
+    if (title !== undefined) user.title = title;
+    if (quote !== undefined) user.quote = quote;
+    if (age !== undefined) user.age = age;
+    if (status !== undefined) user.status = status;
+    if (location !== undefined) user.location = location;
+    if (archetype !== undefined) user.archetype = archetype;
+    if (rating !== undefined) user.rating = rating;
+    if (personality !== undefined) user.personality = personality;
+    if (motivations !== undefined) user.motivations = motivations;
+    if (goals !== undefined) user.goals = goals;
+    if (frustrations !== undefined) user.frustrations = frustrations;
+    if (favoriteBrands !== undefined) user.favoriteBrands = favoriteBrands;
+    if (archetypes !== undefined) user.archetypes = archetypes;
+
+    // Visual customization
     if (primaryColor !== undefined) user.primaryColor = primaryColor;
     if (accentColor !== undefined) user.accentColor = accentColor;
     if (bgMode !== undefined) user.bgMode = bgMode;
@@ -200,6 +231,20 @@ export const updateProfile = async (req, res) => {
       rut: user.rut || "",
       phone: user.phone || "",
       address: user.address || "",
+      title: user.title,
+      quote: user.quote,
+      age: user.age,
+      status: user.status,
+      location: user.location,
+      archetype: user.archetype,
+      rating: user.rating,
+      personality: user.personality,
+      motivations: user.motivations,
+      goals: user.goals,
+      frustrations: user.frustrations,
+      favoriteBrands: user.favoriteBrands,
+      archetypes: user.archetypes,
+      stats: user.stats,
       primaryColor: user.primaryColor,
       accentColor: user.accentColor,
       bgMode: user.bgMode,
@@ -221,12 +266,27 @@ export const getPublicProfile = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(id).select(
-      "username avatarUrl bio primaryColor accentColor bgMode bgColorTop bgColorBottom bgPattern bgImageUrl"
-    );
+    const user = await User.findById(id).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Calcular número de negocios del usuario
+    const Store = (await import("../models/store.model.js")).default;
+    const businessCount = await Store.countDocuments({
+      $or: [{ owner: user._id }, { user: user._id }],
+      isActive: true,
+    });
+
+    // Actualizar estadísticas si han cambiado
+    if (!user.stats) {
+      user.stats = { projects: 0, businesses: 0, responseRate: 0 };
+    }
+    
+    if (user.stats.businesses !== businessCount) {
+      user.stats.businesses = businessCount;
+      await user.save();
     }
 
     return res.json(user);
