@@ -180,13 +180,15 @@ export default function ExploreStoresPage() {
         allStores = data;
       }
 
-      // Filtrar por búsqueda si existe
+      // Filtrar por búsqueda si existe (nombre, categoría o comuna)
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase().trim();
         allStores = allStores.filter(store => 
           store.name?.toLowerCase().includes(searchLower) ||
           store.description?.toLowerCase().includes(searchLower) ||
-          store.direccion?.toLowerCase().includes(searchLower)
+          store.direccion?.toLowerCase().includes(searchLower) ||
+          store.tipoNegocio?.toLowerCase().includes(searchLower) ||
+          store.comuna?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -409,13 +411,14 @@ export default function ExploreStoresPage() {
         );
       })()}
 
-      <div style={{ background: headerBarBg, boxShadow: accent.glow }} className="w-full backdrop-blur-md border-b border-white/10">
-        <MainHeader subtitle="Explora negocios dentro de la plataforma" />
-      </div>
+      <MainHeader subtitle="Explora negocios dentro de la plataforma" />
+
+      {/* Spacer para compensar el header fixed */}
+      <div className="header-spacer" />
 
       {/* Palette selector: Auto / Cálido / Frío - GALAXY STYLE */}
       <div className="w-full flex justify-center mt-4 mb-2">
-        <div className="inline-flex items-center bg-black/30 backdrop-blur-xl border border-white/20 rounded-full p-1.5 shadow-2xl text-sm" style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }}>
+        <div className="inline-flex items-center bg-black/60 backdrop-blur-lg border border-white/30 rounded-full p-1.5 shadow-2xl text-sm" style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }}>
           <button
             type="button"
             onClick={() => setPaletteMode("auto")}
@@ -456,7 +459,7 @@ export default function ExploreStoresPage() {
         <div className="mx-auto w-full max-w-7xl space-y-5">
           <div className="grid gap-5 lg:grid-cols-[260px,minmax(0,2.6fr),360px] items-start">
             {/* Filtros - GALAXY STYLE MEJORADO */}
-            <aside className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl self-start sticky top-24" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.4)`, transition: uiTransition }}>
+            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-2xl self-start sticky top-24" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
               <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">🔍</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-200 to-pink-200">
@@ -476,8 +479,8 @@ export default function ExploreStoresPage() {
                     name="search"
                     value={filters.search}
                     onChange={handleFilterChange}
-                    placeholder="Buscar por nombre..."
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white/10 backdrop-blur-sm text-white placeholder-white/40 focus:bg-white/20 focus:outline-none focus:ring-2 transition-all"
+                    placeholder="Buscar por nombre, categoría o comuna..."
+                    className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white/20 backdrop-blur-sm text-white placeholder-white/60 focus:bg-white/30 focus:outline-none focus:ring-2 transition-all"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   />
                 </div>
@@ -591,7 +594,7 @@ export default function ExploreStoresPage() {
             </aside>
 
             {/* Mapa - GALAXY STYLE */}
-            <section className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden relative" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.4)` }}>
+            <section className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl overflow-hidden relative" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)` }}>
               <div className="border-b border-white/10 px-5 py-3 bg-gradient-to-r from-black/30 to-transparent backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -666,7 +669,7 @@ export default function ExploreStoresPage() {
                 <div className="absolute top-4 right-4 z-20 w-64">
                   <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-2 shadow-2xl" style={{ boxShadow: `${accent.glow}, 0 4px 16px rgba(0, 0, 0, 0.3)` }}>
                     <input
-                      placeholder="🔎 Buscar nombre de tienda"
+                      placeholder="🔎 Buscar tienda, categoría o comuna"
                       value={filters.search || ""}
                       onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
                       className="w-full text-sm px-3 py-2 rounded-md border bg-white/10 text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:ring-2"
@@ -678,7 +681,7 @@ export default function ExploreStoresPage() {
             </section>
 
             {/* Lista de negocios a la derecha - GALAXY STYLE */}
-            <aside className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl h-[460px] md:h-[520px] lg:h-[600px] flex flex-col" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.4)`, transition: uiTransition }}>
+            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-2xl h-[460px] md:h-[520px] lg:h-[600px] flex flex-col" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
               <div className="mb-3">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2" style={{ transition: uiTransition }}>
                   <span className="text-xl">🏪</span>

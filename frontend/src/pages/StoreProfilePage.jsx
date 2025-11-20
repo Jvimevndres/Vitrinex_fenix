@@ -146,6 +146,93 @@ export default function StoreProfilePage() {
     setMsg("");
   };
 
+  // 🗺️ Comunas de Santiago (sincronizadas con ExploreStoresPage)
+  const comunasOptions = [
+    "Santiago Centro",
+    "Las Condes",
+    "Providencia",
+    "Vitacura",
+    "Lo Barnechea",
+    "Ñuñoa",
+    "La Reina",
+    "Peñalolén",
+    "Macul",
+    "La Florida",
+    "San Joaquín",
+    "La Granja",
+    "La Pintana",
+    "San Ramón",
+    "San Miguel",
+    "La Cisterna",
+    "El Bosque",
+    "Pedro Aguirre Cerda",
+    "Lo Espejo",
+    "Estación Central",
+    "Cerrillos",
+    "Maipú",
+    "Pudahuel",
+    "Cerro Navia",
+    "Lo Prado",
+    "Quinta Normal",
+    "Renca",
+    "Quilicura",
+    "Huechuraba",
+    "Conchalí",
+    "Recoleta",
+    "Independencia",
+  ];
+
+  // 🏪 Tipos de negocio (sincronizados con ExploreStoresPage)
+  const tiposNegocioOptions = [
+    "🍔 Restaurante",
+    "☕ Cafetería",
+    "🛍️ Retail / Tienda",
+    "💇 Peluquería / Barbería",
+    "💅 Salón de Belleza",
+    "🏋️ Gimnasio / Fitness",
+    "🧘 Yoga / Bienestar",
+    "🏥 Salud / Clínica",
+    "🦷 Dental",
+    "🐾 Veterinaria / Mascotas",
+    "🔧 Taller / Mecánica",
+    "🏠 Hogar / Decoración",
+    "👗 Moda / Vestuario",
+    "👟 Deportes",
+    "📚 Librería / Papelería",
+    "🎨 Arte / Artesanía",
+    "💻 Tecnología / Electrónica",
+    "📱 Celulares / Accesorios",
+    "🎮 Videojuegos",
+    "🎵 Música / Instrumentos",
+    "🌿 Plantas / Jardín",
+    "🍰 Pastelería / Repostería",
+    "🍕 Comida Rápida",
+    "🍜 Comida Asiática",
+    "🌮 Comida Mexicana",
+    "🥗 Comida Saludable",
+    "🍷 Bar / Pub",
+    "🎉 Eventos / Fiestas",
+    "📸 Fotografía",
+    "🚗 Automotriz",
+    "🏪 Minimarket / Almacén",
+    "🎓 Educación / Cursos",
+    "💼 Servicios Profesionales",
+    "🔨 Construcción / Ferretería",
+    "🧹 Limpieza / Aseo",
+    "🌸 Flores / Regalos",
+    "💎 Joyería",
+    "⌚ Relojería",
+    "👓 Óptica",
+    "🏨 Hotel / Alojamiento",
+    "✈️ Turismo / Viajes",
+    "🚚 Transporte / Logística",
+    "📦 Envíos / Courier",
+    "🖨️ Imprenta / Diseño",
+    "🔒 Seguridad",
+    "🌐 Marketing / Publicidad",
+    "Otro",
+  ];
+
   const getCoordinates = async (address) => {
     try {
       const res = await fetch(
@@ -330,6 +417,18 @@ export default function StoreProfilePage() {
 
               <button
                 type="button"
+                onClick={() => setActiveTab("configuracion")}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                  activeTab === "configuracion"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                ⚙️ Configuración
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab("ventas")}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
                   activeTab === "ventas"
@@ -488,6 +587,156 @@ export default function StoreProfilePage() {
              ║   CONTENIDO PRINCIPAL      ║
              ╚════════════════════════════╝ */}
           <section className="space-y-4">
+            {/* TAB CONFIGURACIÓN */}
+            {activeTab === "configuracion" && (
+              <div className="bg-white/95 backdrop-blur border rounded-2xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                  <span className="text-3xl">⚙️</span>
+                  Configuración de la tienda
+                </h2>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 mb-4">
+                    {error}
+                  </div>
+                )}
+
+                {msg && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 mb-4">
+                    {msg}
+                  </div>
+                )}
+
+                <form onSubmit={onSubmit} className="space-y-6">
+                  {/* Información básica */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-700 border-b pb-2">
+                      📋 Información básica
+                    </h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Nombre del negocio *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={form.name}
+                        onChange={onChange}
+                        required
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Ej: Café del Centro"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Descripción
+                      </label>
+                      <textarea
+                        name="description"
+                        value={form.description}
+                        onChange={onChange}
+                        rows={3}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Describe tu negocio..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Tipo de negocio *
+                      </label>
+                      <select
+                        name="tipoNegocio"
+                        value={form.tipoNegocio}
+                        onChange={onChange}
+                        required
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      >
+                        <option value="">Selecciona un tipo de negocio</option>
+                        {tiposNegocioOptions.map((tipo) => (
+                          <option key={tipo} value={tipo}>
+                            {tipo}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Esto ayudará a los clientes a encontrarte en los filtros de búsqueda
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Comuna *
+                      </label>
+                      <select
+                        name="comuna"
+                        value={form.comuna}
+                        onChange={onChange}
+                        required
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      >
+                        <option value="">Selecciona una comuna</option>
+                        {comunasOptions.map((comuna) => (
+                          <option key={comuna} value={comuna}>
+                            {comuna}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Los clientes podrán filtrar negocios por comuna
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Dirección exacta *
+                      </label>
+                      <input
+                        type="text"
+                        name="direccion"
+                        value={form.direccion}
+                        onChange={onChange}
+                        required
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Ej: Av. Libertador Bernardo O'Higgins 1234, Santiago"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Usaremos esto para mostrarte en el mapa
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Modo de operación *
+                      </label>
+                      <select
+                        name="mode"
+                        value={form.mode}
+                        onChange={onChange}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      >
+                        <option value="products">🛍️ Venta de productos</option>
+                        <option value="bookings">📅 Agendamiento de horas</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Botones */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      {saving ? "Guardando..." : "💾 Guardar cambios"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {/* TAB VENTAS/AGENDAMIENTO */}
             {activeTab === "ventas" && (
               <>

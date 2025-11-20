@@ -161,6 +161,9 @@ export default function OnboardingPage() {
   }}
 >
       <MainHeader subtitle="Configura tus negocios en la plataforma" />
+      
+      {/* Spacer para compensar el header fixed */}
+      <div style={{ height: '60px' }} />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between gap-4">

@@ -143,6 +143,9 @@ export default function CustomerPublicPage() {
   return (
     <div className="min-h-screen flex flex-col" style={pageStyle}>
       <MainHeader subtitle="Perfil de usuario" />
+      
+      {/* Spacer para compensar el header fixed */}
+      <div style={{ height: '60px' }} />
 
       {error && (
         <div className="max-w-6xl mx-auto px-4 py-3">
