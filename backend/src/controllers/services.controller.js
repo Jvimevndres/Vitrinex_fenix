@@ -24,13 +24,14 @@ const verifyStoreOwnership = async (storeId, userId) => {
  * GET /api/stores/:storeId/services
  * Obtener todos los servicios de una tienda
  * Público: Los clientes también necesitan ver los servicios
+ * Query params: includeInactive, tags, category, search
  */
 export const getStoreServices = async (req, res) => {
   try {
     const { storeId } = req.params;
-    const { includeInactive } = req.query;
+    const { includeInactive, tags, category, search } = req.query;
 
-    // Validar que la tienda existe
+    // Validar que la tienda exists
     const store = await Store.findById(storeId);
     if (!store) {
       return res.status(404).json({ message: "Tienda no encontrada" });
@@ -42,6 +43,27 @@ export const getStoreServices = async (req, res) => {
     // Si no se solicita incluir inactivos, filtrar solo activos
     if (includeInactive !== "true") {
       query.isActive = true;
+    }
+
+    // Filtro por tags (puede ser un string separado por comas o un array)
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());
+      if (tagArray.length > 0) {
+        query.tags = { $in: tagArray };
+      }
+    }
+
+    // Filtro por categoría
+    if (category && category.trim()) {
+      query.category = category.trim();
+    }
+
+    // Búsqueda por texto en nombre o descripción
+    if (search && search.trim()) {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: 'i' } },
+        { description: { $regex: search.trim(), $options: 'i' } },
+      ];
     }
 
     const services = await Service.find(query).sort({ displayOrder: 1, name: 1 });
@@ -81,7 +103,7 @@ export const createService = async (req, res) => {
   try {
     const { storeId } = req.params;
     const userId = req.user.id;
-    const { name, description, duration, price, isActive, displayOrder, imageUrl } = req.body;
+    const { name, description, duration, price, isActive, displayOrder, imageUrl, category, tags } = req.body;
 
     // Verificar ownership
     const { error } = await verifyStoreOwnership(storeId, userId);
@@ -112,6 +134,8 @@ export const createService = async (req, res) => {
       isActive: isActive !== undefined ? Boolean(isActive) : true,
       displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : 0,
       imageUrl: imageUrl?.trim() || "",
+      category: category?.trim() || "",
+      tags: Array.isArray(tags) ? tags.map(tag => tag.trim()).filter(Boolean) : [],
     });
 
     await service.save();
@@ -138,7 +162,7 @@ export const updateService = async (req, res) => {
   try {
     const { storeId, serviceId } = req.params;
     const userId = req.user.id;
-    const { name, description, duration, price, isActive, displayOrder, imageUrl } = req.body;
+    const { name, description, duration, price, isActive, displayOrder, imageUrl, category, tags } = req.body;
 
     // Verificar ownership
     const { error } = await verifyStoreOwnership(storeId, userId);
@@ -190,6 +214,14 @@ export const updateService = async (req, res) => {
 
     if (imageUrl !== undefined) {
       service.imageUrl = imageUrl.trim();
+    }
+
+    if (category !== undefined) {
+      service.category = category.trim();
+    }
+
+    if (tags !== undefined) {
+      service.tags = Array.isArray(tags) ? tags.map(tag => tag.trim()).filter(Boolean) : [];
     }
 
     await service.save();

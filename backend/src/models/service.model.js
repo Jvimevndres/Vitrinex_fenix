@@ -52,6 +52,19 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Categoría del servicio (opcional)
+    category: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+    // Etiquetas para búsqueda y filtrado
+    tags: {
+      type: [String],
+      default: [],
+      index: true,
+    },
   },
   {
     timestamps: true,

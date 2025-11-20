@@ -158,6 +158,24 @@ const storeSchema = new mongoose.Schema(
     highlight1: { type: String, default: "" },
     highlight2: { type: String, default: "" },
     priceFrom: { type: String, default: "" },
+
+    // Información adicional de contacto
+    address: { type: String, default: "" },
+
+    // Sección "Quiénes Somos"
+    aboutTitle: { type: String, default: "Quiénes Somos" },
+    aboutDescription: { type: String, default: "" },
+
+    // Cuadros personalizados
+    customBoxes: {
+      type: [{
+        id: { type: Number },
+        icon: { type: String, default: "📌" },
+        title: { type: String, required: true },
+        content: { type: String, required: true }
+      }],
+      default: []
+    },
   },
   { timestamps: true }
 );

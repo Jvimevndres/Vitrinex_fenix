@@ -31,12 +31,16 @@ export default function ProductManager({ storeId }) {
   const [uploading, setUploading] = useState(false);
 
   const load = async () => {
+    console.log("🔄 ProductManager - Cargando productos para store:", storeId);
     try {
       setLoading(true);
       const { data } = await listStoreProductsForOwner(storeId);
+      console.log("✅ Productos cargados:", data?.length || 0, data);
       setProducts(data || []);
     } catch (err) {
-      setError("No se pudieron cargar los productos");
+      console.error("❌ Error al cargar productos:", err);
+      console.error("📋 Detalles del error:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "No se pudieron cargar los productos");
     } finally {
       setLoading(false);
     }
@@ -65,6 +69,11 @@ export default function ProductManager({ storeId }) {
     e.preventDefault();
     setFormError("");
 
+    console.log("🛒 ProductManager - Intentando guardar producto");
+    console.log("📝 Form data:", form);
+    console.log("🏪 Store ID:", storeId);
+    console.log("✏️ Editing ID:", editingId);
+
     if (!form.name.trim()) return setFormError("Ingresa el nombre del producto");
 
     const priceValue = Number(form.price);
@@ -92,19 +101,26 @@ export default function ProductManager({ storeId }) {
       isActive: form.isActive,
     };
 
+    console.log("📦 Payload a enviar:", payload);
+
     try {
       setSaving(true);
       if (editingId) {
+        console.log("✏️ Actualizando producto existente:", editingId);
         await updateStoreProduct(storeId, editingId, payload);
       } else {
-        await createStoreProduct(storeId, payload);
+        console.log("➕ Creando nuevo producto");
+        const response = await createStoreProduct(storeId, payload);
+        console.log("✅ Respuesta del servidor:", response);
       }
 
+      console.log("✅ Producto guardado exitosamente");
       resetForm();
       await load();
     } catch (err) {
-      console.log(err);
-      setFormError("No se pudo guardar el producto");
+      console.error("❌ Error al guardar producto:", err);
+      console.error("📋 Detalles del error:", err.response?.data || err.message);
+      setFormError(err.response?.data?.message || "No se pudo guardar el producto");
     } finally {
       setSaving(false);
     }

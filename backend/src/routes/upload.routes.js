@@ -201,4 +201,37 @@ router.post(
   }
 );
 
+/**
+ * Imagen de fondo para personalización
+ */
+const backgroundUpload = multer({ storage: createStorage("backgrounds"), ...uploadConfig });
+
+router.post(
+  "/background",
+  authRequired,
+  backgroundUpload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ message: "No se recibió ningún archivo" });
+      }
+
+      const baseUrl = getBaseUrl();
+      const imageUrl = `${baseUrl}/uploads/backgrounds/${req.file.filename}`;
+
+      return res.json({
+        message: "Imagen de fondo subida correctamente",
+        url: imageUrl,
+      });
+    } catch (err) {
+      console.error("Error subiendo imagen de fondo:", err);
+      return res
+        .status(500)
+        .json({ message: "Error al subir la imagen de fondo" });
+    }
+  }
+);
+
 export default router;

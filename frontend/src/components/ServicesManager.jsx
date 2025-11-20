@@ -32,7 +32,12 @@ export default function ServicesManager({ storeId }) {
     duration: 30,
     price: 0,
     isActive: true,
+    category: "",
+    tags: [],
   });
+
+  // Estado para agregar tags
+  const [tagInput, setTagInput] = useState("");
 
   // Cargar servicios al montar
   useEffect(() => {
@@ -84,7 +89,10 @@ export default function ServicesManager({ storeId }) {
         duration: 30,
         price: 0,
         isActive: true,
+        category: "",
+        tags: [],
       });
+      setTagInput("");
       setEditingService(null);
       setShowForm(false);
     } catch (err) {
@@ -101,7 +109,10 @@ export default function ServicesManager({ storeId }) {
       duration: service.duration,
       price: service.price,
       isActive: service.isActive,
+      category: service.category || "",
+      tags: service.tags || [],
     });
+    setTagInput("");
     setShowForm(true);
   };
 
@@ -140,10 +151,41 @@ export default function ServicesManager({ storeId }) {
       duration: 30,
       price: 0,
       isActive: true,
+      category: "",
+      tags: [],
     });
+    setTagInput("");
     setEditingService(null);
     setShowForm(false);
     setError("");
+  };
+
+  // Manejar agregar etiqueta
+  const handleAddTag = () => {
+    const tag = tagInput.trim();
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData({
+        ...formData,
+        tags: [...formData.tags, tag],
+      });
+      setTagInput("");
+    }
+  };
+
+  // Manejar eliminar etiqueta
+  const handleRemoveTag = (tagToRemove) => {
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter(tag => tag !== tagToRemove),
+    });
+  };
+
+  // Manejar Enter en el input de tags
+  const handleTagKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
   };
 
   if (loading) {
@@ -272,6 +314,84 @@ export default function ServicesManager({ storeId }) {
               </div>
             </div>
 
+            {/* Categoría */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoría
+              </label>
+              <input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                placeholder="Ej: Belleza, Salud, Estética..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Etiquetas */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Etiquetas (Tags)
+              </label>
+              <div className="space-y-2">
+                {/* Input para agregar tags */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={handleTagKeyPress}
+                    placeholder="Escribe una etiqueta y presiona Enter"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTag}
+                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                  >
+                    Agregar
+                  </button>
+                </div>
+
+                {/* Lista de tags */}
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:bg-blue-200 rounded-full p-0.5"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  Las etiquetas ayudan a los clientes a encontrar tus servicios más fácilmente
+                </p>
+              </div>
+            </div>
+
             {/* Activo */}
             <div className="flex items-center gap-2">
               <input
@@ -354,6 +474,25 @@ export default function ServicesManager({ storeId }) {
 
                   {service.description && (
                     <p className="text-gray-600 mb-3">{service.description}</p>
+                  )}
+
+                  {/* Categoría y Tags */}
+                  {(service.category || (service.tags && service.tags.length > 0)) && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {service.category && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          📁 {service.category}
+                        </span>
+                      )}
+                      {service.tags && service.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          🏷️ {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
 
                   <div className="flex gap-6 text-sm">

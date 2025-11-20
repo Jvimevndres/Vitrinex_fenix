@@ -16,7 +16,8 @@ import ModernProductManager from "../components/ModernProductManager"; // 🆕 G
 import OrdersList from "../components/OrdersList";
 import StoreCalendarManager from "../components/StoreCalendarManager";
 import SmartInsights from "../components/SmartInsights"; // 👈 IMPORTANTE
-import StoreVisualBuilder from "../components/StoreVisualBuilder"; // 🎨 CONSTRUCTOR VISUAL
+import StoreVisualBuilder from "../components/StoreVisualBuilder"; // 🎨 CONSTRUCTOR VISUAL (LEGACY)
+import EnhancedStoreCustomizer from "../components/EnhancedStoreCustomizer"; // 🎨 CONSTRUCTOR MEJORADO
 
 /* ========= Helpers =========== */
 const buildBg = (f) => {
@@ -510,9 +511,9 @@ export default function StoreProfilePage() {
         </div>
       </main>
 
-      {/* 🎨 Constructor Visual - Pantalla completa cuando está abierto */}
+      {/* 🎨 Constructor Visual Mejorado - Pantalla completa cuando está abierto */}
       {showVisualBuilder && (
-        <StoreVisualBuilder 
+        <EnhancedStoreCustomizer 
           storeId={id} 
           onClose={() => setShowVisualBuilder(false)} 
         />

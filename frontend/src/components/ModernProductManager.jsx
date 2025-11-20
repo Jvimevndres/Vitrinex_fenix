@@ -1,11 +1,12 @@
 // src/components/ModernProductManager.jsx
 import { useState, useEffect } from "react";
 import { 
-  listStoreProducts, 
+  listStoreProductsForOwner, 
   createStoreProduct, 
   updateStoreProduct, 
   deleteStoreProduct,
 } from "../api/store";
+import axios from "axios";
 
 export default function ModernProductManager({ storeId }) {
   const [products, setProducts] = useState([]);
@@ -40,12 +41,16 @@ export default function ModernProductManager({ storeId }) {
   }, [products]);
 
   const loadProducts = async () => {
+    console.log("🔄 ModernProductManager - Cargando productos para store:", storeId);
     try {
       setLoading(true);
-      const { data } = await listStoreProducts(storeId);
+      const { data } = await listStoreProductsForOwner(storeId);
+      console.log("✅ Productos cargados:", data?.length || 0, data);
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error cargando productos:", error);
+      console.error("❌ Error cargando productos:", error);
+      console.error("📋 Detalles del error:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Error al cargar productos");
       setProducts([]);
     } finally {
       setLoading(false);
@@ -92,6 +97,11 @@ export default function ModernProductManager({ storeId }) {
   };
 
   const handleSave = async () => {
+    console.log("🛒 ModernProductManager - Intentando guardar producto");
+    console.log("📝 Form data:", formData);
+    console.log("🏪 Store ID:", storeId);
+    console.log("✏️ Editing product:", editingProduct?._id || "nuevo");
+
     try {
       const productData = {
         ...formData,
@@ -102,16 +112,23 @@ export default function ModernProductManager({ storeId }) {
         images: productImages,
       };
 
+      console.log("📦 Payload a enviar:", productData);
+
       if (editingProduct) {
+        console.log("✏️ Actualizando producto existente:", editingProduct._id);
         await updateStoreProduct(storeId, editingProduct._id, productData);
       } else {
-        await createStoreProduct(storeId, productData);
+        console.log("➕ Creando nuevo producto");
+        const response = await createStoreProduct(storeId, productData);
+        console.log("✅ Respuesta del servidor:", response);
       }
 
+      console.log("✅ Producto guardado exitosamente");
       await loadProducts();
       setShowModal(false);
     } catch (error) {
-      console.error("Error guardando producto:", error);
+      console.error("❌ Error guardando producto:", error);
+      console.error("📋 Detalles del error:", error.response?.data || error.message);
       alert(error.response?.data?.message || "Error al guardar");
     }
   };
@@ -127,21 +144,41 @@ export default function ModernProductManager({ storeId }) {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploadingImage(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProductImages([...productImages, reader.result]);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("storeId", storeId);
+
+    try {
+      setUploadingImage(true);
+      console.log("📤 Subiendo imagen al servidor...");
+      
+      const { data } = await axios.post(
+        "http://localhost:3000/api/upload/product-image",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
+
+      if (!data.imageUrl) {
+        alert("Error: no llegó URL desde el backend");
+        return;
+      }
+
+      console.log("✅ Imagen subida correctamente:", data.imageUrl);
+      setProductImages([...productImages, data.imageUrl]);
+    } catch (err) {
+      console.error("❌ Error al subir imagen:", err);
+      alert(err.response?.data?.message || "No se pudo subir la imagen");
+    } finally {
       setUploadingImage(false);
-    };
-    reader.onerror = () => {
-      alert("Error al leer imagen");
-      setUploadingImage(false);
-    };
-    reader.readAsDataURL(file);
+      e.target.value = "";
+    }
   };
 
   const removeImage = (index) => {

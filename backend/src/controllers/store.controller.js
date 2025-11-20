@@ -269,9 +269,20 @@ export const updateMyStore = async (req, res) => {
     bgColorBottom,
     bgPattern,
     bgImageUrl,
+    address,
+    aboutTitle,
+    aboutDescription,
+    customBoxes,
   } = req.body;
 
   if (!name) return res.status(400).json({ message: "El nombre es obligatorio" });
+
+  console.log('📥 Backend recibió campos personalizados:', {
+    aboutTitle,
+    aboutDescription,
+    address,
+    customBoxes: customBoxes ? customBoxes.length : 0
+  });
 
   const userId = req.user.id;
 
@@ -291,6 +302,10 @@ export const updateMyStore = async (req, res) => {
       whatsapp: whatsapp || "",
       website: website || "",
       scheduleText: scheduleText || "",
+      address: address || "",
+      aboutTitle: aboutTitle || "Quiénes Somos",
+      aboutDescription: aboutDescription || "",
+      customBoxes: customBoxes || [],
       isActive: true,
       owner: userId,
       user: userId,
@@ -377,6 +392,11 @@ export const getStoreById = async (req, res) => {
       highlight1: store.highlight1 || "",
       highlight2: store.highlight2 || "",
       priceFrom: store.priceFrom || "",
+      scheduleText: store.scheduleText || "",
+      address: store.address || "",
+      aboutTitle: store.aboutTitle || "Quiénes Somos",
+      aboutDescription: store.aboutDescription || "",
+      customBoxes: store.customBoxes || [],
       // nuevos campos de personalización
       bgMode: store.bgMode || "gradient",
       bgColorTop: store.bgColorTop || "#e8d7ff",
@@ -798,20 +818,34 @@ export const listStoreProductsForOwner = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
+  console.log("📋 listStoreProductsForOwner - Iniciando");
+  console.log("🏪 Store ID:", id);
+  console.log("👤 User ID:", userId);
+
   try {
     const { store, error } = await findStoreForOwner(id, userId);
-    if (error) return res.status(error.status).json({ message: error.message });
+    if (error) {
+      console.log("❌ Error al buscar tienda:", error);
+      return res.status(error.status).json({ message: error.message });
+    }
 
-    if (store.mode !== "products")
+    console.log("✅ Tienda encontrada:", store._id);
+    console.log("🏪 Modo de tienda:", store.mode);
+
+    if (store.mode !== "products") {
+      console.log("❌ Tienda no es de tipo 'products', es:", store.mode);
       return res.status(400).json({ message: "Esta tienda no vende productos" });
+    }
 
     const products = await Product.find({ store: store._id })
       .sort({ createdAt: -1 })
       .lean();
 
+    console.log("✅ Productos encontrados:", products.length);
+
     res.json(products.map(mapProductResponse));
   } catch (err) {
-    console.error("Error al listar productos (dueño):", err);
+    console.error("❌ Error al listar productos (dueño):", err);
     res.status(500).json({ message: "Error al obtener los productos" });
   }
 };
@@ -820,23 +854,40 @@ export const createStoreProduct = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
+  console.log("🛒 createStoreProduct - Iniciando");
+  console.log("📋 Store ID:", id);
+  console.log("👤 User ID:", userId);
+  console.log("📦 Request body:", req.body);
+
   try {
     const { store, error } = await findStoreForOwner(id, userId);
-    if (error) return res.status(error.status).json({ message: error.message });
+    if (error) {
+      console.log("❌ Error al buscar tienda:", error);
+      return res.status(error.status).json({ message: error.message });
+    }
 
-    if (store.mode !== "products")
+    console.log("✅ Tienda encontrada:", store._id);
+    console.log("🏪 Modo de tienda:", store.mode);
+
+    if (store.mode !== "products") {
+      console.log("❌ Tienda no es de tipo 'products'");
       return res.status(400).json({ message: "Esta tienda no vende productos" });
+    }
 
     const { name, description, price, images, isActive, stock, category, tags, discount } = req.body || {};
 
     if (!name || typeof price === "undefined") {
+      console.log("❌ Faltan campos obligatorios: name o price");
       return res.status(400).json({ message: "Nombre y precio del producto son obligatorios" });
     }
 
     const numericPrice = Number(price);
     if (Number.isNaN(numericPrice) || numericPrice < 0) {
+      console.log("❌ Precio inválido:", price);
       return res.status(400).json({ message: "El precio debe ser un número válido" });
     }
+
+    console.log("✅ Creando producto en base de datos...");
 
     const product = await Product.create({
       store: store._id,
@@ -851,9 +902,11 @@ export const createStoreProduct = async (req, res) => {
       discount: typeof discount === "number" ? Math.max(0, Math.min(100, discount)) : 0,
     });
 
+    console.log("✅ Producto creado exitosamente:", product._id);
+
     res.status(201).json(mapProductResponse(product));
   } catch (err) {
-    console.error("Error al crear producto:", err);
+    console.error("❌ Error al crear producto:", err);
     res.status(500).json({ message: "Error al crear el producto" });
   }
 };

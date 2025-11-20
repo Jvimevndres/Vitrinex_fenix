@@ -38,11 +38,16 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+// Aumentar límite de payload para productos con imágenes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Seguridad HTTP headers
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carga de imágenes desde otros orígenes
+  crossOriginEmbedderPolicy: false, // Deshabilitar para permitir embeds
+}));
 
 // Nota: el rate-limit se aplica únicamente a rutas sensibles (ej. auth)
 

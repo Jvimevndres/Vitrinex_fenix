@@ -18,6 +18,7 @@ import { getStoreAppearance } from "../api/appearance"; // 🎨 Personalización
 import MainHeader from "../components/MainHeader";
 import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tienda moderna
 import PromotionalBanner from "../components/PromotionalBanner"; // 📢 Banners promocionales
+import ParticlesBackground from "../components/ParticlesBackground"; // 🎨 Partículas animadas
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -321,9 +322,12 @@ function getButtonStyle(appearance, colors, variant = "primary") {
 function getCardStyle(appearance, colors) {
   if (!appearance?.components?.cards) {
     return {
-      backgroundColor: colors.surface,
-      borderRadius: "0.75rem",
-      boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)",
+      style: {
+        backgroundColor: colors.surface,
+        borderRadius: "0.75rem",
+        boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1)",
+      },
+      className: ''
     };
   }
 
@@ -350,18 +354,51 @@ function getCardStyle(appearance, colors) {
     boxShadow: shadowMap[shadow] || shadowMap.md,
   };
 
+  // Determinar clases CSS dinámicas basadas en efectos
+  let dynamicClasses = [];
+  if (appearance?.effects?.glassmorphism) {
+    dynamicClasses.push('glass-card');
+  }
+  if (appearance?.effects?.neomorphism) {
+    dynamicClasses.push('neomorph-card');
+  }
+  if (appearance?.effects?.shadows3D) {
+    dynamicClasses.push('shadow-3d');
+  }
+
+  let cardStyle = {};
   switch (style) {
     case "elevated":
-      return { ...baseStyle, backgroundColor: colors.surface };
-    case "outline":
-      return { ...baseStyle, backgroundColor: colors.surface, border: `1px solid ${colors.border}` };
-    case "filled":
-      return { ...baseStyle, backgroundColor: hexToRgba(colors.primary, 0.05) };
+      cardStyle = { ...baseStyle, backgroundColor: colors.surface };
+      break;
+    case "outlined":
+      cardStyle = { ...baseStyle, backgroundColor: colors.surface, border: `1px solid ${colors.border}` };
+      break;
+    case "flat":
+      cardStyle = { ...baseStyle, backgroundColor: colors.surface, boxShadow: 'none' };
+      break;
+    case "glass":
+      cardStyle = { ...baseStyle, background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', border: `1px solid rgba(255, 255, 255, 0.2)` };
+      dynamicClasses.push('glass-card'); // Forzar glassmorphism
+      break;
+    case "neumorphic":
+      cardStyle = { ...baseStyle, backgroundColor: colors.surface };
+      dynamicClasses.push('neomorph-card'); // Forzar neomorphism
+      break;
     case "gradient":
-      return { ...baseStyle, backgroundImage: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.1)}, ${hexToRgba(colors.secondary, 0.1)})` };
+      cardStyle = { ...baseStyle, backgroundImage: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.1)}, ${hexToRgba(colors.secondary, 0.1)})` };
+      break;
+    case "filled":
+      cardStyle = { ...baseStyle, backgroundColor: hexToRgba(colors.primary, 0.05) };
+      break;
     default:
-      return { ...baseStyle, backgroundColor: colors.surface };
+      cardStyle = { ...baseStyle, backgroundColor: colors.surface };
   }
+
+  return {
+    style: cardStyle,
+    className: dynamicClasses.join(' ')
+  };
 }
 
 export default function StorePublicPage() {
@@ -388,8 +425,11 @@ export default function StorePublicPage() {
   const [specialDays, setSpecialDays] = useState([]);
 
   // 🆕 SERVICIOS Y FLUJO PASO A PASO
-  const [services, setServices] = useState([]);
+  const [allServices, setAllServices] = useState([]); // Todos los servicios sin filtrar
   const [servicesLoading, setServicesLoading] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]); // Tags seleccionados para filtrar
+  const [selectedCategory, setSelectedCategory] = useState(""); // Categoría seleccionada
+  const [searchText, setSearchText] = useState(""); // Texto de búsqueda
   const [bookingStep, setBookingStep] = useState(1); // 1=servicio, 2=fecha, 3=hora, 4=datos
   const [selectedService, setSelectedService] = useState(null);
   const [dateSlots, setDateSlots] = useState([]);
@@ -498,6 +538,34 @@ export default function StorePublicPage() {
     loadStore();
   }, [id]);
 
+  // Log para debug cuando store cambia
+  useEffect(() => {
+    if (store) {
+      console.log('🏪 === STORE PUBLIC - DATOS RECIBIDOS ===');
+      console.log('Store completo:', store);
+      console.log('📦 customBoxes:', store.customBoxes);
+      console.log('👥 aboutTitle:', store.aboutTitle);
+      console.log('👥 aboutDescription:', store.aboutDescription);
+      console.log('⏰ scheduleText:', store.scheduleText);
+      console.log('🔲 === VERIFICACIÓN DE SECCIONES ===');
+      console.log('appearance completo:', appearance);
+      console.log('appearance.sections:', appearance?.sections);
+      if (appearance?.sections) {
+        console.log('  - hero:', appearance.sections.hero);
+        console.log('  - about:', appearance.sections.about);
+        console.log('  - services:', appearance.sections.services);
+        console.log('  - gallery:', appearance.sections.gallery);
+        console.log('  - testimonials:', appearance.sections.testimonials);
+        console.log('  - schedule:', appearance.sections.schedule);
+        console.log('  - contact:', appearance.sections.contact);
+        console.log('  - booking:', appearance.sections.booking);
+      } else {
+        console.warn('⚠️ appearance.sections es undefined!');
+      }
+      console.log('=====================================');
+    }
+  }, [store, appearance]);
+
   // cargar según modo
   useEffect(() => {
     if (!store?.mode) return;
@@ -508,6 +576,297 @@ export default function StorePublicPage() {
     if (store.mode === "products") loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.mode, id]);
+
+  // 🎨 Aplicar efectos globales cuando cambie appearance
+  useEffect(() => {
+    if (!appearance?.effects) return;
+
+    const effects = appearance.effects;
+
+    // 1. Smooth Scroll
+    if (effects.smoothScroll) {
+      document.documentElement.style.scrollBehavior = 'smooth';
+    } else {
+      document.documentElement.style.scrollBehavior = 'auto';
+    }
+
+    // 2. Scroll Reveal - Aplicar animación de entrada a elementos
+    if (effects.scrollReveal) {
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      // Observar secciones principales
+      setTimeout(() => {
+        const sections = document.querySelectorAll('section, .card-item, .service-card, .product-card');
+        sections.forEach(section => {
+          section.classList.add('reveal-element');
+          observer.observe(section);
+        });
+      }, 100);
+
+      // Cleanup
+      return () => observer.disconnect();
+    }
+  }, [appearance?.effects]);
+
+  // 🎨 Aplicar estilos CSS dinámicos para efectos
+  useEffect(() => {
+    if (!appearance?.effects) return;
+
+    const styleId = 'dynamic-effects-styles';
+    let styleElement = document.getElementById(styleId);
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    const effects = appearance.effects;
+    let css = '';
+
+    // Scroll Reveal Animation
+    if (effects.scrollReveal) {
+      css += `
+        .reveal-element {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `;
+    }
+
+    // Glassmorphism para cards
+    if (effects.glassmorphism) {
+      css += `
+        .glass-card {
+          background: rgba(255, 255, 255, 0.1) !important;
+          backdrop-filter: blur(10px) !important;
+          -webkit-backdrop-filter: blur(10px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15) !important;
+        }
+      `;
+    }
+
+    // Neomorphism para cards
+    if (effects.neomorphism) {
+      css += `
+        .neomorph-card {
+          background: ${appearance?.colors?.surface || '#f0f0f0'} !important;
+          box-shadow: 
+            8px 8px 16px rgba(163, 177, 198, 0.6),
+            -8px -8px 16px rgba(255, 255, 255, 0.5) !important;
+          border: none !important;
+        }
+        .neomorph-card:hover {
+          box-shadow: 
+            4px 4px 8px rgba(163, 177, 198, 0.6),
+            -4px -4px 8px rgba(255, 255, 255, 0.5) !important;
+        }
+      `;
+    }
+
+    // 3D Shadows
+    if (effects.shadows3D) {
+      css += `
+        .shadow-3d {
+          box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.12),
+            0 2px 6px rgba(0, 0, 0, 0.08),
+            0 4px 12px rgba(0, 0, 0, 0.05),
+            0 8px 24px rgba(0, 0, 0, 0.03) !important;
+        }
+        .shadow-3d:hover {
+          box-shadow: 
+            0 2px 6px rgba(0, 0, 0, 0.12),
+            0 4px 12px rgba(0, 0, 0, 0.08),
+            0 8px 24px rgba(0, 0, 0, 0.05),
+            0 16px 48px rgba(0, 0, 0, 0.03) !important;
+        }
+      `;
+    }
+
+    // Parallax effect (aplicado con CSS transform)
+    if (effects.parallax) {
+      css += `
+        .parallax-bg {
+          transform: translateZ(-1px) scale(2);
+          will-change: transform;
+        }
+      `;
+    }
+
+    // Glow effect
+    if (effects.glow) {
+      css += `
+        .glow-effect {
+          filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+          transition: filter 0.3s ease;
+        }
+        .glow-effect:hover {
+          filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+        }
+      `;
+    }
+
+    // Animated Gradient
+    if (effects.animatedGradient) {
+      css += `
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+          background-size: 200% 200%;
+          animation: gradient-shift 8s ease infinite;
+        }
+      `;
+    }
+
+    // Floating Hover
+    if (effects.floatingHover) {
+      css += `
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .floating-hover {
+          transition: transform 0.3s ease;
+        }
+        .floating-hover:hover {
+          animation: float 2s ease-in-out infinite;
+        }
+      `;
+    }
+
+    // Blur Effect
+    if (effects.blur) {
+      css += `
+        .blur-effect {
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+        .blur-effect:hover {
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+        }
+      `;
+    }
+
+    // Color Shift
+    if (effects.colorShift) {
+      css += `
+        @keyframes colorShift {
+          0%, 100% { filter: hue-rotate(0deg); }
+          50% { filter: hue-rotate(30deg); }
+        }
+        .color-shift {
+          animation: colorShift 10s ease-in-out infinite;
+        }
+      `;
+    }
+
+    // Morphing
+    if (effects.morphing) {
+      css += `
+        @keyframes morph {
+          0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+          25% { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; }
+          50% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+          75% { border-radius: 30% 70% 70% 30% / 70% 30% 30% 70%; }
+        }
+        .morphing {
+          animation: morph 8s ease-in-out infinite;
+        }
+      `;
+    }
+
+    // Ripple Effect
+    if (effects.ripple) {
+      css += `
+        @keyframes ripple {
+          0% { transform: scale(0); opacity: 1; }
+          100% { transform: scale(4); opacity: 0; }
+        }
+        .ripple-effect {
+          position: relative;
+          overflow: hidden;
+        }
+        .ripple-effect::after {
+          content: '';
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.6);
+          width: 100px;
+          height: 100px;
+          margin-left: -50px;
+          margin-top: -50px;
+          animation: ripple 0.8s;
+          opacity: 0;
+        }
+        .ripple-effect:active::after {
+          opacity: 1;
+        }
+      `;
+    }
+
+    // Holographic Effect
+    if (effects.holographic) {
+      css += `
+        @keyframes holographic {
+          0% { 
+            background-position: 0% 50%;
+            filter: hue-rotate(0deg);
+          }
+          50% { 
+            background-position: 100% 50%;
+            filter: hue-rotate(180deg);
+          }
+          100% { 
+            background-position: 0% 50%;
+            filter: hue-rotate(360deg);
+          }
+        }
+        .holographic {
+          background: linear-gradient(
+            135deg,
+            rgba(255, 0, 255, 0.1) 0%,
+            rgba(0, 255, 255, 0.1) 25%,
+            rgba(255, 255, 0, 0.1) 50%,
+            rgba(0, 255, 255, 0.1) 75%,
+            rgba(255, 0, 255, 0.1) 100%
+          );
+          background-size: 400% 400%;
+          animation: holographic 6s ease-in-out infinite;
+        }
+      `;
+    }
+
+    styleElement.textContent = css;
+
+    return () => {
+      if (styleElement && styleElement.parentNode) {
+        styleElement.parentNode.removeChild(styleElement);
+      }
+    };
+  }, [appearance?.effects, appearance?.colors]);
 
   const loadAvailability = async () => {
     try {
@@ -555,13 +914,13 @@ export default function StorePublicPage() {
       const { data } = await getStoreServices(id);
       const activeServices = Array.isArray(data) ? data.filter(s => s.isActive) : [];
       console.log("🛎️ Servicios activos cargados:", activeServices.length, activeServices);
-      setServices(activeServices);
+      setAllServices(activeServices);
       
       // Cargar specialDays para marcar el calendario
       await loadSpecialDays();
     } catch (err) {
       console.error("❌ Error al cargar servicios:", err);
-      setServices([]);
+      setAllServices([]);
     } finally {
       setServicesLoading(false);
     }
@@ -853,6 +1212,76 @@ export default function StorePublicPage() {
     return dateSlots;
   }, [dateSlots]);
 
+  // 🆕 Calcular todas las tags y categorías disponibles desde TODOS los servicios
+  const allAvailableTags = useMemo(() => {
+    const tagsSet = new Set();
+    allServices.forEach(service => {
+      if (service.tags && Array.isArray(service.tags)) {
+        service.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet).sort();
+  }, [allServices]);
+
+  const allAvailableCategories = useMemo(() => {
+    const categoriesSet = new Set();
+    allServices.forEach(service => {
+      if (service.category && service.category.trim()) {
+        categoriesSet.add(service.category);
+      }
+    });
+    return Array.from(categoriesSet).sort();
+  }, [allServices]);
+
+  // 🆕 Filtrar servicios según criterios seleccionados
+  const services = useMemo(() => {
+    let filtered = [...allServices];
+
+    // Filtrar por tags
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(service => 
+        service.tags && service.tags.some(tag => selectedTags.includes(tag))
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory) {
+      filtered = filtered.filter(service => 
+        service.category === selectedCategory
+      );
+    }
+
+    // Filtrar por búsqueda de texto
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase();
+      filtered = filtered.filter(service => 
+        service.name.toLowerCase().includes(searchLower) ||
+        (service.description && service.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    return filtered;
+  }, [allServices, selectedTags, selectedCategory, searchText]);
+
+  // Manejar cambios en filtros
+  const handleTagToggle = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag) 
+        : [...prev, tag]
+    );
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedTags([]);
+    setSelectedCategory("");
+    setSearchText("");
+  };
+
   const submitBooking = async (e) => {
     e.preventDefault();
     setBookingError("");
@@ -1039,6 +1468,18 @@ export default function StorePublicPage() {
   
   // Aplicar tipografía si está configurada
   const fontFamily = appearance?.typography?.fontFamily || "Inter, system-ui, sans-serif";
+  const headingStyle = {
+    fontSize: appearance?.typography?.headingSize || '2rem',
+    fontWeight: appearance?.typography?.headingWeight || '700',
+    letterSpacing: appearance?.typography?.letterSpacing === 'tight' ? '-0.05em' : 
+                    appearance?.typography?.letterSpacing === 'wide' ? '0.05em' : 'normal',
+    textTransform: appearance?.typography?.textTransform || 'none',
+  };
+  const bodyStyle = {
+    fontSize: appearance?.typography?.bodySize || '1rem',
+    fontWeight: appearance?.typography?.bodyWeight || '400',
+    lineHeight: appearance?.typography?.lineHeight || '1.6',
+  };
 
   return (
     <div 
@@ -1048,6 +1489,12 @@ export default function StorePublicPage() {
         fontFamily
       }}
     >
+      {/* Partículas animadas */}
+      <ParticlesBackground 
+        config={appearance?.effects?.particles} 
+        colors={colors}
+      />
+
       {/* patrón */}
       {patternStyle && <div aria-hidden style={patternStyle} />}
 
@@ -1066,10 +1513,11 @@ export default function StorePublicPage() {
 
         <main className="flex-1 max-w-5xl mx-auto px-4 py-8 space-y-6">
           {/* HERO */}
+          {appearance?.sections?.hero !== false && (
           <section
-            className="backdrop-blur p-6 flex flex-col md:flex-row gap-6 items-start"
+            className={`backdrop-blur p-6 flex flex-col md:flex-row gap-6 items-start ${getCardStyle(appearance, colors).className}`}
             style={{ 
-              ...getCardStyle(appearance, colors),
+              ...getCardStyle(appearance, colors).style,
               borderColor: colors.border 
             }}
           >
@@ -1090,8 +1538,11 @@ export default function StorePublicPage() {
             <div className="flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <h2
-                  className="text-2xl md:text-3xl font-semibold"
-                  style={{ color: colors.text }}
+                  className="font-semibold"
+                  style={{ 
+                    ...headingStyle,
+                    color: colors.text 
+                  }}
                 >
                   {store.name}
                 </h2>
@@ -1125,19 +1576,27 @@ export default function StorePublicPage() {
               {store.heroTitle || store.heroSubtitle ? (
                 <div className="space-y-1">
                   {store.heroTitle && (
-                    <p className="text-sm md:text-base text-slate-900 font-semibold">
+                    <p 
+                      className="font-semibold"
+                      style={{
+                        fontSize: `calc(${appearance?.typography?.bodySize || '1rem'} * 1.1)`,
+                        color: colors.text
+                      }}
+                    >
                       {store.heroTitle}
                     </p>
                   )}
                   {store.heroSubtitle && (
-                    <p className="text-sm text-slate-600">
+                    <p style={{ ...bodyStyle, color: colors.textSecondary }}>
                       {store.heroSubtitle}
                     </p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-slate-600">
-                  {store.description || "Sin descripción."}
+                <p style={{ ...bodyStyle, color: colors.textSecondary }}>
+                  {store.description || (store.mode === 'bookings' 
+                    ? "Reserva tu hora con nosotros. Atención profesional garantizada." 
+                    : "Descubre nuestros productos de calidad.")}
                 </p>
               )}
 
@@ -1222,23 +1681,140 @@ export default function StorePublicPage() {
               </div>
             </div>
           </section>
+          )}
 
           {/* Banner Entre Secciones */}
           <PromotionalBanner position="betweenSections" store={store} />
 
+          {/* Sección Quiénes Somos */}
+          {(() => {
+            const shouldShow = store.aboutDescription && appearance?.sections?.about !== false;
+            console.log('👥 ¿Mostrar Quiénes Somos?', shouldShow, '| aboutDescription:', !!store.aboutDescription, '| sections.about:', appearance?.sections?.about);
+            return shouldShow;
+          })() && (
+            <section
+              className={`rounded-2xl p-6 space-y-4 ${getCardStyle(appearance, colors).className}`}
+              style={getCardStyle(appearance, colors).style}
+            >
+              <h3 
+                className="font-bold text-center"
+                style={{
+                  fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                  fontWeight: appearance?.typography?.headingWeight || '700',
+                  color: colors.text
+                }}
+              >
+                {store.aboutTitle || 'Quiénes Somos'}
+              </h3>
+              <p 
+                className="text-center whitespace-pre-line"
+                style={{
+                  ...bodyStyle,
+                  color: colors.textSecondary
+                }}
+              >
+                {store.aboutDescription}
+              </p>
+            </section>
+          )}
+
+          {/* Cuadros Personalizados */}
+          {store.customBoxes && store.customBoxes.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {store.customBoxes.map((box) => (
+                <div
+                  key={box.id}
+                  className={`p-6 rounded-xl space-y-3 ${getCardStyle(appearance, colors).className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
+                  style={getCardStyle(appearance, colors).style}
+                >
+                  <div className="text-4xl">{box.icon}</div>
+                  <h4 
+                    className="font-bold"
+                    style={{
+                      fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.6)`,
+                      fontWeight: appearance?.typography?.headingWeight || '700',
+                      color: colors.text
+                    }}
+                  >
+                    {box.title}
+                  </h4>
+                  <p 
+                    className="whitespace-pre-line"
+                    style={{
+                      ...bodyStyle,
+                      color: colors.textSecondary
+                    }}
+                  >
+                    {box.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Horarios de Atención */}
+          {(() => {
+            const shouldShow = store.scheduleText && appearance?.sections?.schedule !== false;
+            console.log('⏰ ¿Mostrar Horarios?', shouldShow, '| scheduleText:', !!store.scheduleText, '| sections.schedule:', appearance?.sections?.schedule);
+            return shouldShow;
+          })() && (
+            <section
+              className={`rounded-2xl p-6 space-y-4 ${getCardStyle(appearance, colors).className}`}
+              style={getCardStyle(appearance, colors).style}
+            >
+              <h3 
+                className="font-bold text-center flex items-center justify-center gap-2"
+                style={{
+                  fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                  fontWeight: appearance?.typography?.headingWeight || '700',
+                  color: colors.text
+                }}
+              >
+                <span>⏰</span>
+                Horarios de Atención
+              </h3>
+              <p 
+                className="text-center whitespace-pre-line"
+                style={{
+                  ...bodyStyle,
+                  color: colors.textSecondary
+                }}
+              >
+                {store.scheduleText}
+              </p>
+            </section>
+          )}
+
           {/* 🆕 AGENDAMIENTO MEJORADO - FLUJO PASO A PASO */}
-          {store.mode === "bookings" && (
+          {(() => {
+            const shouldShow = store.mode === "bookings" && appearance?.sections?.booking !== false;
+            console.log('📅 ¿Mostrar Agendamiento?', shouldShow, '| mode:', store.mode, '| sections.booking:', appearance?.sections?.booking);
+            return shouldShow;
+          })() && (
             <section
               ref={bookingSectionRef}
-              className="rounded-2xl p-6 space-y-6"
-              style={getCardStyle(appearance, colors)}
+              className={`rounded-2xl p-6 space-y-6 ${getCardStyle(appearance, colors).className}`}
+              style={getCardStyle(appearance, colors).style}
             >
               {/* Header */}
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-slate-800">
+                <h3 
+                  className="font-bold"
+                  style={{
+                    fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                    fontWeight: appearance?.typography?.headingWeight || '700',
+                    color: colors.text
+                  }}
+                >
                   📅 Agenda tu Cita
                 </h3>
-                <p className="text-sm text-slate-500 mt-2">
+                <p 
+                  className="mt-2"
+                  style={{
+                    ...bodyStyle,
+                    color: colors.textSecondary
+                  }}
+                >
                   Sigue los pasos para reservar tu servicio
                 </p>
               </div>
@@ -1323,6 +1899,109 @@ export default function StorePublicPage() {
                     </p>
                   </div>
 
+                  {/* Filtros de búsqueda */}
+                  {(allAvailableTags.length > 0 || allAvailableCategories.length > 0) && (
+                    <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                          <span>🔍</span>
+                          <span>Filtrar servicios</span>
+                        </h5>
+                        {(selectedTags.length > 0 || selectedCategory || searchText) && (
+                          <button
+                            type="button"
+                            onClick={handleClearFilters}
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Limpiar filtros
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Búsqueda por texto */}
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre o descripción..."
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* Categorías */}
+                      {allAvailableCategories.length > 0 && (
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1.5 block">
+                            Categoría
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleCategoryChange("")}
+                              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                                selectedCategory === ""
+                                  ? "bg-purple-600 text-white"
+                                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              }`}
+                            >
+                              Todas
+                            </button>
+                            {allAvailableCategories.map((category) => (
+                              <button
+                                key={category}
+                                type="button"
+                                onClick={() => handleCategoryChange(category)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                                  selectedCategory === category
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                                }`}
+                              >
+                                📁 {category}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {allAvailableTags.length > 0 && (
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1.5 block">
+                            Etiquetas {selectedTags.length > 0 && `(${selectedTags.length} seleccionada${selectedTags.length !== 1 ? 's' : ''})`}
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {allAvailableTags.map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => handleTagToggle(tag)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                                  selectedTags.includes(tag)
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                }`}
+                              >
+                                🏷️ {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contador de resultados */}
+                      {!servicesLoading && (
+                        <p className="text-xs text-slate-500 pt-2 border-t border-slate-200">
+                          {services.length === 0 
+                            ? "No se encontraron servicios con los filtros aplicados" 
+                            : `Mostrando ${services.length} servicio${services.length !== 1 ? 's' : ''}`
+                          }
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {servicesLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
@@ -1343,7 +2022,7 @@ export default function StorePublicPage() {
                           key={service._id}
                           type="button"
                           onClick={() => handleServiceSelect(service)}
-                          className="text-left border-2 border-slate-200 rounded-xl p-5 hover:border-blue-500 hover:shadow-lg transition-all group"
+                          className={`text-left border-2 border-slate-200 rounded-xl p-5 hover:border-blue-500 hover:shadow-lg transition-all group ${appearance?.effects?.glow ? 'glow-effect' : ''} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''} ${appearance?.effects?.animatedGradient ? 'animated-gradient' : ''}`}
                         >
                           {service.imageUrl && (
                             <img
@@ -1360,6 +2039,28 @@ export default function StorePublicPage() {
                               {service.description}
                             </p>
                           )}
+                          
+                          {/* Categoría y Tags */}
+                          {(service.category || (service.tags && service.tags.length > 0)) && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {service.category && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">
+                                  <span>📁</span>
+                                  <span>{service.category}</span>
+                                </span>
+                              )}
+                              {service.tags && service.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                                >
+                                  <span>🏷️</span>
+                                  <span>{tag}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                             <div className="flex items-center gap-2 text-xs text-slate-600">
                               <span>⏱️ {service.duration} min</span>
@@ -1640,7 +2341,11 @@ export default function StorePublicPage() {
           )}
 
           {/* PRODUCTOS */}
-          {store.mode === "products" && (
+          {(() => {
+            const shouldShow = store.mode === "products" && appearance?.sections?.services !== false;
+            console.log('🛒 ¿Mostrar Productos?', shouldShow, '| mode:', store.mode, '| sections.services:', appearance?.sections?.services);
+            return shouldShow;
+          })() && (
             <ModernProductsStore store={store} appearance={appearance} />
           )}
 

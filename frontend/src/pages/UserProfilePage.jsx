@@ -105,9 +105,13 @@ export default function UserProfilePage() {
 
     try {
       const { data } = await uploadAvatar(file);
+      const newAvatarUrl = data.avatarUrl || profile.avatarUrl;
+      // Agregar timestamp para evitar caché
+      const avatarUrlWithTimestamp = `${newAvatarUrl}?t=${Date.now()}`;
+      
       setProfile((prev) => ({
         ...prev,
-        avatarUrl: data.avatarUrl || prev.avatarUrl,
+        avatarUrl: avatarUrlWithTimestamp,
       }));
       setMsg("Imagen de perfil actualizada.");
     } catch (err) {
