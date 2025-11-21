@@ -147,4 +147,12 @@ export const updateOrderStatus = async (orderId, status) => {
   return res;
 };
 
+/* =====================================
+ * 🔔 NOTIFICACIONES
+ * ===================================== */
+export const getStoreNotifications = async (id) => {
+  const res = await api.get(`/stores/${id}/notifications`);
+  return res;
+};
+
 export default api;

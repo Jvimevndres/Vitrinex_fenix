@@ -3,25 +3,33 @@ import {
   getBookingMessages, 
   sendMessage, 
   getBookingMessagesPublic, 
-  sendMessagePublic 
+  sendMessagePublic,
+  getOrderMessages,
+  sendOrderMessage,
+  sendOrderMessagePublic,
+  getOrderMessagesPublic
 } from '../api/messages';
 
 /**
  * ChatBox - Componente de chat para comunicación owner-cliente
  * @param {Object} props
- * @param {string} props.bookingId - ID de la reserva
- * @param {string} props.mode - "owner" o "customer"
- * @param {string} props.customerEmail - Email del cliente (requerido si mode="customer")
+ * @param {string} props.bookingId - ID de la reserva (opcional si orderId está presente)
+ * @param {string} props.orderId - ID de la orden (opcional si bookingId está presente)
+ * @param {string} props.userType - "owner" o "customer"
+ * @param {string} props.userEmail - Email del usuario (requerido si userType="customer")
+ * @param {Object} props.bookingInfo - Información adicional de la reserva (opcional)
  * @param {Function} props.onClose - Callback para cerrar el chat
- * @param {Object} props.bookingInfo - Info de la reserva para mostrar en header
  */
-export default function ChatBox({ bookingId, mode, customerEmail, onClose, bookingInfo }) {
+export default function ChatBox({ bookingId, orderId, userType = 'customer', userEmail, bookingInfo, onClose }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+
+  const chatType = bookingId ? 'booking' : 'order';
+  const chatId = bookingId || orderId;
 
   // Scroll automático al final cuando hay nuevos mensajes
   const scrollToBottom = () => {
@@ -38,15 +46,24 @@ export default function ChatBox({ bookingId, mode, customerEmail, onClose, booki
     // Polling cada 5 segundos para nuevos mensajes
     const interval = setInterval(loadMessages, 5000);
     return () => clearInterval(interval);
-  }, [bookingId, mode, customerEmail]);
+  }, [chatId, chatType, userType, userEmail]);
 
   const loadMessages = async () => {
     try {
       let data;
-      if (mode === 'owner') {
-        data = await getBookingMessages(bookingId);
+      if (chatType === 'booking') {
+        if (userType === 'owner') {
+          data = await getBookingMessages(bookingId);
+        } else {
+          data = await getBookingMessagesPublic(bookingId, userEmail);
+        }
       } else {
-        data = await getBookingMessagesPublic(bookingId, customerEmail);
+        // Order
+        if (userType === 'owner') {
+          data = await getOrderMessages(orderId);
+        } else {
+          data = await getOrderMessagesPublic(orderId, userEmail);
+        }
       }
       setMessages(data);
       setError(null);
@@ -71,15 +88,31 @@ export default function ChatBox({ bookingId, mode, customerEmail, onClose, booki
     setError(null);
 
     try {
-      console.log('📤 Enviando mensaje...', { mode, bookingId, customerEmail });
+      console.log('📤 Enviando mensaje...', { userType, chatType, chatId, userEmail });
       let sentMessage;
-      if (mode === 'owner') {
-        sentMessage = await sendMessage(bookingId, newMessage.trim());
-      } else {
-        if (!customerEmail) {
-          throw new Error('Email del cliente no proporcionado');
+      
+      if (chatType === 'booking') {
+        if (userType === 'owner') {
+          sentMessage = await sendMessage(bookingId, newMessage.trim());
+        } else {
+          if (!userEmail) {
+            throw new Error('Email del cliente requerido');
+          }
+          sentMessage = await sendMessagePublic(bookingId, userEmail, newMessage.trim());
         }
-        sentMessage = await sendMessagePublic(bookingId, customerEmail, newMessage.trim());
+      } else {
+        // Order
+        if (userType === 'owner') {
+          sentMessage = await sendOrderMessage(orderId, newMessage.trim());
+        } else {
+          if (!userEmail) {
+            throw new Error('Email del cliente requerido');
+          }
+          sentMessage = await sendOrderMessagePublic(orderId, {
+            content: newMessage.trim(),
+            customerEmail: userEmail
+          });
+        }
       }
       
       console.log('✅ Mensaje enviado:', sentMessage);
@@ -111,12 +144,12 @@ export default function ChatBox({ bookingId, mode, customerEmail, onClose, booki
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-semibold">
-                {mode === 'owner' ? '💬 Chat con Cliente' : '💬 Chat con la Tienda'}
+                {userType === 'owner' ? '💬 Chat con Cliente' : '💬 Chat con la Tienda'}
               </h3>
               {bookingInfo && (
                 <div className="text-sm text-blue-100 mt-1">
                   {bookingInfo.service?.name || 'Servicio'} • {new Date(bookingInfo.date).toLocaleDateString('es-ES')} • {bookingInfo.slot}
-                  {mode === 'owner' && (
+                  {userType === 'owner' && (
                     <div className="mt-1">
                       <strong>{bookingInfo.customerName}</strong> • {bookingInfo.customerEmail}
                     </div>
@@ -150,7 +183,7 @@ export default function ChatBox({ bookingId, mode, customerEmail, onClose, booki
           ) : (
             <>
               {messages.map((msg) => {
-                const isOwnMessage = mode === 'owner' 
+                const isOwnMessage = userType === 'owner' 
                   ? msg.senderType === 'owner' 
                   : msg.senderType === 'customer';
 

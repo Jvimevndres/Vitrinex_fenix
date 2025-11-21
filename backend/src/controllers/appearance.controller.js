@@ -3,6 +3,34 @@ import StoreAppearance from "../models/storeAppearance.model.js";
 import Store from "../models/store.model.js";
 
 /**
+ * Función helper para hacer merge profundo recursivo
+ * Necesario para actualizar objetos anidados correctamente
+ */
+function deepMerge(target, source) {
+  const output = { ...target };
+  
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          output[key] = source[key];
+        } else {
+          output[key] = deepMerge(target[key], source[key]);
+        }
+      } else {
+        output[key] = source[key];
+      }
+    });
+  }
+  
+  return output;
+}
+
+function isObject(item) {
+  return item && typeof item === 'object' && !Array.isArray(item);
+}
+
+/**
  * GET /api/stores/:id/appearance
  * Obtener configuración de apariencia (público)
  */
@@ -71,10 +99,10 @@ export const updateStoreAppearance = async (req, res) => {
 
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        // Merge profundo para objetos anidados
+        // Usar merge profundo para objetos anidados
         if (typeof req.body[field] === "object" && !Array.isArray(req.body[field])) {
           const existing = appearance[field] ? appearance[field].toObject() : {};
-          appearance[field] = { ...existing, ...req.body[field] };
+          appearance[field] = deepMerge(existing, req.body[field]);
         } else {
           appearance[field] = req.body[field];
         }
@@ -183,56 +211,52 @@ export const resetAppearance = async (req, res) => {
 export const getAvailableThemes = async (req, res) => {
   try {
     const themes = [
-      {
-        id: "minimal",
-        name: "Minimal",
-        description: "Diseño limpio y profesional con enfoque en el contenido",
-        preview: {
-          primary: "#0f172a",
-          secondary: "#64748b",
-          accent: "#3b82f6",
-        },
-      },
-      {
-        id: "neon",
-        name: "Neon",
-        description: "Vibrante y moderno con efectos de neón",
-        preview: {
-          primary: "#a855f7",
-          secondary: "#ec4899",
-          accent: "#06b6d4",
-        },
-      },
-      {
-        id: "dark-pro",
-        name: "Dark Pro",
-        description: "Tema oscuro profesional y elegante",
-        preview: {
-          primary: "#3b82f6",
-          secondary: "#8b5cf6",
-          accent: "#10b981",
-        },
-      },
-      {
-        id: "pastel",
-        name: "Pastel",
-        description: "Suave y acogedor con colores pastel",
-        preview: {
-          primary: "#fb7185",
-          secondary: "#a78bfa",
-          accent: "#fbbf24",
-        },
-      },
-      {
-        id: "gradient-wave",
-        name: "Gradient Wave",
-        description: "Degradados fluidos y modernos",
-        preview: {
-          primary: "#6366f1",
-          secondary: "#a855f7",
-          accent: "#ec4899",
-        },
-      },
+      // Minimalistas (5)
+      { id: "minimal", name: "Minimal Clean", category: "minimal", description: "Diseño limpio y profesional" },
+      { id: "minimal-white", name: "Minimal White", category: "minimal", description: "Blanco puro minimalista" },
+      { id: "minimal-gray", name: "Minimal Gray", category: "minimal", description: "Grises elegantes" },
+      { id: "minimal-mono", name: "Minimal Mono", category: "minimal", description: "Monocromático simple" },
+      { id: "minimal-zen", name: "Minimal Zen", category: "minimal", description: "Serenidad y balance" },
+      
+      // Negocios (8)
+      { id: "professional-services", name: "Servicios Profesionales", category: "business", description: "Ideal para consultorías" },
+      { id: "warm-cafe", name: "Cafetería Acogedora", category: "business", description: "Perfecto para cafés" },
+      { id: "eco-friendly", name: "Eco Friendly", category: "business", description: "Productos sostenibles" },
+      { id: "restaurant", name: "Restaurante Gourmet", category: "business", description: "Comida y gastronomía" },
+      { id: "corporate-blue", name: "Corporativo Azul", category: "business", description: "Profesional y confiable" },
+      { id: "medical-clinic", name: "Clínica Médica", category: "business", description: "Salud y bienestar" },
+      { id: "law-firm", name: "Bufete Legal", category: "business", description: "Abogados y legal" },
+      { id: "financial-advisor", name: "Asesor Financiero", category: "business", description: "Finanzas e inversiones" },
+      
+      // Creativos (7)
+      { id: "artistic-studio", name: "Estudio Artístico", category: "creative", description: "Para artistas y creativos" },
+      { id: "pastel", name: "Pastel Dreams", category: "creative", description: "Colores suaves" },
+      { id: "gradient-wave", name: "Gradient Wave", category: "creative", description: "Degradados vibrantes" },
+      { id: "photography", name: "Fotografía Pro", category: "creative", description: "Portfolio fotográfico" },
+      { id: "music-studio", name: "Estudio Musical", category: "creative", description: "Música y audio" },
+      { id: "design-agency", name: "Agencia de Diseño", category: "creative", description: "Diseño gráfico y web" },
+      { id: "video-production", name: "Producción de Video", category: "creative", description: "Cine y video" },
+      
+      // Modernos (6)
+      { id: "tech-startup", name: "Tech Startup", category: "modern", description: "Tecnología y startups" },
+      { id: "modern-agency", name: "Agencia Moderna", category: "modern", description: "Diseño contemporáneo" },
+      { id: "dark-pro", name: "Dark Pro", category: "modern", description: "Profesional oscuro" },
+      { id: "cyber-tech", name: "Cyber Tech", category: "modern", description: "Futurista tecnológico" },
+      { id: "app-developer", name: "Desarrollador de Apps", category: "modern", description: "Desarrollo de software" },
+      { id: "gaming-esports", name: "Gaming & Esports", category: "modern", description: "Videojuegos y competencias" },
+      
+      // Elegantes (5)
+      { id: "elegant-boutique", name: "Boutique Elegante", category: "elegant", description: "Lujo y sofisticación" },
+      { id: "luxury-brand", name: "Marca de Lujo", category: "elegant", description: "Premium y exclusivo" },
+      { id: "beauty-salon", name: "Salón de Belleza", category: "elegant", description: "Belleza y cuidado" },
+      { id: "jewelry-store", name: "Joyería Exclusiva", category: "elegant", description: "Joyas y accesorios" },
+      { id: "spa-wellness", name: "Spa & Wellness", category: "elegant", description: "Relajación y bienestar" },
+      
+      // Vibrantes (4)
+      { id: "neon", name: "Neon Lights", category: "vibrant", description: "Colores neón y energía" },
+      { id: "vibrant-shop", name: "Tienda Vibrante", category: "vibrant", description: "Colorido y llamativo" },
+      { id: "fitness-center", name: "Centro de Fitness", category: "vibrant", description: "Energía y movimiento" },
+      { id: "party-events", name: "Eventos y Fiestas", category: "vibrant", description: "Celebraciones" },
     ];
 
     return res.json(themes);

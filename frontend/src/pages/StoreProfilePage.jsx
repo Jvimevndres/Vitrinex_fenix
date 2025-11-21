@@ -1,6 +1,6 @@
 // src/pages/StoreProfilePage.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import { getStoreById, updateMyStore } from "../api/store";
 
@@ -57,6 +57,7 @@ const buildStoreHeaderStyle = (storeLike) => {
 export default function StoreProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // ========= Estados principales ===========
   const [form, setForm] = useState({
@@ -95,6 +96,19 @@ export default function StoreProfilePage() {
   // 🎨 Constructor visual
   const [showVisualBuilder, setShowVisualBuilder] = useState(false);
   const [showAdsManager, setShowAdsManager] = useState(false); // 📢 Gestor de anuncios
+
+  // ========= Leer parámetros de URL ===========
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const panel = searchParams.get('panel');
+    
+    if (tab) setActiveTab(tab);
+    if (panel && tab === 'ventas') {
+      setProductsPanel(panel);
+    } else if (panel && tab === 'agendamiento') {
+      setBookingsPanel(panel);
+    }
+  }, [searchParams]);
 
   // ========= Cargar tienda ===========
   useEffect(() => {
@@ -328,7 +342,7 @@ export default function StoreProfilePage() {
      ───────────────────────────────────────────── */
 
   return (
-    <div className="min-h-screen flex flex-col" style={pageBackgroundStyle}>
+    <div className="min-h-screen flex flex-col pt-20" style={pageBackgroundStyle}>
       {/* HEADER */}
       <MainHeader
         subtitle={`Negocio: ${form.name || "Tu tienda"}`}

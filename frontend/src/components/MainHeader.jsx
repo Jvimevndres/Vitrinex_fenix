@@ -1,9 +1,10 @@
 // src/components/MainHeader.jsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { listMyStores } from "../api/store";
+import { listMyStores, listStoreOrders, getStoreNotifications } from "../api/store";
 import { getBookingsWithMessages } from "../api/messages";
+import axios from "../api/axios";
 
 /**
  * Props:
@@ -18,6 +19,7 @@ export default function MainHeader({
   headerStyle,
   logoSrc,
 }) {
+  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const [openMenu, setOpenMenu] = useState(false);
   const [openNotifications, setOpenNotifications] = useState(false);
@@ -26,16 +28,234 @@ export default function MainHeader({
   const [conversations, setConversations] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [userStores, setUserStores] = useState([]);
 
   const isStore = variant === "store";
 
   // Cargar notificaciones y mensajes
   useEffect(() => {
     if (isAuthenticated && user) {
-      loadNotifications();
-      loadMessages();
+      loadStoresAndNotifications();
+      
+      // Polling cada 30 segundos para actualizar notificaciones y mensajes
+      const interval = setInterval(() => {
+        loadStoresAndNotifications();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated, user]);
+
+  // Cargar tiendas primero, luego notificaciones y mensajes
+  const loadStoresAndNotifications = async () => {
+    try {
+      // 1. Cargar tiendas del usuario
+      const { data: stores } = await listMyStores();
+      setUserStores(stores || []);
+      
+      // 2. Cargar notificaciones de esas tiendas
+      if (stores && stores.length > 0) {
+        await loadNotifications(stores);
+        await loadMessages(stores);
+      } else {
+        setNotifications([]);
+        setConversations([]);
+      }
+    } catch (error) {
+      console.error('Error loading stores and notifications:', error);
+      setUserStores([]);
+      setNotifications([]);
+    }
+  };
+
+  const loadNotifications = async (stores) => {
+    try {
+      setLoadingNotifications(true);
+      const allNotifications = [];
+      
+      // Cargar notificaciones de cada tienda del usuario
+      for (const store of stores) {
+        try {
+          console.log(`🔔 Cargando notificaciones para tienda ${store.name} (${store._id})`);
+          const { data } = await getStoreNotifications(store._id);
+          console.log(`✅ Notificaciones recibidas:`, data);
+          allNotifications.push(...data);
+        } catch (err) {
+          console.error(`❌ Error loading notifications for store ${store._id}:`, err);
+        }
+      }
+      
+      // Ordenar por timestamp (más reciente primero)
+      allNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      console.log(`📊 Total notificaciones: ${allNotifications.length}`, allNotifications);
+      setNotifications(allNotifications);
+      setLoadingNotifications(false);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      setLoadingNotifications(false);
+    }
+  };
+
+  const loadMessages = async (stores) => {
+    try {
+      setLoadingMessages(true);
+      const allConversations = [];
+      
+      // Cargar mensajes como dueño (si tiene tiendas)
+      if (stores && stores.length > 0) {
+        for (const store of stores) {
+          try {
+            // Cargar reservas con mensajes
+            const { data: bookings } = await getBookingsWithMessages(store._id);
+            bookings.forEach(booking => {
+              allConversations.push({
+                id: `owner-booking-${booking._id}`,
+                bookingId: booking._id,
+                storeId: store._id,
+                storeName: store.name,
+                customerName: booking.customerName || booking.email,
+                lastMessage: booking.lastMessage || 'Sin mensajes',
+                unreadCount: booking.unreadMessagesOwner || 0,
+                timestamp: booking.lastMessageAt || booking.createdAt,
+                isOwner: true,
+                type: 'owner',
+                itemType: 'booking'
+              });
+            });
+            
+            // Cargar pedidos con mensajes (si es tienda de productos)
+            if (store.mode === 'products') {
+              try {
+                const { data: orders } = await listStoreOrders(store._id);
+                orders
+                  .filter(order => order.unreadMessagesOwner > 0 || order.lastMessageAt)
+                  .forEach(order => {
+                    allConversations.push({
+                      id: `owner-order-${order._id}`,
+                      orderId: order._id,
+                      storeId: store._id,
+                      storeName: store.name,
+                      customerName: order.customerName || order.customerEmail,
+                      lastMessage: 'Ver conversación',
+                      unreadCount: order.unreadMessagesOwner || 0,
+                      timestamp: order.lastMessageAt || order.createdAt,
+                      isOwner: true,
+                      type: 'owner',
+                      itemType: 'order',
+                      orderTotal: order.total,
+                      orderStatus: order.status
+                    });
+                  });
+              } catch (err) {
+                console.error(`Error loading orders for store ${store._id}:`, err);
+              }
+            }
+          } catch (err) {
+            console.error(`Error loading messages for store ${store._id}:`, err);
+          }
+        }
+      }
+      
+      // Cargar mensajes como cliente (siempre)
+      if (user?.email) {
+        try {
+          const customerConvs = await loadCustomerMessages();
+          allConversations.push(...customerConvs);
+        } catch (err) {
+          console.error('Error loading customer messages:', err);
+        }
+      }
+      
+      // Ordenar por timestamp
+      const sortedConversations = allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setConversations(sortedConversations);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const loadCustomerMessages = async () => {
+    if (!user?.email) return [];
+    
+    try {
+      console.log('📱 Cargando mensajes del cliente:', user.email);
+      const customerConversations = [];
+      
+      // Cargar conversaciones de reservas
+      try {
+        const bookingsResponse = await axios.get('/stores/bookings/my-bookings', {
+          params: { email: user.email }
+        });
+        
+        const bookings = bookingsResponse.data || [];
+        bookings
+          .filter(b => b.unreadMessagesCustomer > 0 || b.lastMessageAt) // Solo con actividad de chat
+          .forEach(booking => {
+            customerConversations.push({
+              id: `customer-booking-${booking._id}`,
+              bookingId: booking._id,
+              storeId: booking.store?._id,
+              storeName: booking.store?.name || 'Negocio',
+              storeLogo: booking.store?.logoUrl,
+              serviceName: booking.service?.name || booking.serviceName,
+              lastMessage: 'Ver conversación',
+              unreadCount: booking.unreadMessagesCustomer || 0,
+              timestamp: booking.lastMessageAt || booking.createdAt,
+              isOwner: false,
+              type: 'customer',
+              itemType: 'booking',
+              bookingDate: booking.date,
+              bookingSlot: booking.slot
+            });
+          });
+      } catch (err) {
+        console.error('Error loading customer bookings:', err);
+      }
+      
+      // Cargar conversaciones de órdenes/pedidos
+      try {
+        const ordersResponse = await axios.get('/stores/orders/my-orders', {
+          params: { email: user.email }
+        });
+        
+        const orders = ordersResponse.data || [];
+        orders
+          .filter(o => o.unreadMessagesCustomer > 0 || o.lastMessageAt) // Solo con actividad de chat
+          .forEach(order => {
+            customerConversations.push({
+              id: `customer-order-${order._id}`,
+              orderId: order._id,
+              storeId: order.store?._id,
+              storeName: order.store?.name || 'Negocio',
+              storeLogo: order.store?.logoUrl,
+              serviceName: `Pedido #${order._id.slice(-6)}`,
+              lastMessage: 'Ver conversación',
+              unreadCount: order.unreadMessagesCustomer || 0,
+              timestamp: order.lastMessageAt || order.createdAt,
+              isOwner: false,
+              type: 'customer',
+              itemType: 'order',
+              orderTotal: order.total,
+              orderItems: order.items?.length || 0
+            });
+          });
+      } catch (err) {
+        console.error('Error loading customer orders:', err);
+      }
+      
+      // Ordenar por timestamp
+      customerConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      console.log(`✅ ${customerConversations.length} conversaciones del cliente (${customerConversations.filter(c => c.itemType === 'booking').length} reservas, ${customerConversations.filter(c => c.itemType === 'order').length} pedidos)`);
+      return customerConversations;
+    } catch (error) {
+      console.error('Error loading customer messages:', error);
+      return [];
+    }
+  };
 
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
@@ -53,62 +273,25 @@ export default function MainHeader({
     }
   }, [openNotifications, openMessages, openMenu]);
 
-  const loadNotifications = async () => {
-    try {
-      setLoadingNotifications(true);
-      const { data } = await listMyStores();
-      
-      // Simular notificaciones basadas en actividad de tiendas
-      const mockNotifications = [];
-      data.forEach(store => {
-        // Aquí puedes agregar lógica real cuando tengas endpoints de notificaciones
-        mockNotifications.push({
-          id: `notif-${store._id}-1`,
-          type: 'order',
-          storeId: store._id,
-          storeName: store.name,
-          message: `Nuevo pedido en ${store.name}`,
-          timestamp: new Date().toISOString(),
-          read: false
-        });
-      });
-      setNotifications(mockNotifications);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setLoadingNotifications(false);
-    }
-  };
-
-  const loadMessages = async () => {
-    try {
-      setLoadingMessages(true);
-      const { data: stores } = await listMyStores();
-      
-      const allConversations = [];
-      for (const store of stores) {
-        try {
-          const { data: bookings } = await getBookingsWithMessages(store._id);
-          bookings.forEach(booking => {
-            allConversations.push({
-              id: booking._id,
-              storeId: store._id,
-              storeName: store.name,
-              customerName: booking.customerName || booking.email,
-              lastMessage: booking.lastMessage || 'Sin mensajes',
-              unreadCount: booking.unreadCount || 0,
-              timestamp: booking.lastMessageAt || booking.createdAt
-            });
-          });
-        } catch (err) {
-          console.error(`Error loading messages for store ${store._id}:`, err);
-        }
+  const handleConversationClick = (conv) => {
+    setOpenMessages(false);
+    if (conv.isOwner) {
+      // Si es dueño, ir a la página de su tienda
+      // Si es un pedido, agregar parámetros para abrir la pestaña de pedidos
+      if (conv.itemType === 'order') {
+        navigate(`/negocio/${conv.storeId}?tab=ventas&panel=orders`);
+      } else {
+        // Si es reserva/booking, ir a la vista normal
+        navigate(`/negocio/${conv.storeId}`);
       }
-      setConversations(allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    } finally {
-      setLoadingMessages(false);
+    } else {
+      // Si es cliente con un pedido, ir a la tienda para ver productos/pedidos
+      if (conv.itemType === 'order' && conv.storeId) {
+        navigate(`/tiendas/${conv.storeId}`);
+      } else {
+        // Si es reserva de cliente, ir a "Mis Reservas"
+        navigate('/perfil?tab=reservas');
+      }
     }
   };
 
@@ -297,13 +480,30 @@ export default function MainHeader({
                         notifications.map((notif) => (
                           <div
                             key={notif.id}
-                            className="px-4 py-3 border-b border-white/5 hover:bg-purple-500/5 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setOpenNotifications(false);
+                              // Navegar según el tipo de notificación
+                              if (notif.itemType === 'order') {
+                                navigate(`/negocio/${notif.storeId}?tab=ventas&panel=orders`);
+                              } else if (notif.itemType === 'booking') {
+                                navigate(`/negocio/${notif.storeId}`);
+                              }
+                            }}
+                            className={`px-4 py-3 border-b border-white/5 hover:bg-purple-500/10 transition-colors cursor-pointer ${
+                              notif.priority === 'high' ? 'bg-purple-500/5' : ''
+                            }`}
                           >
                             <div className="flex gap-3">
-                              <div className="w-2 h-2 rounded-full bg-pink-500 mt-2 flex-shrink-0" />
+                              <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                                notif.priority === 'high' ? 'bg-pink-500' : 
+                                notif.priority === 'medium' ? 'bg-purple-400' : 'bg-blue-400'
+                              }`} />
                               <div className="flex-1 min-w-0">
-                                <p className="text-white text-sm font-medium">{notif.message}</p>
-                                <p className="text-white/50 text-xs mt-0.5">{notif.storeName}</p>
+                                <p className="text-white text-sm font-medium">{notif.title}</p>
+                                <p className="text-white/70 text-sm mt-0.5">{notif.message}</p>
+                                {notif.details && (
+                                  <p className="text-white/50 text-xs mt-1">{notif.details}</p>
+                                )}
                                 <p className="text-white/30 text-xs mt-1">
                                   {new Date(notif.timestamp).toLocaleDateString('es-ES', { 
                                     day: 'numeric', 
@@ -312,6 +512,11 @@ export default function MainHeader({
                                     minute: '2-digit' 
                                   })}
                                 </p>
+                                {notif.unreadCount > 0 && (
+                                  <span className="inline-block mt-1 text-xs bg-pink-500 text-white px-2 py-0.5 rounded-full">
+                                    {notif.unreadCount} nuevo{notif.unreadCount > 1 ? 's' : ''}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -378,6 +583,17 @@ export default function MainHeader({
                           </span>
                         )}
                       </div>
+                      {/* Indicador de tipos de mensajes si es dual */}
+                      {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
+                        <div className="flex gap-2 mt-2 text-xs">
+                          <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
+                            🏪 Negocio
+                          </span>
+                          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
+                            👤 Reservas
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Content */}
@@ -389,33 +605,70 @@ export default function MainHeader({
                       ) : conversations.length === 0 ? (
                         <div className="px-4 py-8 text-center">
                           <div className="text-white/30 text-3xl mb-2">💬</div>
-                          <p className="text-white/50 text-sm">No tienes conversaciones</p>
+                          <p className="text-white/50 text-sm">
+                            {userStores.length > 0 
+                              ? 'No tienes conversaciones activas' 
+                              : 'No tienes mensajes de tus reservas'}
+                          </p>
+                          {userStores.length === 0 && (
+                            <p className="text-white/30 text-xs mt-2">
+                              Los mensajes de tus reservas aparecerán aquí
+                            </p>
+                          )}
                         </div>
                       ) : (
                         conversations.map((conv) => (
                           <div
                             key={conv.id}
-                            onClick={() => {
-                              setOpenMessages(false);
-                              window.location.href = `/tienda/${conv.storeId}`;
-                            }}
+                            onClick={() => handleConversationClick(conv)}
                             className="px-4 py-3 border-b border-white/5 hover:bg-blue-500/5 transition-colors cursor-pointer"
                           >
                             <div className="flex gap-3">
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                {conv.customerName?.[0]?.toUpperCase() || '?'}
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 relative">
+                                {conv.storeLogo ? (
+                                  <img src={conv.storeLogo} alt="" className="w-full h-full rounded-full object-cover" />
+                                ) : (
+                                  conv.isOwner 
+                                    ? conv.customerName?.[0]?.toUpperCase() || '?' 
+                                    : conv.storeName?.[0]?.toUpperCase() || '?'
+                                )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-0.5">
-                                  <p className="text-white text-sm font-medium truncate">{conv.customerName}</p>
-                                  {conv.unreadCount > 0 && (
-                                    <span className="ml-2 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
-                                      {conv.unreadCount}
-                                    </span>
-                                  )}
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <p className="text-white text-sm font-medium truncate flex-1">
+                                    {conv.isOwner ? conv.customerName : conv.storeName}
+                                  </p>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    {/* Badge de tipo (solo si hay ambos tipos) */}
+                                    {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                        conv.type === 'owner' 
+                                          ? 'bg-purple-500/30 text-purple-300' 
+                                          : 'bg-blue-500/30 text-blue-300'
+                                      }`}>
+                                        {conv.type === 'owner' ? '🏪' : '👤'}
+                                      </span>
+                                    )}
+                                    {conv.unreadCount > 0 && (
+                                      <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                        {conv.unreadCount}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-white/50 text-xs truncate">{conv.storeName}</p>
-                                <p className="text-white/70 text-xs mt-0.5 truncate">{conv.lastMessage}</p>
+                                <p className="text-white/50 text-xs truncate">
+                                  {conv.isOwner 
+                                    ? `🏪 ${conv.storeName}` 
+                                    : conv.itemType === 'order' 
+                                      ? `🛒 ${conv.serviceName} • $${conv.orderTotal?.toLocaleString()}` 
+                                      : `📅 ${conv.serviceName || 'Reserva'}`
+                                  }
+                                </p>
+                                {!conv.isOwner && conv.itemType === 'booking' && conv.bookingDate && (
+                                  <p className="text-white/40 text-xs mt-0.5">
+                                    📅 {new Date(conv.bookingDate).toLocaleDateString('es-ES')} • {conv.bookingSlot}
+                                  </p>
+                                )}
                                 <p className="text-white/30 text-xs mt-1">
                                   {new Date(conv.timestamp).toLocaleDateString('es-ES', { 
                                     day: 'numeric', 
@@ -434,12 +687,46 @@ export default function MainHeader({
                     {/* Footer */}
                     {conversations.length > 0 && (
                       <div className="px-4 py-2 border-t border-white/10 bg-gray-900/50">
-                        <button 
-                          onClick={() => setOpenMessages(false)}
-                          className="w-full text-center text-xs text-blue-400 hover:text-blue-300 font-medium py-1.5 hover:bg-blue-500/10 rounded transition-colors"
-                        >
-                          Ver todos los mensajes
-                        </button>
+                        {/* Si es dual (cliente Y dueño), mostrar dos botones */}
+                        {userStores.length > 0 && conversations.some(c => c.type === 'customer') ? (
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => {
+                                setOpenMessages(false);
+                                navigate(`/negocio/${userStores[0]._id}`);
+                              }}
+                              className="flex-1 text-center text-xs text-purple-400 hover:text-purple-300 font-medium py-1.5 hover:bg-purple-500/10 rounded transition-colors"
+                            >
+                              🏪 Negocio
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setOpenMessages(false);
+                                navigate('/perfil?tab=reservas');
+                              }}
+                              className="flex-1 text-center text-xs text-blue-400 hover:text-blue-300 font-medium py-1.5 hover:bg-blue-500/10 rounded transition-colors"
+                            >
+                              👤 Reservas
+                            </button>
+                          </div>
+                        ) : (
+                          /* Si es solo uno, mostrar un botón */
+                          <button 
+                            onClick={() => {
+                              setOpenMessages(false);
+                              if (userStores.length > 0) {
+                                // Si es dueño, ir a su primera tienda
+                                navigate(`/negocio/${userStores[0]._id}`);
+                              } else {
+                                // Si es cliente, ir a Mis Reservas
+                                navigate('/perfil?tab=reservas');
+                              }
+                            }}
+                            className="w-full text-center text-xs text-blue-400 hover:text-blue-300 font-medium py-1.5 hover:bg-blue-500/10 rounded transition-colors"
+                          >
+                            {userStores.length > 0 ? 'Ir a mensajes de negocio' : 'Ver mis reservas'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

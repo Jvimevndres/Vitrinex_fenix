@@ -20,10 +20,30 @@ const storeAppearanceSchema = new mongoose.Schema(
     theme: {
       type: String,
       enum: [
+        // Originales
         "minimal", "neon", "dark-pro", "pastel", "gradient-wave", 
         "elegant-boutique", "tech-startup", "modern-agency", "warm-cafe",
         "luxury-brand", "eco-friendly", "vibrant-shop", "professional-services",
         "artistic-studio", "fitness-center", "beauty-salon", "restaurant",
+        
+        // Nuevas plantillas minimalistas
+        "minimal-white", "minimal-gray", "minimal-mono", "minimal-zen",
+        
+        // Nuevas plantillas business
+        "corporate-blue", "medical-clinic", "law-firm", "financial-advisor",
+        
+        // Nuevas plantillas creative
+        "photography", "music-studio", "design-agency", "video-production",
+        
+        // Nuevas plantillas modern
+        "cyber-tech", "app-developer", "gaming-esports",
+        
+        // Nuevas plantillas elegant
+        "jewelry-store", "spa-wellness",
+        
+        // Nuevas plantillas vibrant
+        "party-events",
+        
         "custom"
       ],
       default: "minimal",
@@ -849,6 +869,422 @@ storeAppearanceSchema.methods.applyTheme = function (themeName) {
       effects: {
         smoothScroll: true,
         hoverEffects: true,
+      },
+    },
+    
+    // ============ PLANTILLAS ADICIONALES (18 nuevas) ============
+    "minimal-white": {
+      category: "minimal",
+      colors: {
+        primary: "#ffffff",
+        secondary: "#f8fafc",
+        accent: "#64748b",
+        background: "#ffffff",
+        surface: "#fafafa",
+        text: "#0f172a",
+        textSecondary: "#64748b",
+        border: "#e2e8f0",
+      },
+      background: { mode: "solid", solid: "#ffffff" },
+      typography: { fontFamily: "Inter", headingWeight: "600", bodyWeight: "400" },
+      components: {
+        buttons: { style: "outline", roundness: "md", size: "md" },
+        cards: { style: "flat", roundness: "lg", shadow: "none" },
+      },
+    },
+    
+    "minimal-gray": {
+      category: "minimal",
+      colors: {
+        primary: "#475569",
+        secondary: "#64748b",
+        accent: "#94a3b8",
+        background: "#f1f5f9",
+        surface: "#f8fafc",
+        text: "#1e293b",
+        textSecondary: "#475569",
+        border: "#cbd5e1",
+      },
+      background: { mode: "solid", solid: "#f1f5f9" },
+      typography: { fontFamily: "Inter" },
+      components: {
+        buttons: { style: "soft", roundness: "md", size: "md" },
+        cards: { style: "outlined", roundness: "lg", shadow: "sm" },
+      },
+    },
+    
+    "minimal-mono": {
+      category: "minimal",
+      colors: {
+        primary: "#000000",
+        secondary: "#404040",
+        accent: "#737373",
+        background: "#ffffff",
+        surface: "#fafafa",
+        text: "#000000",
+        textSecondary: "#737373",
+        border: "#e5e5e5",
+      },
+      background: { mode: "solid", solid: "#ffffff" },
+      typography: { fontFamily: "Roboto", letterSpacing: "tight" },
+      components: {
+        buttons: { style: "filled", roundness: "none", size: "md" },
+        cards: { style: "outlined", roundness: "none", shadow: "none" },
+      },
+    },
+    
+    "minimal-zen": {
+      category: "minimal",
+      colors: {
+        primary: "#059669",
+        secondary: "#10b981",
+        accent: "#6ee7b7",
+        background: "#f0fdf4",
+        surface: "#ffffff",
+        text: "#064e3b",
+        textSecondary: "#047857",
+        border: "#d1fae5",
+      },
+      background: { mode: "solid", solid: "#f0fdf4" },
+      typography: { fontFamily: "Lato", lineHeight: "1.8" },
+      components: {
+        buttons: { style: "soft", roundness: "full", size: "md" },
+        cards: { style: "flat", roundness: "2xl", shadow: "none" },
+      },
+      effects: { smoothScroll: true, animations: true },
+    },
+    
+    "corporate-blue": {
+      category: "business",
+      colors: {
+        primary: "#1e40af",
+        secondary: "#3b82f6",
+        accent: "#60a5fa",
+        background: "#ffffff",
+        surface: "#f8fafc",
+        text: "#1e3a8a",
+        textSecondary: "#475569",
+        border: "#dbeafe",
+      },
+      background: { mode: "solid", solid: "#ffffff" },
+      typography: { fontFamily: "Roboto" },
+      components: {
+        buttons: { style: "filled", roundness: "md", size: "md" },
+        cards: { style: "elevated", roundness: "lg", shadow: "md" },
+      },
+    },
+    
+    "medical-clinic": {
+      category: "business",
+      colors: {
+        primary: "#0891b2",
+        secondary: "#06b6d4",
+        accent: "#22d3ee",
+        background: "#f0fdfa",
+        surface: "#ffffff",
+        text: "#134e4a",
+        textSecondary: "#0f766e",
+        border: "#99f6e4",
+      },
+      background: { mode: "solid", solid: "#f0fdfa" },
+      typography: { fontFamily: "Open Sans" },
+      components: {
+        buttons: { style: "soft", roundness: "lg", size: "md" },
+        cards: { style: "elevated", roundness: "xl", shadow: "sm" },
+      },
+    },
+    
+    "law-firm": {
+      category: "business",
+      colors: {
+        primary: "#1c1917",
+        secondary: "#44403c",
+        accent: "#78716c",
+        background: "#fafaf9",
+        surface: "#ffffff",
+        text: "#1c1917",
+        textSecondary: "#57534e",
+        border: "#e7e5e4",
+      },
+      background: { mode: "solid", solid: "#fafaf9" },
+      typography: { fontFamily: "Merriweather", headingWeight: "700" },
+      components: {
+        buttons: { style: "outline", roundness: "sm", size: "md" },
+        cards: { style: "outlined", roundness: "md", shadow: "sm" },
+      },
+    },
+    
+    "financial-advisor": {
+      category: "business",
+      colors: {
+        primary: "#065f46",
+        secondary: "#059669",
+        accent: "#10b981",
+        background: "#ffffff",
+        surface: "#f0fdf4",
+        text: "#064e3b",
+        textSecondary: "#047857",
+        border: "#bbf7d0",
+      },
+      background: { mode: "solid", solid: "#ffffff" },
+      typography: { fontFamily: "Roboto" },
+      components: {
+        buttons: { style: "filled", roundness: "md", size: "md" },
+        cards: { style: "elevated", roundness: "lg", shadow: "md" },
+      },
+    },
+    
+    "photography": {
+      category: "creative",
+      colors: {
+        primary: "#000000",
+        secondary: "#404040",
+        accent: "#737373",
+        background: "#0a0a0a",
+        surface: "#171717",
+        text: "#fafafa",
+        textSecondary: "#a3a3a3",
+        border: "#262626",
+      },
+      background: { mode: "solid", solid: "#0a0a0a" },
+      typography: { fontFamily: "Montserrat" },
+      components: {
+        buttons: { style: "outline", roundness: "none", size: "lg" },
+        cards: { style: "flat", roundness: "none", shadow: "none" },
+      },
+      effects: { animations: true, hoverScale: 1.05 },
+    },
+    
+    "music-studio": {
+      category: "creative",
+      colors: {
+        primary: "#7c3aed",
+        secondary: "#a855f7",
+        accent: "#c084fc",
+        background: "#1e1b4b",
+        surface: "#2e1065",
+        text: "#f5f3ff",
+        textSecondary: "#c4b5fd",
+        border: "#5b21b6",
+      },
+      background: {
+        mode: "gradient",
+        gradient: {
+          type: "linear",
+          direction: "to bottom right",
+          colors: ["#1e1b4b", "#581c87", "#1e1b4b"],
+        },
+      },
+      typography: { fontFamily: "Poppins", headingWeight: "800" },
+      components: {
+        buttons: { style: "gradient", roundness: "full", size: "lg" },
+        cards: { style: "glass", roundness: "xl", shadow: "2xl" },
+      },
+      effects: { glassmorphism: true, particles: { enabled: true, type: "stars" } },
+    },
+    
+    "design-agency": {
+      category: "creative",
+      colors: {
+        primary: "#ec4899",
+        secondary: "#f472b6",
+        accent: "#fb7185",
+        background: "#ffffff",
+        surface: "#fdf2f8",
+        text: "#831843",
+        textSecondary: "#be185d",
+        border: "#fbcfe8",
+      },
+      background: { mode: "solid", solid: "#ffffff" },
+      typography: { fontFamily: "Montserrat", headingWeight: "700" },
+      components: {
+        buttons: { style: "gradient", roundness: "full", size: "lg" },
+        cards: { style: "elevated", roundness: "2xl", shadow: "xl", hoverEffect: "tilt" },
+      },
+      effects: { animations: true, scrollReveal: true },
+    },
+    
+    "video-production": {
+      category: "creative",
+      colors: {
+        primary: "#dc2626",
+        secondary: "#ef4444",
+        accent: "#f87171",
+        background: "#0f172a",
+        surface: "#1e293b",
+        text: "#f8fafc",
+        textSecondary: "#cbd5e1",
+        border: "#334155",
+      },
+      background: { mode: "solid", solid: "#0f172a" },
+      typography: { fontFamily: "Space Grotesk", headingWeight: "700" },
+      components: {
+        buttons: { style: "filled", roundness: "lg", size: "xl" },
+        cards: { style: "glass", roundness: "xl", shadow: "2xl" },
+      },
+      effects: { glassmorphism: true, shadows3D: true },
+    },
+    
+    "cyber-tech": {
+      category: "modern",
+      colors: {
+        primary: "#06b6d4",
+        secondary: "#14b8a6",
+        accent: "#22d3ee",
+        background: "#0a0a0a",
+        surface: "#1a1a1a",
+        text: "#06b6d4",
+        textSecondary: "#0891b2",
+        border: "#083344",
+      },
+      background: {
+        mode: "gradient",
+        gradient: {
+          type: "linear",
+          direction: "135deg",
+          colors: ["#0a0a0a", "#083344", "#0a0a0a"],
+        },
+      },
+      typography: { fontFamily: "Space Grotesk", letterSpacing: "wide" },
+      components: {
+        buttons: { style: "glow", roundness: "md", size: "lg" },
+        cards: { style: "glass", roundness: "lg", shadow: "2xl", hoverEffect: "glow" },
+      },
+      effects: {
+        glassmorphism: true,
+        particles: { enabled: true, type: "dots", density: 80, color: "#06b6d4" },
+      },
+    },
+    
+    "app-developer": {
+      category: "modern",
+      colors: {
+        primary: "#6366f1",
+        secondary: "#818cf8",
+        accent: "#a5b4fc",
+        background: "#f8fafc",
+        surface: "#ffffff",
+        text: "#1e1b4b",
+        textSecondary: "#4338ca",
+        border: "#e0e7ff",
+      },
+      background: { mode: "solid", solid: "#f8fafc" },
+      typography: { fontFamily: "Inter", headingWeight: "700" },
+      components: {
+        buttons: { style: "filled", roundness: "lg", size: "md" },
+        cards: { style: "elevated", roundness: "xl", shadow: "lg" },
+      },
+    },
+    
+    "gaming-esports": {
+      category: "modern",
+      colors: {
+        primary: "#8b5cf6",
+        secondary: "#a855f7",
+        accent: "#d946ef",
+        background: "#18181b",
+        surface: "#27272a",
+        text: "#fafafa",
+        textSecondary: "#d4d4d8",
+        border: "#3f3f46",
+      },
+      background: {
+        mode: "gradient",
+        gradient: {
+          type: "linear",
+          direction: "to bottom",
+          colors: ["#18181b", "#27272a", "#18181b"],
+        },
+      },
+      typography: { fontFamily: "Bebas Neue", headingWeight: "700" },
+      components: {
+        buttons: { style: "glow", roundness: "md", size: "xl", animation: "pulse" },
+        cards: { style: "glass", roundness: "lg", shadow: "2xl", hoverEffect: "zoom" },
+      },
+      effects: {
+        glassmorphism: true,
+        particles: { enabled: true, type: "sparkles", density: 60 },
+        shadows3D: true,
+      },
+    },
+    
+    "jewelry-store": {
+      category: "elegant",
+      colors: {
+        primary: "#c9b037",
+        secondary: "#d4af37",
+        accent: "#ffd700",
+        background: "#fafaf9",
+        surface: "#ffffff",
+        text: "#1c1917",
+        textSecondary: "#78716c",
+        border: "#e7e5e4",
+      },
+      background: { mode: "solid", solid: "#fafaf9" },
+      typography: { fontFamily: "Playfair Display", headingWeight: "700" },
+      components: {
+        buttons: { style: "outline", roundness: "none", size: "md" },
+        cards: { style: "elevated", roundness: "sm", shadow: "md", hoverEffect: "lift" },
+      },
+      effects: { animations: true, scrollReveal: true },
+    },
+    
+    "spa-wellness": {
+      category: "elegant",
+      colors: {
+        primary: "#0891b2",
+        secondary: "#06b6d4",
+        accent: "#22d3ee",
+        background: "#ecfeff",
+        surface: "#ffffff",
+        text: "#164e63",
+        textSecondary: "#0e7490",
+        border: "#a5f3fc",
+      },
+      background: {
+        mode: "gradient",
+        gradient: {
+          type: "linear",
+          direction: "to bottom",
+          colors: ["#ecfeff", "#ffffff"],
+        },
+      },
+      typography: { fontFamily: "Lora", lineHeight: "1.8" },
+      components: {
+        buttons: { style: "soft", roundness: "full", size: "md" },
+        cards: { style: "flat", roundness: "2xl", shadow: "sm" },
+      },
+      effects: { animations: true, smoothScroll: true },
+    },
+    
+    "party-events": {
+      category: "vibrant",
+      colors: {
+        primary: "#f59e0b",
+        secondary: "#fbbf24",
+        accent: "#fcd34d",
+        background: "#fffbeb",
+        surface: "#fef3c7",
+        text: "#78350f",
+        textSecondary: "#92400e",
+        border: "#fde68a",
+      },
+      background: {
+        mode: "gradient",
+        gradient: {
+          type: "linear",
+          direction: "to bottom right",
+          colors: ["#fffbeb", "#fef3c7", "#fde68a"],
+        },
+      },
+      typography: { fontFamily: "Quicksand", headingWeight: "700" },
+      components: {
+        buttons: { style: "gradient", roundness: "full", size: "xl", animation: "bounce" },
+        cards: { style: "elevated", roundness: "2xl", shadow: "xl", hoverEffect: "lift" },
+      },
+      effects: {
+        particles: { enabled: true, type: "confetti", density: 50 },
+        animations: true,
       },
     },
   };

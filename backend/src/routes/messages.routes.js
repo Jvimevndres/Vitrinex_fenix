@@ -10,6 +10,7 @@ import {
   getOrderMessages,
   sendOrderMessage,
   sendOrderMessagePublic,
+  getOrderMessagesPublic,
 } from "../controllers/messages.controller.js";
 
 const router = Router();
@@ -28,6 +29,7 @@ router.get("/orders/:orderId/messages", authRequired, getOrderMessages);
 router.post("/orders/:orderId/messages", authRequired, sendOrderMessage);
 
 // Rutas públicas - Orders (clientes)
+router.get("/public/orders/:orderId/messages", getOrderMessagesPublic);
 router.post("/public/orders/:orderId/messages", sendOrderMessagePublic);
 
 export default router;

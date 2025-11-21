@@ -3,7 +3,7 @@ import MainHeader from "../components/MainHeader";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-violet-50">
+    <div className="min-h-screen bg-violet-50 pt-20">
       <MainHeader subtitle="Inicio" />
       <main className="max-w-4xl mx-auto py-16 px-6 text-center">
         <h1 className="text-4xl font-bold text-violet-800 mb-6">

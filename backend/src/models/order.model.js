@@ -73,6 +73,22 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "confirmed", "fulfilled", "cancelled"],
       default: "pending",
     },
+    // 🆕 Campos para sistema de chat
+    unreadMessagesOwner: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    unreadMessagesCustomer: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    lastMessageAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   {
     timestamps: true,

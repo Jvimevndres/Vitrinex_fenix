@@ -486,13 +486,13 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
         </aside>
 
         {/* Preview Area Mejorado */}
-        <main className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 overflow-auto p-6">
-          <div className={`mx-auto transition-all duration-300 ${
+        <main className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 overflow-y-auto p-6">
+          <div className={`mx-auto transition-all duration-300 pb-6 ${
             previewMode === 'desktop' ? 'max-w-7xl' :
             previewMode === 'tablet' ? 'max-w-3xl' :
             'max-w-sm'
           }`}>
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
               <StorePreviewRealistic 
                 appearance={appearance} 
                 storeData={storeData} 

@@ -1,231 +1,323 @@
-// frontend/src/components/StorePreviewRealistic.jsx
+// src/components/StorePreviewRealistic.jsx
+import React from 'react';
 import ParticlesBackground from './ParticlesBackground';
 
 /**
- * 🎨 PREVIEW REALISTA DE TIENDA
- * Muestra exactamente cómo se verá la tienda con la configuración aplicada
+ * 🎨 StorePreviewRealistic
+ * Réplica COMPLETA de StorePublic.jsx - muestra TODAS las secciones como las verá el cliente
  */
-export default function StorePreviewRealistic({ appearance, storeData, mode = 'desktop' }) {
-  
+const StorePreviewRealistic = ({ appearance, storeData }) => {
+  // Colores del tema aplicado
   const colors = appearance?.colors || {
-    primary: '#2563eb',
-    secondary: '#7c3aed',
-    accent: '#f59e0b',
-    background: '#ffffff',
-    surface: '#f8fafc',
-    text: '#0f172a',
+    primary: storeData?.primaryColor || '#2563eb',
+    secondary: storeData?.accentColor || '#0f172a',
+    accent: storeData?.primaryColor || '#2563eb',
+    background: storeData?.bgColorTop || '#ffffff',
+    surface: '#ffffff',
+    text: '#1e293b',
     textSecondary: '#64748b',
     border: '#e2e8f0',
   };
-  
-  const typography = appearance?.typography || {
-    fontFamily: 'Inter',
-    headingSize: '2.5rem',
-    bodySize: '1rem',
-    lineHeight: '1.6',
-  };
-  
-  const effects = appearance?.effects || {};
-  const background = appearance?.background || { mode: 'solid', solid: '#ffffff' };
-  const components = appearance?.components || {};
 
-  // Generar estilo de fondo
+  // Tipografía aplicada
+  const headingStyle = {
+    fontSize: appearance?.typography?.headingSize || '2rem',
+    fontWeight: appearance?.typography?.headingWeight || '700',
+    fontFamily: appearance?.typography?.headingFont || 'inherit',
+  };
+
+  const bodyStyle = {
+    fontSize: appearance?.typography?.bodySize || '1rem',
+    fontWeight: appearance?.typography?.bodyWeight || '400',
+    fontFamily: appearance?.typography?.bodyFont || 'inherit',
+  };
+
+  // Estilos de fondo según configuración
   const getBackgroundStyle = () => {
-    if (background.mode === 'solid') {
-      return { backgroundColor: background.solid || colors.background };
-    }
-    
-    if (background.mode === 'gradient' && background.gradient?.colors?.length >= 2) {
-      const { type, direction, colors: gradColors } = background.gradient;
-      const colorStops = gradColors.join(', ');
+    const bg = appearance?.background || {};
+    const mode = bg.mode || 'gradient';
+
+    if (mode === 'solid') {
       return {
-        backgroundImage: type === 'radial' 
-          ? `radial-gradient(circle, ${colorStops})`
-          : `linear-gradient(${direction || 'to bottom'}, ${colorStops})`
+        backgroundColor: bg.solid?.color || bg.solid || colors.background,
       };
     }
 
-    if (background.mode === 'image' && background.image?.url) {
+    if (mode === 'gradient') {
+      const top = bg.gradient?.from || colors.primary;
+      const bottom = bg.gradient?.to || colors.background;
       return {
-        backgroundImage: `url(${background.image.url})`,
-        backgroundSize: background.image.size || 'cover',
-        backgroundPosition: background.image.position || 'center',
-        backgroundColor: colors.background,
+        backgroundImage: `linear-gradient(to bottom, ${top}, ${bottom})`,
+      };
+    }
+
+    if (mode === 'image' && bg.image?.url) {
+      return {
+        backgroundImage: `url(${bg.image.url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       };
     }
 
     return {
-      backgroundImage: `linear-gradient(to bottom, ${colors.surface}, ${colors.background})`
+      backgroundColor: colors.background,
     };
   };
 
-  // Estilo de botones según configuración
-  const getButtonClass = () => {
-    const style = components?.buttons?.style || 'filled';
-    const roundness = components?.buttons?.roundness || 'lg';
-    
-    const roundnessClass = {
-      none: 'rounded-none',
-      sm: 'rounded-sm',
-      md: 'rounded-md',
-      lg: 'rounded-lg',
-      full: 'rounded-full',
-    }[roundness];
-
-    const baseClass = `px-6 py-3 font-medium transition-all duration-200 ${roundnessClass}`;
-
-    if (style === 'filled') {
-      return `${baseClass} text-white shadow-md hover:shadow-lg`;
-    }
-    if (style === 'outline') {
-      return `${baseClass} border-2 bg-transparent hover:bg-opacity-10`;
-    }
-    if (style === 'ghost') {
-      return `${baseClass} bg-transparent hover:bg-opacity-10`;
-    }
-    if (style === 'soft') {
-      return `${baseClass} bg-opacity-10 hover:bg-opacity-20`;
-    }
-    if (style === 'gradient') {
-      return `${baseClass} text-white bg-gradient-to-r shadow-lg hover:shadow-xl`;
-    }
-    
-    return baseClass;
+  // Estilos de tarjetas según configuración
+  const getCardStyle = () => {
+    const card = appearance?.cards || {};
+    return {
+      backgroundColor: card.backgroundColor || colors.surface,
+      borderRadius: `${card.borderRadius || 1}rem`,
+      boxShadow: card.shadow ? '0 10px 30px rgba(0,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.1)',
+      border: card.border ? `1px solid ${colors.border}` : `1px solid ${colors.border}`,
+    };
   };
 
-  const scaleClass = mode === 'mobile' ? 'scale-[0.5]' : mode === 'tablet' ? 'scale-[0.7]' : 'scale-100';
+  // Estilos de botones
+  const getButtonStyle = () => {
+    const buttons = appearance?.buttons || {};
+    return {
+      backgroundColor: buttons.primaryColor || colors.primary,
+      color: buttons.primaryTextColor || '#ffffff',
+      borderRadius: `${buttons.borderRadius || 0.5}rem`,
+      padding: '0.75rem 1.5rem',
+      fontWeight: '600',
+      border: 'none',
+      cursor: 'pointer',
+    };
+  };
 
-  // Determinar tipo de negocio
-  const isBookings = storeData?.mode === 'bookings' || storeData?.storeType === 'bookings';
-  const businessType = isBookings ? 'bookings' : 'products';
+  // Función helper para rgba
+  const hexToRgba = (hex, alpha = 0.15) => {
+    if (!hex) return `rgba(0,0,0,${alpha})`;
+    let h = hex.replace("#", "");
+    if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+    const bigint = parseInt(h, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
 
   return (
-    <div 
-      className={`relative w-full min-h-[600px] overflow-hidden ${scaleClass}`}
+    <div
+      className="relative w-full overflow-y-auto"
       style={{
         ...getBackgroundStyle(),
-        fontFamily: typography.fontFamily,
-        color: colors.text,
+        minHeight: '100vh',
+        padding: '1.5rem',
       }}
     >
-      {/* Partículas usando el componente real */}
-      <ParticlesBackground 
-        config={effects?.particles} 
-        colors={colors}
-      />
+      {/* Partículas si están activadas */}
+      {appearance?.effects?.particles && (
+        <ParticlesBackground
+          color={colors.primary}
+          quantity={appearance.effects.particlesQuantity || 50}
+          speed={appearance.effects.particlesSpeed || 0.5}
+        />
+      )}
 
-      {/* Contenido del preview */}
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
+      {/* Contenedor principal */}
+      <div className="relative z-10 max-w-6xl mx-auto space-y-6">
         
-        {/* Sección Hero */}
-        <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            {storeData?.logoUrl ? (
-              <img
-                src={storeData.logoUrl}
-                alt={storeData?.name || 'Logo'}
-                className="w-24 h-24 rounded-full object-cover shadow-lg border-4"
-                style={{ borderColor: colors.primary }}
-              />
-            ) : (
-              <div 
-                className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg"
-                style={{ backgroundColor: colors.primary }}
-              >
-                {storeData?.name?.charAt(0) || 'T'}
-              </div>
-            )}
-          </div>
-
-          <h1 
-            className="font-bold mb-4"
-            style={{ 
-              fontSize: typography.headingSize || '2.5rem',
-              fontWeight: typography.headingWeight || '700',
-              color: colors.text,
-              letterSpacing: typography.letterSpacing === 'tight' ? '-0.05em' : 
-                            typography.letterSpacing === 'wide' ? '0.05em' : 'normal',
-              textTransform: typography.textTransform || 'none',
-            }}
-          >
-            {storeData?.name || 'Nombre de la Tienda'}
-          </h1>
-
-          <p 
-            className="max-w-2xl mx-auto mb-8"
-            style={{ 
-              fontSize: typography.bodySize || '1rem',
-              fontWeight: typography.bodyWeight || '400',
-              color: colors.textSecondary,
-              lineHeight: typography.lineHeight || '1.6',
-            }}
-          >
-            {storeData?.description || (isBookings 
-              ? 'Agenda tu cita con nosotros. Profesionales expertos a tu servicio.'
-              : 'Descubre nuestra selección de productos de alta calidad.')}
-          </p>
-
-          <button
-            className={getButtonClass()}
+        {/* HERO - Réplica exacta de StorePublic.jsx */}
+        {appearance?.sections?.hero !== false && (
+          <section
+            className="p-6 flex flex-col md:flex-row gap-6 items-start"
             style={{
-              backgroundColor: components?.buttons?.style === 'filled' ? colors.primary : 'transparent',
-              borderColor: colors.primary,
-              color: components?.buttons?.style === 'outline' ? colors.primary : 'white',
-              backgroundImage: components?.buttons?.style === 'gradient' 
-                ? `linear-gradient(to right, ${colors.primary}, ${colors.secondary})` 
-                : 'none',
+              ...getCardStyle(),
+              borderColor: colors.border,
             }}
           >
-            {isBookings ? '📅 Agendar Cita' : '🛒 Ver Catálogo'}
-          </button>
-        </div>
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              {storeData?.logoUrl ? (
+                <img
+                  src={storeData.logoUrl}
+                  alt={storeData.name}
+                  className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-2xl border shadow-sm"
+                />
+              ) : (
+                <div
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center text-2xl font-semibold border"
+                  style={{
+                    backgroundColor: '#f1f5f9',
+                    color: colors.text,
+                  }}
+                >
+                  {storeData?.name?.[0] || 'T'}
+                </div>
+              )}
+            </div>
 
-        {/* Sección Sobre Nosotros / Quiénes Somos */}
-        {storeData?.aboutDescription && (
-          <div 
-            className="mb-16 p-8 rounded-2xl"
-            style={{ 
-              backgroundColor: colors.surface,
-            }}
+            {/* Info de la tienda */}
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2
+                  className="font-semibold"
+                  style={{
+                    ...headingStyle,
+                    color: colors.text,
+                  }}
+                >
+                  {storeData?.name || 'Mi Tienda'}
+                </h2>
+                {storeData?.mode && (
+                  <span
+                    className="text-[11px] uppercase tracking-wide px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: hexToRgba(colors.primary, 0.15),
+                      color: colors.primary,
+                    }}
+                  >
+                    {storeData.mode === 'bookings' ? 'Agendamiento de citas' : 'Venta de productos'}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                {storeData?.tipoNegocio || 'Negocio'} · {storeData?.comuna || 'Santiago'}
+              </p>
+
+              {storeData?.direccion && (
+                <p className="text-sm flex items-center gap-1" style={{ color: colors.text }}>
+                  <span>📍</span>
+                  <span>{storeData.direccion}</span>
+                </p>
+              )}
+
+              {storeData?.heroTitle || storeData?.heroSubtitle ? (
+                <div className="space-y-1">
+                  {storeData.heroTitle && (
+                    <p
+                      className="font-semibold"
+                      style={{
+                        fontSize: `calc(${appearance?.typography?.bodySize || '1rem'} * 1.1)`,
+                        color: colors.text,
+                      }}
+                    >
+                      {storeData.heroTitle}
+                    </p>
+                  )}
+                  {storeData.heroSubtitle && (
+                    <p style={{ ...bodyStyle, color: colors.textSecondary }}>
+                      {storeData.heroSubtitle}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p style={{ ...bodyStyle, color: colors.textSecondary }}>
+                  {storeData?.description || (storeData?.mode === 'bookings'
+                    ? 'Reserva tu hora con nosotros. Atención profesional garantizada.'
+                    : 'Descubre nuestros productos de calidad.')}
+                </p>
+              )}
+
+              {/* Highlights */}
+              {(storeData?.highlight1 || storeData?.highlight2 || storeData?.priceFrom) && (
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {storeData.highlight1 && (
+                    <span
+                      className="px-2 py-1 rounded-full border"
+                      style={{ borderColor: colors.primary, color: colors.text }}
+                    >
+                      {storeData.highlight1}
+                    </span>
+                  )}
+                  {storeData.highlight2 && (
+                    <span
+                      className="px-2 py-1 rounded-full border"
+                      style={{ borderColor: colors.primary, color: colors.text }}
+                    >
+                      {storeData.highlight2}
+                    </span>
+                  )}
+                  {storeData.priceFrom && (
+                    <span className="px-2 py-1 rounded-full" style={{ backgroundColor: '#f1f5f9', color: colors.text }}>
+                      {storeData.priceFrom}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Botones */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  className="text-xs md:text-sm font-medium shadow-sm"
+                  style={getButtonStyle()}
+                >
+                  {storeData?.mode === 'bookings' ? 'Agendar cita' : 'Ver catálogo'}
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded-lg text-xs md:text-sm border text-slate-700"
+                  style={{ borderColor: '#cbd5e1' }}
+                >
+                  ← Volver al inicio
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Sección Quiénes Somos */}
+        {storeData?.aboutDescription && appearance?.sections?.about !== false && (
+          <section
+            className="rounded-2xl p-6 space-y-4"
+            style={getCardStyle()}
           >
-            <h2 
-              className="font-bold mb-4 text-center"
-              style={{ 
-                fontSize: `calc(${typography.headingSize} * 0.7)`,
+            <h3
+              className="font-bold text-center"
+              style={{
+                fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                fontWeight: appearance?.typography?.headingWeight || '700',
                 color: colors.text,
               }}
             >
-              {storeData?.aboutTitle || 'Quiénes Somos'}
-            </h2>
-            <p className="text-center whitespace-pre-line" style={{ color: colors.textSecondary, lineHeight: typography.lineHeight }}>
-              {storeData?.aboutDescription}
+              {storeData.aboutTitle || 'Quiénes Somos'}
+            </h3>
+            <p
+              className="text-center whitespace-pre-line"
+              style={{
+                ...bodyStyle,
+                color: colors.textSecondary,
+              }}
+            >
+              {storeData.aboutDescription}
             </p>
-          </div>
+          </section>
         )}
 
         {/* Cuadros Personalizados */}
         {storeData?.customBoxes && storeData.customBoxes.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            {storeData.customBoxes.map((box) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {storeData.customBoxes.map((box, idx) => (
               <div
-                key={box.id}
-                className="p-6 rounded-xl"
-                style={{
-                  backgroundColor: colors.surface,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
+                key={box.id || idx}
+                className={`p-6 rounded-xl space-y-3 ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
+                style={getCardStyle()}
               >
-                <div className="text-4xl mb-4">{box.icon}</div>
-                <h3 
-                  className="font-bold mb-3" 
-                  style={{ 
-                    fontSize: `calc(${typography.headingSize} * 0.6)`,
-                    color: colors.text 
+                <div className="text-4xl">{box.icon}</div>
+                <h4
+                  className="font-bold"
+                  style={{
+                    fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.6)`,
+                    fontWeight: appearance?.typography?.headingWeight || '700',
+                    color: colors.text,
                   }}
                 >
                   {box.title}
-                </h3>
-                <p className="text-sm whitespace-pre-line" style={{ color: colors.textSecondary }}>
+                </h4>
+                <p
+                  className="whitespace-pre-line"
+                  style={{
+                    ...bodyStyle,
+                    color: colors.textSecondary,
+                  }}
+                >
                   {box.content}
                 </p>
               </div>
@@ -234,79 +326,120 @@ export default function StorePreviewRealistic({ appearance, storeData, mode = 'd
         )}
 
         {/* Horarios de Atención */}
-        {storeData?.scheduleText && (
-          <div 
-            className="mb-16 p-8 rounded-2xl text-center"
-            style={{ 
-              backgroundColor: colors.surface,
-            }}
+        {storeData?.scheduleText && appearance?.sections?.schedule !== false && (
+          <section
+            className="rounded-2xl p-6 space-y-4"
+            style={getCardStyle()}
           >
-            <h2 
-              className="font-bold mb-4 flex items-center justify-center gap-2"
-              style={{ 
-                fontSize: `calc(${typography.headingSize} * 0.7)`,
+            <h3
+              className="font-bold text-center flex items-center justify-center gap-2"
+              style={{
+                fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                fontWeight: appearance?.typography?.headingWeight || '700',
                 color: colors.text,
               }}
             >
               <span>⏰</span>
               Horarios de Atención
-            </h2>
-            <p className="whitespace-pre-line" style={{ color: colors.textSecondary, lineHeight: typography.lineHeight }}>
-              {storeData?.scheduleText}
-            </p>
-          </div>
-        )}
-
-        {/* Grid de servicios/productos de ejemplo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="p-6 rounded-xl transition-transform hover:scale-105"
+            </h3>
+            <p
+              className="text-center whitespace-pre-line"
               style={{
-                backgroundColor: colors.surface,
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                ...bodyStyle,
+                color: colors.textSecondary,
               }}
             >
-              <div 
-                className="w-full h-32 rounded-lg mb-4 flex items-center justify-center text-4xl"
-                style={{ backgroundColor: colors.primary + '20' }}
+              {storeData.scheduleText}
+            </p>
+          </section>
+        )}
+
+        {/* Sección de Agendamiento (Simulada) */}
+        {storeData?.mode === 'bookings' && appearance?.sections?.booking !== false && (
+          <section
+            className="rounded-2xl p-6 space-y-6"
+            style={getCardStyle()}
+          >
+            <div className="text-center">
+              <h3
+                className="font-bold"
+                style={{
+                  fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                  fontWeight: appearance?.typography?.headingWeight || '700',
+                  color: colors.text,
+                }}
               >
-                {isBookings ? '⏰' : '📦'}
-              </div>
-              <h3 className="font-semibold mb-2" style={{ color: colors.text }}>
-                {isBookings ? `Servicio Profesional ${item}` : `Producto Premium ${item}`}
+                📅 Agenda tu Cita
               </h3>
-              <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                {isBookings 
-                  ? `Duración: ${30 + item * 15} minutos • Atención personalizada`
-                  : `Disponible • Envío gratis en compras sobre $50.000`}
+              <p
+                className="mt-2"
+                style={{
+                  ...bodyStyle,
+                  color: colors.textSecondary,
+                }}
+              >
+                Selecciona el servicio y horario que prefieras
               </p>
-              <div className="flex justify-between items-center">
-                <span className="font-bold" style={{ color: colors.primary }}>
-                  {isBookings ? `${30 + item * 15} min` : `$${15000 * item}.000`}
-                </span>
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-medium"
+            </div>
+            {/* Aquí iría el calendario y servicios - simulado */}
+            <div className="p-8 rounded-lg text-center" style={{ backgroundColor: hexToRgba(colors.primary, 0.05) }}>
+              <p style={{ color: colors.textSecondary }}>Vista previa del sistema de agendamiento</p>
+            </div>
+          </section>
+        )}
+
+        {/* Sección de Productos (Simulada) */}
+        {storeData?.mode === 'products' && appearance?.sections?.products !== false && (
+          <section
+            className="rounded-2xl p-6 space-y-6"
+            style={getCardStyle()}
+          >
+            <div className="text-center">
+              <h3
+                className="font-bold"
+                style={{
+                  fontSize: `calc(${appearance?.typography?.headingSize || '2rem'} * 0.8)`,
+                  fontWeight: appearance?.typography?.headingWeight || '700',
+                  color: colors.text,
+                }}
+              >
+                🛍️ Nuestros Productos
+              </h3>
+            </div>
+            {/* Grid de productos simulados */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-xl overflow-hidden"
                   style={{
-                    backgroundColor: colors.primary,
-                    color: 'white',
+                    ...getCardStyle(),
+                    padding: 0,
                   }}
                 >
-                  {isBookings ? 'Agendar' : 'Comprar'}
-                </button>
-              </div>
+                  <div style={{ height: '150px', backgroundColor: hexToRgba(colors.primary, 0.1) }}></div>
+                  <div className="p-4">
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: colors.text }}>Producto {i}</h4>
+                    <p style={{ fontSize: '0.875rem', color: colors.textSecondary, marginTop: '0.5rem' }}>
+                      Descripción del producto
+                    </p>
+                    <p style={{ fontSize: '1.25rem', fontWeight: '700', color: colors.primary, marginTop: '0.5rem' }}>
+                      $19.990
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </section>
+        )}
 
         {/* Footer */}
-        <div className="text-center py-8 border-t" style={{ borderColor: colors.border }}>
-          <p className="text-sm" style={{ color: colors.textSecondary }}>
-            © 2025 {storeData?.name || 'Tu Tienda'}. Todos los derechos reservados.
-          </p>
+        <div className="text-center pt-4" style={{ color: colors.textSecondary, fontSize: '0.875rem' }}>
+          © 2025 {storeData?.name || 'Tienda'}. Todos los derechos reservados.
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default StorePreviewRealistic;

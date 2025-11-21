@@ -282,7 +282,7 @@ export default function ExploreStoresPage() {
   const headerBarBg = modePresets[paletteMode].headerBar;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: baseBackground, transition: 'background 420ms ease' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden pt-20" style={{ background: baseBackground, transition: 'background 420ms ease' }}>
 
       {/* Animated stars background */}
       {modePresets[paletteMode].stars && (

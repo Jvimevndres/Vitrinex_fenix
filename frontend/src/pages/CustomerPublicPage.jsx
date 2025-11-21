@@ -177,7 +177,7 @@ export default function CustomerPublicPage() {
   const mailUrl = emailAddr ? mailto(emailAddr) : null;
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={pageStyle}>
+    <div className="min-h-screen relative overflow-hidden pt-20" style={pageStyle}>
       {/* Animated stars background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.4 }}>
         {Array.from({ length: 50 }).map((_, i) => (

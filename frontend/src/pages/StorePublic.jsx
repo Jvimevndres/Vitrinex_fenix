@@ -1499,7 +1499,7 @@ export default function StorePublicPage() {
 
   return (
     <div 
-      className="relative min-h-screen flex flex-col" 
+      className="relative min-h-screen flex flex-col pt-20" 
       style={{ 
         ...bgStyle,
         fontFamily

@@ -45,12 +45,91 @@ export default function RegisterPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
-      <main className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden" 
+         style={{ 
+           background: 'radial-gradient(ellipse at top, #1a0b2e 0%, #16213e 35%, #0f3460 70%, #533483 100%)',
+           transition: 'background 420ms ease'
+         }}>
+      
+      {/* Animated stars background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.6 }}>
+        {Array.from({ length: 80 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white"
+            style={{
+              width: Math.random() * 3 + 1 + 'px',
+              height: Math.random() * 3 + 1 + 'px',
+              top: Math.random() * 100 + '%',
+              left: Math.random() * 100 + '%',
+              opacity: Math.random() * 0.7 + 0.3,
+              animation: `twinkle ${Math.random() * 5 + 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 5}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+      `}</style>
+
+      {/* Decorative background blobs */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: -120,
+          left: -140,
+          width: 480,
+          height: 480,
+          borderRadius: 9999,
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, rgba(99, 102, 241, 0.3) 40%, transparent 70%)',
+          opacity: 0.7,
+          filter: "blur(80px)",
+          transform: "rotate(-12deg)",
+          mixBlendMode: "screen",
+          pointerEvents: "none",
+          animation: "float 8s ease-in-out infinite",
+        }}
+      />
+
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          bottom: -140,
+          right: -100,
+          width: 560,
+          height: 560,
+          borderRadius: 9999,
+          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, rgba(168, 85, 247, 0.25) 40%, transparent 70%)',
+          opacity: 0.6,
+          filter: "blur(90px)",
+          transform: "rotate(12deg)",
+          mixBlendMode: "screen",
+          pointerEvents: "none",
+          animation: "float 10s ease-in-out infinite reverse",
+        }}
+      />
+
+      <main className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 items-center relative z-10">
         {/* Left visual panel */}
         <section className="hidden lg:flex flex-col items-start gap-6">
           <div
-            className="w-full rounded-3xl p-10 bg-gradient-to-r from-violet-600 to-indigo-600 shadow-2xl text-white transform -rotate-2"
+            className="w-full rounded-3xl p-10 shadow-2xl text-white transform -rotate-2"
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(99, 102, 241, 0.9) 50%, rgba(168, 85, 247, 0.9) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
             aria-hidden="true"
           >
             <h2 className="text-4xl font-extrabold leading-tight">
@@ -62,9 +141,13 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <div className="w-full rounded-2xl p-6 bg-white shadow-lg border">
-            <h3 className="text-lg font-semibold text-slate-800">Beneficios</h3>
-            <ul className="mt-3 text-sm text-slate-600 space-y-2">
+          <div className="w-full rounded-2xl p-6 shadow-lg border" style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            borderColor: 'rgba(255, 255, 255, 0.2)'
+          }}>
+            <h3 className="text-lg font-semibold text-white">Beneficios</h3>
+            <ul className="mt-3 text-sm text-slate-200 space-y-2">
               <li>• Publica y administra tus tiendas</li>
               <li>• Accede a métricas y estadísticas</li>
               <li>• Integraciones y soporte dedicado</li>
@@ -75,12 +158,16 @@ export default function RegisterPage() {
         {/* Register card */}
         <section className="flex justify-center">
           <div className="w-full max-w-md">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border overflow-hidden">
+            <div className="rounded-3xl shadow-xl overflow-hidden" style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
               <div className="p-8">
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                <h1 className="text-2xl font-bold text-white">
                   Crear cuenta
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-300 mt-1">
+                <p className="text-sm text-slate-200 mt-1">
                   Regístrate para empezar a usar Vitrinex.
                 </p>
 
@@ -96,7 +183,7 @@ export default function RegisterPage() {
                   noValidate
                 >
                   <label className="block">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-slate-200">
                       Nombre
                     </span>
                     <input
@@ -104,7 +191,15 @@ export default function RegisterPage() {
                       {...registerField("username", {
                         required: "El nombre es obligatorio",
                       })}
-                      className="mt-2 w-full rounded-full border-2 border-violet-100 focus:border-violet-400 focus:ring-4 focus:ring-violet-100 px-4 py-2 placeholder:text-slate-400 transition"
+                      className="mt-2 w-full rounded-full px-4 py-2 placeholder:text-slate-400 transition"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '2px solid rgba(139, 92, 246, 0.3)',
+                        color: 'white',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.6)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'}
                       placeholder="Tu nombre o nombre de usuario"
                       aria-label="Nombre"
                     />
@@ -116,7 +211,7 @@ export default function RegisterPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-slate-200">
                       Correo electrónico
                     </span>
                     <input
@@ -124,7 +219,15 @@ export default function RegisterPage() {
                       {...registerField("email", {
                         required: "El correo es obligatorio",
                       })}
-                      className="mt-2 w-full rounded-full border-2 border-violet-100 focus:border-violet-400 focus:ring-4 focus:ring-violet-100 px-4 py-2 placeholder:text-slate-400 transition"
+                      className="mt-2 w-full rounded-full px-4 py-2 placeholder:text-slate-400 transition"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '2px solid rgba(139, 92, 246, 0.3)',
+                        color: 'white',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.6)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'}
                       placeholder="ejemplo@correo.com"
                       aria-label="Correo electrónico"
                     />
@@ -136,7 +239,7 @@ export default function RegisterPage() {
                   </label>
 
                   <label className="block relative">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-slate-200">
                       Contraseña
                     </span>
                     <input
@@ -145,7 +248,15 @@ export default function RegisterPage() {
                         required: "La contraseña es obligatoria",
                         minLength: { value: 6, message: "Mínimo 6 caracteres" },
                       })}
-                      className="mt-2 w-full rounded-full border-2 border-violet-100 focus:border-violet-400 focus:ring-4 focus:ring-violet-100 px-4 py-2 placeholder:text-slate-400 transition"
+                      className="mt-2 w-full rounded-full px-4 py-2 placeholder:text-slate-400 transition"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '2px solid rgba(139, 92, 246, 0.3)',
+                        color: 'white',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.6)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'}
                       placeholder="••••••••"
                       aria-label="Contraseña"
                     />
@@ -165,11 +276,11 @@ export default function RegisterPage() {
                   </button>
                 </form>
 
-                <p className="text-sm text-slate-600 mt-4">
+                <p className="text-sm text-slate-200 mt-4">
                   ¿Ya tienes cuenta?{" "}
                   <Link
                     to="/login"
-                    className="text-violet-600 font-medium hover:underline"
+                    className="text-violet-400 font-medium hover:text-violet-300 hover:underline"
                   >
                     Inicia sesión
                   </Link>

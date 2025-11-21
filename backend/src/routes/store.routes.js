@@ -37,6 +37,8 @@ import {
   updateAppointmentStatus,
   deleteAppointment, // 🆕 NUEVO
   getCustomerBookings, // 🆕 NUEVO
+  getCustomerOrders, // 🆕 NUEVO
+  getStoreNotifications, // 🔔 NUEVO
 } from "../controllers/store.controller.js";
 
 import {
@@ -81,6 +83,8 @@ router.delete("/:id/special-days/:date", authRequired, deleteSpecialDay); // Eli
 router.get("/:id/appointments", authRequired, listStoreAppointments);
 router.post("/:id/appointments", createAppointment); // 🆕 Ahora soporta serviceId
 router.get("/bookings/my-bookings", getCustomerBookings); // 🆕 Obtener reservas del cliente por email
+router.get("/bookings/my-bookings", getCustomerBookings); // 🆕 Obtener reservas del cliente por email
+router.get("/orders/my-orders", getCustomerOrders); // 🆕 Obtener órdenes del cliente por email
 
 router.patch(
   "/:id/appointments/:bookingId/status",
@@ -109,6 +113,11 @@ router.delete("/:id/products/:productId", authRequired, deleteStoreProduct);
 router.get("/:id/orders", authRequired, listStoreOrders);
 router.post("/:id/orders", createStoreOrder);
 router.patch("/orders/:orderId/status", authRequired, updateOrderStatus);
+
+/**
+ * 🔔 Notificaciones de la tienda
+ */
+router.get("/:id/notifications", authRequired, getStoreNotifications);
 
 /**
  * 🔹 INSIGHTS / ANÁLISIS INTELIGENTE

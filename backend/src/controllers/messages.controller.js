@@ -396,3 +396,55 @@ export const sendOrderMessagePublic = async (req, res) => {
   }
 };
 
+/**
+ * 🆕 Obtener mensajes de una orden (público - para clientes)
+ */
+export const getOrderMessagesPublic = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email requerido" });
+    }
+
+    // Verificar que la orden existe y pertenece al cliente
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Orden no encontrada" });
+    }
+
+    if (order.customerEmail !== email) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    // Obtener mensajes
+    const messages = await Message.find({ order: orderId })
+      .populate("sender", "username")
+      .sort({ createdAt: 1 });
+
+    // Marcar mensajes del owner como leídos por el cliente
+    await Message.updateMany(
+      {
+        order: orderId,
+        senderType: "owner",
+        isRead: false,
+      },
+      {
+        $set: {
+          isRead: true,
+          readAt: new Date(),
+        },
+      }
+    );
+
+    // Actualizar contador
+    order.unreadMessagesCustomer = 0;
+    await order.save();
+
+    return res.json(messages);
+  } catch (error) {
+    console.error("Error al obtener mensajes de orden (público):", error);
+    return res.status(500).json({ message: "Error al obtener mensajes" });
+  }
+};

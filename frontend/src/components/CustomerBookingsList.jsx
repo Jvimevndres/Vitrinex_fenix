@@ -24,7 +24,12 @@ export default function CustomerBookingsList() {
   }, [user]);
 
   const loadBookings = async () => {
+    console.log('🔍 [CustomerBookingsList] Iniciando loadBookings...');
+    console.log('👤 User object:', user);
+    console.log('📧 User email:', user?.email);
+    
     if (!user?.email) {
+      console.error('❌ No hay email de usuario!');
       setError('Usuario no autenticado');
       setLoading(false);
       return;
@@ -34,14 +39,34 @@ export default function CustomerBookingsList() {
       setLoading(true);
       setError('');
       console.log('📋 Cargando reservas para:', user.email);
+      console.log('🌐 URL completa:', '/stores/bookings/my-bookings?email=' + user.email);
+      
       // Obtener todas las reservas del cliente por email
       const response = await axios.get('/stores/bookings/my-bookings', {
         params: { email: user.email }
       });
-      console.log('✅ Reservas cargadas:', response.data);
+      
+      console.log('✅ Respuesta del servidor:', response.status);
+      console.log('📦 Datos recibidos:', response.data);
+      console.log('📊 Total de reservas:', response.data?.length || 0);
+      
+      if (response.data && response.data.length > 0) {
+        console.log('📋 Desglose de reservas:');
+        response.data.forEach((b, idx) => {
+          console.log(`  [${idx + 1}] ${b.customerName} - ${b.date} - Mensajes sin leer: ${b.unreadMessagesCustomer || 0}`);
+        });
+      } else {
+        console.warn('⚠️ No se encontraron reservas para este email');
+      }
+      
       setBookings(response.data || []);
     } catch (err) {
-      console.error('Error cargando reservas:', err);
+      console.error('❌ Error cargando reservas:', err);
+      console.error('📋 Detalles del error:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
       setError(err.response?.data?.message || 'No se pudieron cargar las reservas');
     } finally {
       setLoading(false);
@@ -307,8 +332,8 @@ export default function CustomerBookingsList() {
       {chatOpen && selectedBooking && user?.email && (
         <ChatBox
           bookingId={selectedBooking._id}
-          mode="customer"
-          customerEmail={user.email}
+          userType="customer"
+          userEmail={user.email}
           onClose={closeChat}
           bookingInfo={selectedBooking}
         />

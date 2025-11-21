@@ -126,7 +126,7 @@ export default function UserProfilePage() {
 
   return (
        <div
-  className="min-h-screen flex flex-col"
+  className="min-h-screen flex flex-col pt-20"
   style={{
     background: "linear-gradient(to bottom, #e1c0f6 0%, #ffffff 80%)",
   }}

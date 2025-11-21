@@ -793,15 +793,47 @@ export const getCustomerBookings = async (req, res) => {
     })
       .populate('store', 'name logoUrl category phone address')
       .populate('service', 'name duration price')
+      .select('+unreadMessagesCustomer +unreadMessagesOwner +lastMessageAt') // Asegurar que incluye campos de chat
       .sort({ date: -1, slot: -1 })
       .limit(100);
 
     console.log(`✅ Encontradas ${bookings.length} reservas`);
+    console.log(`📬 Reservas con mensajes sin leer:`, bookings.filter(b => b.unreadMessagesCustomer > 0).length);
 
     return res.json(bookings);
   } catch (err) {
     console.error("Error al obtener reservas del cliente:", err);
     return res.status(500).json({ message: "Error al obtener las reservas" });
+  }
+};
+
+// 🆕 Obtener órdenes/compras del cliente por email
+export const getCustomerOrders = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email requerido" });
+    }
+
+    console.log('🛒 Buscando órdenes para email:', email);
+
+    const orders = await Order.find({ 
+      customerEmail: email
+    })
+      .populate('store', 'name logoUrl category phone address')
+      .populate('items.product', 'name imageUrl')
+      .select('+unreadMessagesCustomer +unreadMessagesOwner +lastMessageAt')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    console.log(`✅ Encontradas ${orders.length} órdenes`);
+    console.log(`📬 Órdenes con mensajes sin leer:`, orders.filter(o => o.unreadMessagesCustomer > 0).length);
+
+    return res.json(orders);
+  } catch (err) {
+    console.error("Error al obtener órdenes del cliente:", err);
+    return res.status(500).json({ message: "Error al obtener las órdenes" });
   }
 };
 
@@ -1043,6 +1075,7 @@ export const listStoreOrders = async (req, res) => {
       return res.status(400).json({ message: "Esta tienda no vende productos" });
 
     const orders = await Order.find({ store: store._id })
+      .select('+unreadMessagesOwner +unreadMessagesCustomer +lastMessageAt')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -1058,6 +1091,9 @@ export const listStoreOrders = async (req, res) => {
         customerAddress: order.customerAddress,
         notes: order.notes,
         createdAt: order.createdAt,
+        unreadMessagesOwner: order.unreadMessagesOwner || 0,
+        unreadMessagesCustomer: order.unreadMessagesCustomer || 0,
+        lastMessageAt: order.lastMessageAt,
       }))
     );
   } catch (err) {
@@ -1537,5 +1573,203 @@ export const createAppointment = async (req, res) => {
     }
 
     return res.status(500).json({ message: "Error al crear la cita" });
+  }
+};
+
+/**
+ * 🔔 Obtener notificaciones de una tienda
+ * - Nuevas reservas (últimas 24h)
+ * - Nuevos pedidos (últimas 24h)
+ * - Mensajes sin leer
+ * - Cancelaciones recientes (últimas 24h)
+ */
+export const getStoreNotifications = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    // Verificar que el usuario es dueño de la tienda
+    const verification = await findStoreForOwner(id, userId);
+    if (verification.error) {
+      return res.status(verification.error.status).json({
+        message: verification.error.message,
+      });
+    }
+
+    const store = verification.store;
+    const notifications = [];
+
+    // Mostrar eventos sin importar la fecha (para que siempre haya notificaciones visibles)
+    const showAll = true;
+    const timeFilter = showAll ? {} : { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } };
+
+    // 1. Reservas recientes (todas si showAll=true, sino últimos 7 días)
+    if (store.mode === 'services' || store.mode === 'both' || store.mode === 'bookings') {
+      const newBookings = await Booking.find({
+        store: id,
+        ...timeFilter,
+        status: { $ne: 'cancelled' }
+      })
+      .populate('service', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10) // Máximo 10 reservas
+      .lean();
+
+      if (newBookings && newBookings.length > 0) {
+        newBookings.forEach(booking => {
+        notifications.push({
+          id: `new-booking-${booking._id}`,
+          type: 'new_booking',
+          itemType: 'booking',
+          bookingId: booking._id,
+          storeId: store._id,
+          storeName: store.name,
+          title: '📅 Nueva reserva',
+          message: `${booking.customerName} reservó ${booking.serviceName || booking.service?.name || 'un servicio'}`,
+          details: `${new Date(booking.date).toLocaleDateString('es-CL')} - ${booking.slot}`,
+          timestamp: booking.createdAt,
+          priority: 'high',
+          read: false
+        });
+        });
+      }
+    }
+
+    // 2. Pedidos recientes (todos si showAll=true, sino últimos 7 días)
+    if (store.mode === 'products' || store.mode === 'both') {
+      const newOrders = await Order.find({
+        store: id,
+        ...timeFilter,
+        status: { $ne: 'cancelled' }
+      })
+      .sort({ createdAt: -1 })
+      .limit(10) // Máximo 10 pedidos
+      .lean();
+
+      if (newOrders && newOrders.length > 0) {
+        newOrders.forEach(order => {
+        notifications.push({
+          id: `new-order-${order._id}`,
+          type: 'new_order',
+          itemType: 'order',
+          orderId: order._id,
+          storeId: store._id,
+          storeName: store.name,
+          title: '🛒 Nuevo pedido',
+          message: `${order.customerName} realizó un pedido`,
+          details: `Total: $${order.total.toLocaleString('es-CL')} - ${order.status}`,
+          timestamp: order.createdAt,
+          priority: 'high',
+          read: false
+        });
+        });
+      }
+    }
+
+    // 3. Mensajes sin leer en reservas
+    if (store.mode === 'services' || store.mode === 'both' || store.mode === 'bookings') {
+      const bookingsWithUnreadMessages = await Booking.find({
+        store: id,
+        unreadMessagesOwner: { $gt: 0 },
+        status: { $ne: 'cancelled' }
+      })
+      .populate('service', 'name')
+      .sort({ lastMessageAt: -1 })
+      .lean();
+
+      if (bookingsWithUnreadMessages && bookingsWithUnreadMessages.length > 0) {
+        bookingsWithUnreadMessages.forEach(booking => {
+        notifications.push({
+          id: `message-booking-${booking._id}`,
+          type: 'unread_message',
+          itemType: 'booking',
+          bookingId: booking._id,
+          storeId: store._id,
+          storeName: store.name,
+          title: '💬 Nuevo mensaje',
+          message: `${booking.customerName} te escribió sobre su reserva`,
+          details: `${booking.unreadMessagesOwner} mensaje${booking.unreadMessagesOwner > 1 ? 's' : ''} sin leer`,
+          timestamp: booking.lastMessageAt,
+          priority: 'medium',
+          read: false,
+          unreadCount: booking.unreadMessagesOwner
+        });
+        });
+      }
+    }
+
+    // 4. Mensajes sin leer en pedidos
+    if (store.mode === 'products' || store.mode === 'both') {
+      const ordersWithUnreadMessages = await Order.find({
+        store: id,
+        unreadMessagesOwner: { $gt: 0 },
+        status: { $ne: 'cancelled' }
+      })
+      .select('+unreadMessagesOwner +lastMessageAt')
+      .sort({ lastMessageAt: -1 })
+      .lean();
+
+      if (ordersWithUnreadMessages && ordersWithUnreadMessages.length > 0) {
+        ordersWithUnreadMessages.forEach(order => {
+        notifications.push({
+          id: `message-order-${order._id}`,
+          type: 'unread_message',
+          itemType: 'order',
+          orderId: order._id,
+          storeId: store._id,
+          storeName: store.name,
+          title: '💬 Nuevo mensaje',
+          message: `${order.customerName} te escribió sobre su pedido`,
+          details: `${order.unreadMessagesOwner} mensaje${order.unreadMessagesOwner > 1 ? 's' : ''} sin leer`,
+          timestamp: order.lastMessageAt,
+          priority: 'medium',
+          read: false,
+          unreadCount: order.unreadMessagesOwner
+        });
+        });
+      }
+    }
+
+    // 5. Cancelaciones recientes
+    if (store.mode === 'services' || store.mode === 'both' || store.mode === 'bookings') {
+      const recentCancellations = await Booking.find({
+        store: id,
+        status: 'cancelled'
+      })
+      .populate('service', 'name')
+      .sort({ updatedAt: -1 })
+      .limit(5) // Máximo 5 cancelaciones
+      .lean();
+
+      if (recentCancellations && recentCancellations.length > 0) {
+        recentCancellations.forEach(booking => {
+        notifications.push({
+          id: `cancelled-booking-${booking._id}`,
+          type: 'cancellation',
+          itemType: 'booking',
+          bookingId: booking._id,
+          storeId: store._id,
+          storeName: store.name,
+          title: '❌ Reserva cancelada',
+          message: `${booking.customerName} canceló su reserva`,
+          details: `${new Date(booking.date).toLocaleDateString('es-CL')} - ${booking.slot}`,
+          timestamp: booking.updatedAt,
+          priority: 'low',
+          read: false
+        });
+        });
+      }
+    }
+
+    // Ordenar por timestamp (más reciente primero)
+    notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    return res.json(notifications);
+  } catch (error) {
+    console.error('❌ Error al obtener notificaciones:', error);
+    return res.status(500).json({ 
+      message: 'Error al obtener notificaciones',
+      error: error.message 
+    });
   }
 };

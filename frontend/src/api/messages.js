@@ -103,3 +103,15 @@ export const sendOrderMessagePublic = async (orderId, data) => {
   return response.data;
 };
 
+/**
+ * 🆕 Obtener mensajes de una orden (cliente público)
+ * @param {string} orderId - ID de la orden
+ * @param {string} email - Email del cliente
+ * @returns {Promise<Array>} Lista de mensajes
+ */
+export const getOrderMessagesPublic = async (orderId, email) => {
+  const response = await axios.get(`/public/orders/${orderId}/messages`, {
+    params: { email }
+  });
+  return response.data;
+};

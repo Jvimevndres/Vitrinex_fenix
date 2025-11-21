@@ -98,8 +98,8 @@ export default function BookingChatPage() {
       <div className="w-full max-w-4xl">
         <ChatBox
           bookingId={bookingId}
-          mode="customer"
-          customerEmail={email}
+          userType="customer"
+          userEmail={email}
           onClose={() => navigate(-1)}
         />
       </div>

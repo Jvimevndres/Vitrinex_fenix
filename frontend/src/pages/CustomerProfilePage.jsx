@@ -1,8 +1,8 @@
 // frontend/src/pages/CustomerProfilePage.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
-import CustomerBookingsList from "../components/CustomerBookingsList";
+import CustomerPurchasesList from "../components/CustomerPurchasesList";
 import { getProfile, updateProfile } from "../api/user";
 import { listMyStores } from "../api/store";
 
@@ -72,6 +72,7 @@ const styles = `
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [form, setForm] = useState({
     username: "",
@@ -131,8 +132,15 @@ export default function CustomerProfilePage() {
 
   useEffect(() => {
     loadUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Verificar si hay un tab en la URL
+    const tabFromURL = searchParams.get('tab');
+    if (tabFromURL === 'reservas') {
+      setActiveTab('reservas');
+    }
+  }, [searchParams]);
 
   const mapUserToForm = (u) => ({
     username: u?.username || "",
@@ -382,7 +390,7 @@ export default function CustomerProfilePage() {
     <>
       <style>{styles}</style>
       <div
-        className="min-h-screen flex flex-col relative"
+        className="min-h-screen flex flex-col relative pt-20"
         style={pageBackgroundStyle}
       >
         {/* Estrellas animadas de fondo */}
@@ -1260,7 +1268,7 @@ export default function CustomerProfilePage() {
             )}
 
             {/* 🆕 TAB: MIS RESERVAS */}
-            {activeTab === "reservas" && <CustomerBookingsList />}
+            {activeTab === "reservas" && <CustomerPurchasesList />}
           </section>
         </div>
 
