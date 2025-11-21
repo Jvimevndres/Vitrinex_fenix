@@ -1655,26 +1655,32 @@ export default function StorePublicPage() {
                 </div>
               )}
 
-              {store.ownerName && (
-                <div className="flex items-center gap-2 mt-2">
-                  {store.ownerAvatar ? (
+              {(store.ownerName || store.owner) && (
+                <button
+                  onClick={() => {
+                    const ownerId = store.owner?._id || store.owner;
+                    if (ownerId) navigate(`/usuario/${ownerId}`);
+                  }}
+                  className="flex items-center gap-2 mt-2 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  {(store.ownerAvatar || store.owner?.avatarUrl) ? (
                     <img
-                      src={store.ownerAvatar}
-                      alt={store.ownerName}
+                      src={store.ownerAvatar || store.owner?.avatarUrl}
+                      alt={store.ownerName || store.owner?.username}
                       className="h-8 w-8 rounded-full border object-cover"
                     />
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs">
-                      {store.ownerName[0]?.toUpperCase() || "U"}
+                      {((store.ownerName || store.owner?.username || "U")[0]?.toUpperCase())}
                     </div>
                   )}
                   <p className="text-xs text-slate-600">
                     Dueño:{" "}
-                    <span className="font-medium text-slate-800">
-                      {store.ownerName}
+                    <span className="font-medium text-slate-800 hover:underline">
+                      {store.ownerName || store.owner?.username || "Usuario"}
                     </span>
                   </p>
-                </div>
+                </button>
               )}
 
               <div className="flex flex-wrap gap-2 pt-2">

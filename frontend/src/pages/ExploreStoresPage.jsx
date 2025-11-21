@@ -741,6 +741,21 @@ export default function ExploreStoresPage() {
                           <div>
                             <h3 className="font-semibold text-white text-sm">{store.name}</h3>
                             <p className="text-[12px] text-white/60">{store.tipoNegocio || "Sin categoría"} {store.comuna ? `· ${store.comuna}` : ""}</p>
+                            {store.owner && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); navigate(`/usuario/${store.owner._id || store.owner}`); }}
+                                className="flex items-center gap-1.5 mt-1 text-[11px] text-white/70 hover:text-white transition-colors"
+                              >
+                                {store.owner.avatarUrl ? (
+                                  <img src={store.owner.avatarUrl} alt={store.owner.username} className="w-4 h-4 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[8px]">
+                                    {(store.owner.username || "U")[0]?.toUpperCase()}
+                                  </div>
+                                )}
+                                <span>Por: {store.owner.username || "Usuario"}</span>
+                              </button>
+                            )}
                           </div>
                           <div className="text-xs text-white/50">{store.distance ? `${store.distance} km` : null}</div>
                         </div>

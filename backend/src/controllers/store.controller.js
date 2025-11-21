@@ -120,6 +120,11 @@ export const listPublicStores = async (req, res) => {
         lng: s.lng,
         direccion: s.direccion,
         isActive: s.isActive,
+        owner: s.owner ? {
+          _id: s.owner._id,
+          username: s.owner.username,
+          avatarUrl: s.owner.avatarUrl
+        } : null,
         ownerName: s.owner?.username || null,
         ownerAvatar: s.owner?.avatarUrl || null,
       })),
@@ -432,6 +437,12 @@ export const getStoreById = async (req, res) => {
       plan: store.plan || "free", // 🆕 Plan de suscripción
       planExpiresAt: store.planExpiresAt || null, // 🆕 Fecha de expiración
       promotionalSpaces: store.promotionalSpaces || {}, // 🆕 Espacios publicitarios
+      owner: store.owner ? {
+        _id: store.owner._id,
+        username: store.owner.username,
+        avatarUrl: store.owner.avatarUrl,
+        email: store.owner.email
+      } : null,
       ownerName: store.owner?.username || null,
       ownerAvatar: store.owner?.avatarUrl || null,
       ownerEmail: store.owner?.email || null,
