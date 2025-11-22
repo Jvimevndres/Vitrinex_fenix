@@ -11,6 +11,9 @@ import {
   sendOrderMessage,
   sendOrderMessagePublic,
   getOrderMessagesPublic,
+  getUserMessages,
+  sendUserMessage,
+  getUserConversations,
 } from "../controllers/messages.controller.js";
 
 const router = Router();
@@ -31,5 +34,10 @@ router.post("/orders/:orderId/messages", authRequired, sendOrderMessage);
 // Rutas públicas - Orders (clientes)
 router.get("/public/orders/:orderId/messages", getOrderMessagesPublic);
 router.post("/public/orders/:orderId/messages", sendOrderMessagePublic);
+
+// 🆕 Rutas para chat usuario-usuario (requieren autenticación)
+router.get("/user-conversations", authRequired, getUserConversations);
+router.get("/public/users/:userId/messages", authRequired, getUserMessages);
+router.post("/public/users/:userId/messages", authRequired, sendUserMessage);
 
 export default router;

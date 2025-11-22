@@ -64,6 +64,25 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     loadStores();
+    
+    // ✅ Recargar tiendas cuando cambia el usuario (login/logout)
+    const handleUserLogin = () => {
+      loadStores();
+    };
+    
+    const handleUserLogout = () => {
+      // Limpiar estados al hacer logout
+      setStores([]);
+      resetForm();
+    };
+    
+    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('userLogout', handleUserLogout);
+    
+    return () => {
+      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('userLogout', handleUserLogout);
+    };
   }, []);
 
   const onChange = (e) => {

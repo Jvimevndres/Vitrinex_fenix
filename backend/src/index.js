@@ -9,7 +9,6 @@ import { fileURLToPath } from "url";
 import logger from "./utils/logger.js";
 
 import authRoutes from "./routes/auth.routes.js";
-import taskRoutes from "./routes/tasks.routes.js";
 import storeRoutes from "./routes/store.routes.js";
 import servicesRoutes from "./routes/services.routes.js"; // 🆕 NUEVO
 import messagesRoutes from "./routes/messages.routes.js"; // 🆕 CHAT
@@ -57,7 +56,6 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.use("/api", healthRoutes); // Health checks
 app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/stores", servicesRoutes); // 🆕 NUEVO: Rutas de servicios (usa mismo prefijo)
 app.use("/api", messagesRoutes); // 🆕 CHAT: Rutas de mensajes para reservas

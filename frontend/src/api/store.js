@@ -24,8 +24,18 @@ export const getStoreById = async (id) => {
  * 🔹 MIS TIENDAS (dueño)
  * ===================================== */
 export const listMyStores = async () => {
-  const res = await api.get("/stores/my");
-  return res;
+  try {
+    const res = await api.get("/stores/my");
+    return res;
+  } catch (error) {
+    // Si el usuario no tiene tiendas, el backend devuelve 404
+    // Lo tratamos como caso normal: "0 tiendas"
+    if (error.response?.status === 404) {
+      return { data: [] };
+    }
+    // Para otros errores (500, red caída, etc.), sí lanzamos la excepción
+    throw error;
+  }
 };
 
 // Crear o actualizar (modo "guardar" centralizado del panel)

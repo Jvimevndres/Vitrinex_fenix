@@ -111,7 +111,7 @@ export default function ExploreStoresPage() {
   // MODOS DE OPERACIÓN EXPANDIDOS
   const modosOperacion = [
     { value: "products", label: "🛍️ Venta de Productos", icon: "🛒" },
-    { value: "bookings", label: "📅 Agendamiento de Citas", icon: "📆" },
+    { value: "bookings", label: "Agendamiento de Citas", icon: "📆" },
   ];
 
   const [mapCenter, setMapCenter] = useState(INITIAL_CENTER);

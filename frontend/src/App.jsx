@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
@@ -22,7 +23,12 @@ import AdminCommentsViewer from "./pages/AdminCommentsViewer";
 
 // Ruta protegida
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, checkLogin } = useAuth();
+
+  useEffect(() => {
+    // ✅ Si llegamos a una ruta protegida y aún no se verificó sesión, hacerlo ahora
+    checkLogin();
+  }, [checkLogin]);
 
   if (loading)
     return (

@@ -151,8 +151,9 @@ export const getMyStore = async (req, res) => {
       $or: [{ owner: userId }, { user: userId }],
     }).lean();
 
+    // Si no tiene tiendas, retornar array vacío con 200 (no es error)
     if (!stores || stores.length === 0) {
-      return res.status(404).json({ message: "Aún no has creado tiendas" });
+      return res.json([]);
     }
 
     res.json(stores);
@@ -786,19 +787,14 @@ export const getCustomerBookings = async (req, res) => {
       return res.status(400).json({ message: "Email requerido" });
     }
 
-    console.log('📋 Buscando reservas para email:', email);
-
     const bookings = await Booking.find({ 
       customerEmail: email
     })
       .populate('store', 'name logoUrl category phone address')
       .populate('service', 'name duration price')
-      .select('+unreadMessagesCustomer +unreadMessagesOwner +lastMessageAt') // Asegurar que incluye campos de chat
+      .select('+unreadMessagesCustomer +unreadMessagesOwner +lastMessageAt')
       .sort({ date: -1, slot: -1 })
       .limit(100);
-
-    console.log(`✅ Encontradas ${bookings.length} reservas`);
-    console.log(`📬 Reservas con mensajes sin leer:`, bookings.filter(b => b.unreadMessagesCustomer > 0).length);
 
     return res.json(bookings);
   } catch (err) {
@@ -816,8 +812,6 @@ export const getCustomerOrders = async (req, res) => {
       return res.status(400).json({ message: "Email requerido" });
     }
 
-    console.log('🛒 Buscando órdenes para email:', email);
-
     const orders = await Order.find({ 
       customerEmail: email
     })
@@ -826,9 +820,6 @@ export const getCustomerOrders = async (req, res) => {
       .select('+unreadMessagesCustomer +unreadMessagesOwner +lastMessageAt')
       .sort({ createdAt: -1 })
       .limit(100);
-
-    console.log(`✅ Encontradas ${orders.length} órdenes`);
-    console.log(`📬 Órdenes con mensajes sin leer:`, orders.filter(o => o.unreadMessagesCustomer > 0).length);
 
     return res.json(orders);
   } catch (err) {
@@ -1493,6 +1484,13 @@ export const createAppointment = async (req, res) => {
     if (!customerName || !date || !slot) {
       return res.status(400).json({ 
         message: "Faltan campos requeridos: customerName, date, slot" 
+      });
+    }
+
+    // Validar email (obligatorio para chat)
+    if (!customerEmail || !customerEmail.trim()) {
+      return res.status(400).json({ 
+        message: "El email es requerido para crear la reserva y poder usar el chat" 
       });
     }
 

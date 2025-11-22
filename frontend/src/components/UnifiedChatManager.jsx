@@ -208,12 +208,6 @@ function ChatArea({ conversation }) {
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return;
     
-    console.log('📤 Enviando mensaje...', {
-      type: conversation.type,
-      id: conversation.id,
-      content: newMessage.trim().substring(0, 50)
-    });
-    
     try {
       setSending(true);
       let result;
@@ -222,12 +216,17 @@ function ChatArea({ conversation }) {
       } else {
         result = await sendMessage(conversation.id, newMessage.trim());
       }
-      console.log('✅ Mensaje enviado:', result);
       setNewMessage("");
       await loadMessages();
+      
+      // ✅ Refrescar contador de mensajes en header con pequeño delay
+      setTimeout(() => {
+        if (window.refreshMessagesAndNotifications) {
+          window.refreshMessagesAndNotifications();
+        }
+      }, 500);
     } catch (err) {
-      console.error("❌ Error enviando mensaje:", err);
-      console.error("Error completo:", err.response || err);
+      console.error("Error enviando mensaje:", err);
       alert(`Error al enviar el mensaje: ${err.response?.data?.message || err.message}`);
     } finally {
       setSending(false);

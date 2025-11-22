@@ -9,15 +9,6 @@ export default function PromotionalBanner({ position, store, className = '' }) {
   const customBanner = store?.promotionalSpaces?.[position];
   const hasCustomBanner = isPremium && customBanner?.enabled && customBanner?.imageUrl;
 
-  console.log('📢 PromotionalBanner', {
-    position,
-    isPremium,
-    storePlan: store?.plan,
-    customBanner,
-    hasCustomBanner,
-    promotionalSpaces: store?.promotionalSpaces
-  });
-
   useEffect(() => {
     // Si no tiene plan premium o no tiene banner personalizado, cargar ads de auspiciadores
     if (!hasCustomBanner) {
@@ -27,9 +18,7 @@ export default function PromotionalBanner({ position, store, className = '' }) {
 
   const loadSponsorAds = async () => {
     try {
-      console.log(`📢 Cargando anuncios de Vitrinex para posición: ${position}`);
       const res = await getActiveAdsByPosition(position);
-      console.log(`✅ Anuncios recibidos:`, res.data.ads);
       setAds(res.data.ads || []);
     } catch (error) {
       console.error('❌ Error cargando anuncios:', error);

@@ -60,9 +60,15 @@ export const getBookingMessagesPublic = async (bookingId, email) => {
  * @returns {Promise<Object>} Mensaje creado
  */
 export const sendMessagePublic = async (bookingId, email, content) => {
+  if (!email || !email.trim()) {
+    throw new Error("Email es requerido para enviar mensajes");
+  }
+  if (!content || !content.trim()) {
+    throw new Error("El mensaje no puede estar vacío");
+  }
   const response = await axios.post(`/public/bookings/${bookingId}/messages`, {
-    email,
-    content
+    email: email.trim(),
+    content: content.trim()
   });
   return response.data;
 };
@@ -99,7 +105,41 @@ export const sendOrderMessage = async (orderId, content) => {
  * @returns {Promise<Object>} Mensaje creado
  */
 export const sendOrderMessagePublic = async (orderId, data) => {
-  const response = await axios.post(`/public/orders/${orderId}/messages`, data);
+  const response = await axios.post(`/public/orders/${orderId}/messages`, messageData);
+  return response.data;
+};
+
+// ============================================
+// USER-TO-USER CHAT (chat directo entre usuarios)
+// ============================================
+
+/**
+ * Obtener lista de conversaciones usuario-usuario
+ * @returns {Promise<Array>} Lista de conversaciones
+ */
+export const getUserConversations = async () => {
+  const response = await axios.get('/user-conversations');
+  return response.data;
+};
+
+/**
+ * Obtener mensajes entre usuario autenticado y otro usuario
+ * @param {string} userId - ID del otro usuario
+ * @returns {Promise<Array>} Lista de mensajes
+ */
+export const getUserMessages = async (userId) => {
+  const response = await axios.get(`/public/users/${userId}/messages`);
+  return response.data;
+};
+
+/**
+ * Enviar mensaje a otro usuario
+ * @param {string} userId - ID del usuario destinatario
+ * @param {string} content - Contenido del mensaje
+ * @returns {Promise<Object>} Mensaje creado
+ */
+export const sendUserMessage = async (userId, content) => {
+  const response = await axios.post(`/public/users/${userId}/messages`, { content });
   return response.data;
 };
 

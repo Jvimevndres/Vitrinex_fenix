@@ -63,12 +63,6 @@ export const sendMessage = async (req, res) => {
     const { bookingId } = req.params;
     const { content } = req.body;
 
-    console.log('📨 [sendMessage] Recibida petición:', {
-      bookingId,
-      content: content?.substring(0, 50),
-      userId: req.user?.id
-    });
-
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: "El mensaje no puede estar vacío" });
     }
@@ -99,10 +93,8 @@ export const sendMessage = async (req, res) => {
 
     await message.save();
 
-    console.log('✅ [sendMessage] Mensaje guardado:', message._id);
-
-    // Actualizar booking
-    booking.unreadMessagesCustomer += 1;
+    // ✅ Actualizar booking con timestamp y contador para el CLIENTE
+    booking.unreadMessagesCustomer = (booking.unreadMessagesCustomer || 0) + 1;
     booking.lastMessageAt = new Date();
     await booking.save();
 
@@ -113,6 +105,178 @@ export const sendMessage = async (req, res) => {
   } catch (error) {
     console.error("Error al enviar mensaje:", error);
     return res.status(500).json({ message: "Error al enviar mensaje" });
+  }
+};
+
+// ============================================
+// CHAT USUARIO-USUARIO (directo entre perfiles)
+// ============================================
+
+/**
+ * GET /api/public/users/:userId/messages
+ * Obtener conversación entre usuario autenticado y otro usuario
+ */
+export const getUserMessages = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID del usuario con quien se chatea
+    const currentUserId = req.user.id; // Usuario autenticado
+
+    // Validar que no intente chatear consigo mismo
+    if (userId === currentUserId) {
+      return res.status(400).json({ message: "No puedes chatear contigo mismo" });
+    }
+
+    // Obtener mensajes en ambas direcciones
+    const messages = await Message.find({
+      conversationType: "user",
+      $or: [
+        { fromUser: currentUserId, toUser: userId },
+        { fromUser: userId, toUser: currentUserId }
+      ]
+    })
+      .populate("fromUser", "username email avatar")
+      .populate("toUser", "username email avatar")
+      .sort({ createdAt: 1 });
+
+    // Marcar como leídos los mensajes que recibió el usuario actual
+    await Message.updateMany(
+      {
+        conversationType: "user",
+        fromUser: userId,
+        toUser: currentUserId,
+        isRead: false
+      },
+      {
+        $set: {
+          isRead: true,
+          readAt: new Date()
+        }
+      }
+    );
+
+    return res.json(messages);
+  } catch (error) {
+    console.error("Error al obtener mensajes usuario-usuario:", error);
+    return res.status(500).json({ message: "Error al obtener mensajes" });
+  }
+};
+
+/**
+ * POST /api/public/users/:userId/messages
+ * Enviar mensaje a otro usuario
+ */
+export const sendUserMessage = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID del usuario destinatario
+    const currentUserId = req.user.id; // Usuario autenticado que envía
+    const { content } = req.body;
+
+    // Validaciones
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: "El mensaje no puede estar vacío" });
+    }
+
+    if (content.length > 1000) {
+      return res.status(400).json({ message: "El mensaje es demasiado largo (máx 1000 caracteres)" });
+    }
+
+    if (userId === currentUserId) {
+      return res.status(400).json({ message: "No puedes enviarte mensajes a ti mismo" });
+    }
+
+    // Verificar que el usuario destinatario existe
+    const User = (await import("../models/user.model.js")).default;
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Crear mensaje
+    const message = new Message({
+      conversationType: "user",
+      fromUser: currentUserId,
+      toUser: userId,
+      sender: currentUserId, // Compatibilidad
+      senderType: "user",
+      content: content.trim(),
+      isRead: false
+    });
+
+    await message.save();
+
+    // Poblar datos para la respuesta
+    await message.populate("fromUser", "username email avatar");
+    await message.populate("toUser", "username email avatar");
+
+    return res.status(201).json(message);
+  } catch (error) {
+    console.error("Error al enviar mensaje usuario-usuario:", error);
+    return res.status(500).json({ message: "Error al enviar mensaje" });
+  }
+};
+
+/**
+ * GET /api/messages/user-conversations
+ * Obtener lista de conversaciones usuario-usuario del usuario autenticado
+ */
+export const getUserConversations = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+
+    // Buscar todos los mensajes donde el usuario es participante
+    const messages = await Message.find({
+      conversationType: "user",
+      $or: [
+        { fromUser: currentUserId },
+        { toUser: currentUserId }
+      ]
+    })
+      .populate("fromUser", "username email avatar")
+      .populate("toUser", "username email avatar")
+      .sort({ createdAt: -1 });
+
+    // Agrupar por conversación (usuario con quien se chatea)
+    const conversationsMap = new Map();
+
+    messages.forEach(msg => {
+      // Determinar el otro usuario
+      const otherUserId = msg.fromUser._id.toString() === currentUserId 
+        ? msg.toUser._id.toString() 
+        : msg.fromUser._id.toString();
+      
+      const otherUser = msg.fromUser._id.toString() === currentUserId 
+        ? msg.toUser 
+        : msg.fromUser;
+
+      // Si ya existe esta conversación, actualizar solo si este mensaje es más reciente
+      if (!conversationsMap.has(otherUserId)) {
+        // Contar mensajes sin leer que recibió el usuario actual
+        const unreadCount = messages.filter(m => 
+          m.fromUser._id.toString() === otherUserId &&
+          m.toUser._id.toString() === currentUserId &&
+          !m.isRead
+        ).length;
+
+        conversationsMap.set(otherUserId, {
+          userId: otherUser._id,
+          username: otherUser.username,
+          email: otherUser.email,
+          avatar: otherUser.avatar,
+          lastMessage: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
+          lastMessageAt: msg.createdAt,
+          unreadCount: unreadCount
+        });
+      }
+    });
+
+    // Convertir a array y ordenar por último mensaje
+    const conversations = Array.from(conversationsMap.values())
+      .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+
+    return res.json(conversations);
+  } catch (error) {
+    console.error("Error al obtener conversaciones usuario-usuario:", error);
+    return res.status(500).json({ message: "Error al obtener conversaciones" });
   }
 };
 
@@ -212,8 +376,8 @@ export const sendMessagePublic = async (req, res) => {
 
     await message.save();
 
-    // Actualizar booking
-    booking.unreadMessagesOwner += 1;
+    // ✅ Actualizar booking con timestamp y contador para el DUEÑO
+    booking.unreadMessagesOwner = (booking.unreadMessagesOwner || 0) + 1;
     booking.lastMessageAt = new Date();
     await booking.save();
 
@@ -232,9 +396,28 @@ export const getBookingsWithMessages = async (req, res) => {
   try {
     const { storeId } = req.params;
 
+    // Verificar que la tienda existe y pertenece al usuario autenticado
+    const store = await Store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ message: "Tienda no encontrada" });
+    }
+
+    // Verificar propiedad
+    const userId = req.user.id;
+    const ownerId = store.owner?.toString();
+    const legacyOwnerId = store.user?.toString();
+    
+    if (ownerId !== userId && legacyOwnerId !== userId) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    // Filtrar por lastMessageAt !== null O unreadMessagesOwner > 0
     const bookings = await Booking.find({
       store: storeId,
-      lastMessageAt: { $exists: true },
+      $or: [
+        { lastMessageAt: { $ne: null } },
+        { unreadMessagesOwner: { $gt: 0 } }
+      ]
     })
       .populate("service", "name")
       .sort({ lastMessageAt: -1 })
@@ -304,12 +487,6 @@ export const sendOrderMessage = async (req, res) => {
     const { orderId } = req.params;
     const { content } = req.body;
 
-    console.log('📨 [sendOrderMessage] Recibida petición:', {
-      orderId,
-      content: content?.substring(0, 50),
-      userId: req.user?.id
-    });
-
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ message: "El mensaje no puede estar vacío" });
     }
@@ -341,6 +518,11 @@ export const sendOrderMessage = async (req, res) => {
     });
 
     await message.save();
+
+    // ✅ Actualizar order con timestamp y contador para el CLIENTE
+    order.unreadMessagesCustomer = (order.unreadMessagesCustomer || 0) + 1;
+    order.lastMessageAt = new Date();
+    await order.save();
 
     return res.status(201).json(message);
   } catch (error) {
@@ -388,6 +570,11 @@ export const sendOrderMessagePublic = async (req, res) => {
     });
 
     await message.save();
+
+    // ✅ Actualizar order con timestamp y contador para el DUEÑO
+    order.unreadMessagesOwner = (order.unreadMessagesOwner || 0) + 1;
+    order.lastMessageAt = new Date();
+    await order.save();
 
     return res.status(201).json(message);
   } catch (error) {

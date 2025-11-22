@@ -3,10 +3,11 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
+    // Conversación tipo tienda/reserva/pedido
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
-      required: true,
+      default: null,
       index: true,
     },
     booking: {
@@ -21,6 +22,28 @@ const messageSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    
+    // 🆕 Chat usuario-usuario directo
+    conversationType: {
+      type: String,
+      enum: ["store", "user"], // "store" = chat tienda/reserva/pedido, "user" = chat directo entre usuarios
+      default: "store",
+      index: true,
+    },
+    fromUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true, // Usuario que envía (para chat directo)
+    },
+    toUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true, // Usuario que recibe (para chat directo)
+    },
+    
+    // Campos existentes (compatibilidad)
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -29,8 +52,8 @@ const messageSchema = new mongoose.Schema(
     },
     senderType: {
       type: String,
-      enum: ["owner", "customer"],
-      required: true,
+      enum: ["owner", "customer", "user"], // 🆕 Agregado "user" para chat directo
+      default: "customer",
     },
     senderName: {
       type: String,
@@ -63,6 +86,10 @@ const messageSchema = new mongoose.Schema(
 messageSchema.index({ booking: 1, createdAt: 1 });
 messageSchema.index({ order: 1, createdAt: 1 });
 messageSchema.index({ store: 1, isRead: 1 });
+// 🆕 Índices para chat usuario-usuario
+messageSchema.index({ conversationType: 1, fromUser: 1, toUser: 1, createdAt: 1 });
+messageSchema.index({ fromUser: 1, createdAt: -1 });
+messageSchema.index({ toUser: 1, createdAt: -1 });
 
 // Virtual para formatear tiempo
 messageSchema.virtual("timeAgo").get(function () {

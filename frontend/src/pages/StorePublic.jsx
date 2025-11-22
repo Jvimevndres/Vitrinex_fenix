@@ -530,9 +530,8 @@ export default function StorePublicPage() {
         try {
           const appearanceData = await getStoreAppearance(id);
           setAppearance(appearanceData);
-          console.log('✅ Apariencia cargada:', appearanceData);
         } catch (err) {
-          console.log("No hay personalización visual configurada, usando valores por defecto");
+          // No hay personalización visual configurada, usando valores por defecto
         }
       } catch (err) {
         console.error(err);
@@ -544,34 +543,6 @@ export default function StorePublicPage() {
 
     loadStore();
   }, [id]);
-
-  // Log para debug cuando store cambia
-  useEffect(() => {
-    if (store) {
-      console.log('🏪 === STORE PUBLIC - DATOS RECIBIDOS ===');
-      console.log('Store completo:', store);
-      console.log('📦 customBoxes:', store.customBoxes);
-      console.log('👥 aboutTitle:', store.aboutTitle);
-      console.log('👥 aboutDescription:', store.aboutDescription);
-      console.log('⏰ scheduleText:', store.scheduleText);
-      console.log('🔲 === VERIFICACIÓN DE SECCIONES ===');
-      console.log('appearance completo:', appearance);
-      console.log('appearance.sections:', appearance?.sections);
-      if (appearance?.sections) {
-        console.log('  - hero:', appearance.sections.hero);
-        console.log('  - about:', appearance.sections.about);
-        console.log('  - services:', appearance.sections.services);
-        console.log('  - gallery:', appearance.sections.gallery);
-        console.log('  - testimonials:', appearance.sections.testimonials);
-        console.log('  - schedule:', appearance.sections.schedule);
-        console.log('  - contact:', appearance.sections.contact);
-        console.log('  - booking:', appearance.sections.booking);
-      } else {
-        console.warn('⚠️ appearance.sections es undefined!');
-      }
-      console.log('=====================================');
-    }
-  }, [store, appearance]);
 
   // cargar según modo
   useEffect(() => {
@@ -882,9 +853,6 @@ export default function StorePublicPage() {
       const { data } = await getStoreAvailability(id);
       const av = Array.isArray(data?.availability) ? data.availability : [];
       setAvailability(av);
-      
-      console.log("📅 Availability cargado:", av.length, "días");
-      console.log("📅 Días configurados:", av.map(a => `${a.dayOfWeek}${a.isClosed ? ' (cerrado)' : ''} - ${a.timeBlocks?.length || 0} bloques`));
     } catch (err) {
       console.error(err);
       setAvailability([]);
@@ -920,7 +888,6 @@ export default function StorePublicPage() {
       setServicesLoading(true);
       const { data } = await getStoreServices(id);
       const activeServices = Array.isArray(data) ? data.filter(s => s.isActive) : [];
-      console.log("🛎️ Servicios activos cargados:", activeServices.length, activeServices);
       setAllServices(activeServices);
       
       // Cargar specialDays para marcar el calendario
@@ -938,11 +905,6 @@ export default function StorePublicPage() {
     try {
       const { data } = await getSpecialDays(id);
       const days = Array.isArray(data) ? data : [];
-      console.log("📅 SpecialDays cargados:", days.length);
-      days.forEach(sd => {
-        const date = new Date(sd.date);
-        console.log(`  ${sd.isClosed ? '🚫' : '⭐'} ${date.toLocaleDateString('es-ES')}: ${sd.isClosed ? 'CERRADO' : `${sd.timeBlocks?.length || 0} bloques`}`);
-      });
       setSpecialDays(days);
     } catch (err) {
       console.error("❌ Error al cargar specialDays:", err);
@@ -952,38 +914,18 @@ export default function StorePublicPage() {
 
   // 🆕 CARGAR SLOTS POR FECHA Y SERVICIO
   const loadSlotsForDate = async (date, serviceId) => {
-    console.log("🚀 loadSlotsForDate iniciado - fecha:", date, "serviceId:", serviceId);
     if (!date || !serviceId) {
-      console.warn("⚠️ loadSlotsForDate cancelado - faltan parámetros");
       return;
     }
     try {
       setDateSlotsLoading(true);
-      console.log("📡 Llamando a API getAvailabilityByDate...");
-      console.log("📡 URL:", `/stores/${id}/availability/date/${date}?serviceId=${serviceId}`);
       
       const { data } = await getAvailabilityByDate(id, date, serviceId);
-      
-      console.log("📅 Disponibilidad recibida:", data);
-      console.log("📊 availableSlots:", data.availableSlots);
-      console.log("📊 bookedSlots:", data.bookedSlots);
-      console.log("📊 Cantidad de slots disponibles:", data.availableSlots?.length || 0);
-      console.log("📊 isClosed:", data.isClosed);
-      console.log("📊 timeBlocks:", data.timeBlocks);
       
       // El backend YA filtra los slots ocupados en availableSlots
       // Solo guardamos los slots que están disponibles
       const slots = Array.isArray(data.availableSlots) ? data.availableSlots : [];
       setDateSlots(slots);
-      
-      console.log("✅ dateSlots actualizado con", slots.length, "slots disponibles");
-      if (slots.length === 0) {
-        console.warn("⚠️ No se recibieron slots. Razones posibles:");
-        console.warn("   - Día cerrado:", data.isClosed);
-        console.warn("   - Sin timeBlocks:", !data.timeBlocks || data.timeBlocks.length === 0);
-        console.warn("   - Bloques muy cortos para el servicio");
-        console.warn("   - Todos los slots están ocupados:", data.bookedSlots?.length || 0);
-      }
     } catch (err) {
       console.error("❌ Error al cargar slots:", err);
       console.error("❌ Error details:", err.response?.data);
@@ -1027,21 +969,14 @@ export default function StorePublicPage() {
     const day = String(value.getDate()).padStart(2, '0');
     const iso = `${year}-${month}-${day}`;
     
-    console.log("📅 Fecha seleccionada:", iso, "Servicio:", selectedService?._id);
-    console.log("📅 Objeto Date:", value);
-    console.log("📅 ISO local:", iso);
-    
     setBookingForm((p) => ({ ...p, date: iso, slot: "" }));
     setBookingError("");
     setBookingMsg("");
     
     // 🆕 Cargar slots para esta fecha y servicio
     if (selectedService?._id) {
-      console.log("🔍 Cargando slots para fecha:", iso, "servicio:", selectedService._id);
       loadSlotsForDate(iso, selectedService._id);
       setBookingStep(3);
-    } else {
-      console.warn("⚠️ No hay servicio seleccionado, no se cargan slots");
     }
   };
 
@@ -1134,21 +1069,14 @@ export default function StorePublicPage() {
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       
-      console.log(`📅 Precargando disponibilidad para ${firstDay.toLocaleDateString('es-ES')} - ${lastDay.toLocaleDateString('es-ES')}`);
-      console.log(`📅 Servicio seleccionado: ${selectedService.name} (${selectedService.duration}min)`);
-      
       // Cargar disponibilidad para cada día del mes
       const promises = [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      let daysToCheck = 0;
-      let daysSkipped = 0;
-      
       for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
         // Solo cargar días futuros
         if (d < today) {
-          daysSkipped++;
           continue;
         }
         
@@ -1157,16 +1085,12 @@ export default function StorePublicPage() {
         const dateDay = String(d.getDate()).padStart(2, '0');
         const dateKey = `${dateYear}-${dateMonth}-${dateDay}`;
         
-        daysToCheck++;
-        
         // Cargar slots reales directamente desde la API
         // La API ya maneja la lógica de specialDays vs bookingAvailability
         promises.push(
           getAvailabilityByDate(id, dateKey, selectedService._id)
             .then(({ data }) => {
               const hasSlots = Array.isArray(data.availableSlots) && data.availableSlots.length > 0;
-              const dayOfWeek = DAY_FROM_INDEX[d.getDay()];
-              console.log(`${hasSlots ? '✅' : '⚠️'} ${dateKey} (${dayOfWeek}): ${data.availableSlots?.length || 0} slots disponibles`);
               setAvailabilityCache(prev => ({ 
                 ...prev, 
                 [dateKey]: { hasSlots, loading: false, slots: data.availableSlots || [] } 
@@ -1179,11 +1103,8 @@ export default function StorePublicPage() {
         );
       }
       
-      console.log(`📊 Días a verificar: ${daysToCheck}, Días omitidos (pasados): ${daysSkipped}`);
-      
       // Esperar a que todas las peticiones terminen
       await Promise.all(promises);
-      console.log(`✅ Disponibilidad del mes cargada - Total en cache:`, Object.keys(availabilityCache).length);
       
       // Forzar re-render del calendario
       setCacheVersion(prev => prev + 1);
@@ -1297,6 +1218,8 @@ export default function StorePublicPage() {
     if (!selectedService) return setBookingError("Selecciona un servicio");
     if (!bookingForm.customerName.trim())
       return setBookingError("Ingresa tu nombre para agendar");
+    if (!bookingForm.customerEmail || !bookingForm.customerEmail.trim())
+      return setBookingError("Ingresa tu email para poder recibir confirmación y usar el chat");
     if (!bookingForm.date)
       return setBookingError("Selecciona una fecha en el calendario");
     if (!bookingForm.slot)
@@ -1722,7 +1645,6 @@ export default function StorePublicPage() {
           {/* Sección Quiénes Somos */}
           {(() => {
             const shouldShow = store.aboutDescription && appearance?.sections?.about !== false;
-            console.log('👥 ¿Mostrar Quiénes Somos?', shouldShow, '| aboutDescription:', !!store.aboutDescription, '| sections.about:', appearance?.sections?.about);
             return shouldShow;
           })() && (
             <section
@@ -1788,7 +1710,6 @@ export default function StorePublicPage() {
           {/* Horarios de Atención */}
           {(() => {
             const shouldShow = store.scheduleText && appearance?.sections?.schedule !== false;
-            console.log('⏰ ¿Mostrar Horarios?', shouldShow, '| scheduleText:', !!store.scheduleText, '| sections.schedule:', appearance?.sections?.schedule);
             return shouldShow;
           })() && (
             <section
@@ -1821,7 +1742,6 @@ export default function StorePublicPage() {
           {/* 🆕 AGENDAMIENTO MEJORADO - FLUJO PASO A PASO */}
           {(() => {
             const shouldShow = store.mode === "bookings" && appearance?.sections?.booking !== false;
-            console.log('📅 ¿Mostrar Agendamiento?', shouldShow, '| mode:', store.mode, '| sections.booking:', appearance?.sections?.booking);
             return shouldShow;
           })() && (
             <section
@@ -2387,7 +2307,6 @@ export default function StorePublicPage() {
           {/* PRODUCTOS */}
           {(() => {
             const shouldShow = store.mode === "products" && appearance?.sections?.services !== false;
-            console.log('🛒 ¿Mostrar Productos?', shouldShow, '| mode:', store.mode, '| sections.services:', appearance?.sections?.services);
             return shouldShow;
           })() && (
             <ModernProductsStore store={store} appearance={appearance} />

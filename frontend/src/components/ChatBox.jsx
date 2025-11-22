@@ -118,6 +118,11 @@ export default function ChatBox({ bookingId, orderId, userType = 'customer', use
       console.log('✅ Mensaje enviado:', sentMessage);
       setMessages(prev => [...prev, sentMessage]);
       setNewMessage('');
+      
+      // ✅ Refrescar contador de mensajes en header inmediatamente
+      if (window.refreshMessagesAndNotifications) {
+        window.refreshMessagesAndNotifications();
+      }
     } catch (err) {
       console.error('❌ Error enviando mensaje:', err);
       console.error('Error response:', err.response?.data);

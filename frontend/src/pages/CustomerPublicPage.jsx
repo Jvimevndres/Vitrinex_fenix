@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
+import UserChatModal from "../components/UserChatModal"; // 🆕 Chat usuario-usuario
 import { getPublicUser } from "../api/user";
+import { useAuth } from "../context/AuthContext"; // 🆕 Para verificar autenticación
 
 const buildBg = () => {
   return {
@@ -63,6 +65,7 @@ function SmallDonut({ percent = 70, color = "#7c3aed" }) {
 export default function CustomerPublicPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser, isAuthenticated } = useAuth(); // 🆕 Usuario autenticado
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -306,7 +309,18 @@ export default function CustomerPublicPage() {
                 {/* Botones de acción */}
                 <div className="flex flex-col gap-3">
                   <button 
-                    onClick={() => setOpenContact(true)}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        alert("Debes iniciar sesión para contactar a este usuario");
+                        navigate("/login");
+                        return;
+                      }
+                      if (currentUser._id === id) {
+                        alert("No puedes contactarte a ti mismo");
+                        return;
+                      }
+                      setOpenContact(true);
+                    }}
                     className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
                   >
                     💬 Contactar
@@ -439,65 +453,13 @@ export default function CustomerPublicPage() {
         </main>
       )}
 
-      {/* Modal de contacto */}
-      {openContact && user && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-gradient-to-br from-slate-900/98 to-slate-800/98 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-white">Contactar</h3>
-                <p className="text-sm text-slate-400 mt-1">{user.username || user.name}</p>
-              </div>
-              <button 
-                onClick={() => setOpenContact(false)} 
-                className="text-slate-400 hover:text-white text-2xl leading-none transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <form className="space-y-4" onSubmit={(e) => { 
-              e.preventDefault(); 
-              alert("Mensaje enviado exitosamente! 🎉"); 
-              setOpenContact(false); 
-            }}>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Tu nombre</label>
-                <input 
-                  required 
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all" 
-                  placeholder="Ingresa tu nombre"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Mensaje</label>
-                <textarea 
-                  required 
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none" 
-                  rows={4}
-                  placeholder="Escribe tu mensaje aquí..."
-                />
-              </div>
-              
-              <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setOpenContact(false)} 
-                  className="flex-1 px-6 py-3 bg-slate-700/50 border border-slate-600 text-slate-300 rounded-xl font-semibold hover:bg-slate-700 transition-all"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
-                >
-                  Enviar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* 🆕 Modal de chat usuario-usuario (reemplaza el formulario viejo) */}
+      {openContact && user && isAuthenticated && (
+        <UserChatModal
+          targetUserId={id}
+          targetUsername={user.username || user.name || user.email}
+          onClose={() => setOpenContact(false)}
+        />
       )}
     </div>
   );
