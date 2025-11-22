@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { listMyStores, saveMyStore, deleteMyStore } from "../api/store";
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -376,6 +377,7 @@ export default function OnboardingPage() {
           </section>
         )}
       </main>
+      <Footer paletteMode="warm" />
     </div>
   );
 }

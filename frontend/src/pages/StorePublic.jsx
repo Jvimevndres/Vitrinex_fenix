@@ -16,6 +16,7 @@ import {
 } from "../api/services";
 import { getStoreAppearance } from "../api/appearance"; // 🎨 Personalización visual
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tienda moderna
 import PromotionalBanner from "../components/PromotionalBanner"; // 📢 Banners promocionales
 import ParticlesBackground from "../components/ParticlesBackground"; // 🎨 Partículas animadas
@@ -1437,7 +1438,7 @@ export default function StorePublicPage() {
       {/* patrón */}
       {patternStyle && <div aria-hidden style={patternStyle} />}
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div className="flex-1" style={{ position: "relative", zIndex: 1 }}>
         <MainHeader
           subtitle={`Negocio: ${store.name}`}
           variant="store"
@@ -2373,6 +2374,7 @@ export default function StorePublicPage() {
           }}
         />
       )}
+      <Footer paletteMode="warm" />
     </div>
   );
 }

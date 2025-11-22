@@ -12,6 +12,7 @@ import CustomerPublicPage from "./pages/CustomerPublicPage";
 import ExploreStoresPage from "./pages/ExploreStoresPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import BookingChatPage from "./pages/BookingChatPage";
+import ContactPage from "./pages/ContactPage";
 
 // Admin Panel
 import AdminLayout from "./components/AdminLayout";
@@ -52,6 +53,9 @@ export default function App() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      
+      {/* Páginas públicas */}
+      <Route path="/contacto" element={<ContactPage />} />
 
       {/* Cliente (privado y público) */}
       <Route

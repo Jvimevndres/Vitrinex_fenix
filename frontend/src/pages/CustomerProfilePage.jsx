@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 import CustomerPurchasesList from "../components/CustomerPurchasesList";
 import { getProfile, updateProfile } from "../api/user";
 import { listMyStores } from "../api/store";
@@ -1600,6 +1601,7 @@ export default function CustomerProfilePage() {
         </section>
       </main>
     </div>
+    <Footer paletteMode="warm" />
     </>
   );
 }

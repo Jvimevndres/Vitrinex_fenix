@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import Footer from "../components/Footer";
 
 export default function RegisterPage() {
   const {
@@ -15,6 +16,16 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  
+  const [paletteMode, setPaletteMode] = useState(() => {
+    try {
+      if (typeof window === "undefined") return "warm";
+      const v = localStorage.getItem("explore:paletteMode");
+      return v === "warm" || v === "cool" ? v : "warm";
+    } catch (e) {
+      return "warm";
+    }
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -45,11 +56,13 @@ export default function RegisterPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden" 
+    <div className="min-h-screen flex flex-col relative overflow-hidden" 
          style={{ 
            background: 'radial-gradient(ellipse at top, #1a0b2e 0%, #16213e 35%, #0f3460 70%, #533483 100%)',
            transition: 'background 420ms ease'
          }}>
+      
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
       
       {/* Animated stars background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.6 }}>
@@ -290,6 +303,9 @@ export default function RegisterPage() {
           </div>
         </section>
       </main>
+      </div>
+      
+      <Footer paletteMode={paletteMode} />
     </div>
   );
 }

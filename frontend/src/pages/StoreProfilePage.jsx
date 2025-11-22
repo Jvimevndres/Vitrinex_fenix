@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 import { getStoreById, updateMyStore } from "../api/store";
 
 import BookingAvailabilityManager from "../components/BookingAvailabilityManager";
@@ -847,6 +848,7 @@ export default function StoreProfilePage() {
           </div>
         </div>
       )}
+      <Footer paletteMode="warm" />
     </div>
   );
 }

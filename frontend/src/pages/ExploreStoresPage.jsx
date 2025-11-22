@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 import { listPublicStores } from "../api/store";
 
 const INITIAL_CENTER = [-33.4489, -70.6693]; // Santiago
@@ -776,6 +777,7 @@ export default function ExploreStoresPage() {
           </div>
         </div>
       </main>
+      <Footer paletteMode={paletteMode} />
     </div>
   );
 }

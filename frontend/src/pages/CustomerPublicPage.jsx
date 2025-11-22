@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
+import Footer from "../components/Footer";
 import UserChatModal from "../components/UserChatModal"; // 🆕 Chat usuario-usuario
 import { getPublicUser } from "../api/user";
 import { useAuth } from "../context/AuthContext"; // 🆕 Para verificar autenticación
@@ -180,7 +181,7 @@ export default function CustomerPublicPage() {
   const mailUrl = emailAddr ? mailto(emailAddr) : null;
 
   return (
-    <div className="min-h-screen relative overflow-hidden pt-20" style={pageStyle}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden pt-20" style={pageStyle}>
       {/* Animated stars background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.4 }}>
         {Array.from({ length: 50 }).map((_, i) => (
@@ -461,6 +462,7 @@ export default function CustomerPublicPage() {
           onClose={() => setOpenContact(false)}
         />
       )}
+      <Footer paletteMode="warm" />
     </div>
   );
 }
