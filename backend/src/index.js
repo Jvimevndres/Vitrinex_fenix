@@ -18,6 +18,7 @@ import healthRoutes from "./routes/health.routes.js";
 import adminRoutes from "./routes/admin.routes.js"; // 🆕 ADMIN PANEL
 import sponsorsRoutes from "./routes/sponsors.routes.js"; // 🆕 ANUNCIOS
 import commentsRoutes from "./routes/comments.routes.js"; // 🆕 FEEDBACK
+import chatbotRoutes from "./routes/chatbot.routes.js"; // 🆕 CHATBOT IA
 import { ensureStoreIndexes } from "./models/store.model.js";
 import helmet from "helmet";
 import multer from "multer";
@@ -63,6 +64,7 @@ app.use("/api", appearanceRoutes); // 🆕 APARIENCIA: Sistema de personalizaci�
 app.use("/api/admin", adminRoutes); // 🆕 ADMIN: Panel de administración
 app.use("/api/sponsors", sponsorsRoutes); // 🆕 SPONSORS: Gestión de anuncios
 app.use("/api/comments", commentsRoutes); // 🆕 COMMENTS: Sistema de feedback
+app.use("/api/chatbot", chatbotRoutes); // 🆕 CHATBOT: Asistente virtual con IA
 app.use("/api/upload", uploadRoutes);
 
 // Middleware global de manejo de errores (debe ir después de todas las rutas)

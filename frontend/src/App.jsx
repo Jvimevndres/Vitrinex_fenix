@@ -22,6 +22,9 @@ import AdminUsersManager from "./pages/AdminUsersManager";
 import AdminSponsorsManager from "./pages/AdminSponsorsManager";
 import AdminCommentsViewer from "./pages/AdminCommentsViewer";
 
+// Chatbot Widget
+import ChatbotWidget from "./components/ChatbotWidget";
+
 // Ruta protegida
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, checkLogin } = useAuth();
@@ -45,70 +48,75 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Home = Mapa */}
-      <Route path="/" element={<ExploreStoresPage />} />
-      <Route path="/explorar" element={<ExploreStoresPage />} />
+    <>
+      <Routes>
+        {/* Home = Mapa */}
+        <Route path="/" element={<ExploreStoresPage />} />
+        <Route path="/explorar" element={<ExploreStoresPage />} />
 
-      {/* Auth */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      
-      {/* Páginas públicas */}
-      <Route path="/contacto" element={<ContactPage />} />
+        {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Páginas públicas */}
+        <Route path="/contacto" element={<ContactPage />} />
 
-      {/* Cliente (privado y público) */}
-      <Route
-        path="/perfil"
-        element={
-          <ProtectedRoute>
-            <CustomerProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/usuario/:id" element={<CustomerPublicPage />} />
+        {/* Cliente (privado y público) */}
+        <Route
+          path="/perfil"
+          element={
+            <ProtectedRoute>
+              <CustomerProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/usuario/:id" element={<CustomerPublicPage />} />
 
-      {/* Negocios (sin cambios) */}
-      <Route
-        path="/negocio/:id"
-        element={
-          <ProtectedRoute>
-            <StoreProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/tienda/:id" element={<StorePublicPage />} />
+        {/* Negocios (sin cambios) */}
+        <Route
+          path="/negocio/:id"
+          element={
+            <ProtectedRoute>
+              <StoreProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/tienda/:id" element={<StorePublicPage />} />
 
-      {/* Chat público de reserva */}
-      <Route path="/reserva/:bookingId/chat" element={<BookingChatPage />} />
+        {/* Chat público de reserva */}
+        <Route path="/reserva/:bookingId/chat" element={<BookingChatPage />} />
 
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            <OnboardingPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Admin Panel */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="stores" element={<AdminStoresManager />} />
-        <Route path="users" element={<AdminUsersManager />} />
-        <Route path="sponsors" element={<AdminSponsorsManager />} />
-        <Route path="comments" element={<AdminCommentsViewer />} />
-      </Route>
+        {/* Admin Panel */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="stores" element={<AdminStoresManager />} />
+          <Route path="users" element={<AdminUsersManager />} />
+          <Route path="sponsors" element={<AdminSponsorsManager />} />
+          <Route path="comments" element={<AdminCommentsViewer />} />
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Widget de Chatbot - Aparece en todas las páginas */}
+      <ChatbotWidget />
+    </>
   );
 }

@@ -80,12 +80,20 @@ JWT_SECRET=clave_super_segura_y_larga_cambiar_en_produccion
 FRONTEND_ORIGIN=http://localhost:5173
 API_PUBLIC_URL=http://localhost:3000
 NODE_ENV=development
+
+# 🤖 Variables para Chatbot con IA (opcional)
+AI_API_KEY=tu_clave_api_de_openai_aqui
+AI_PROVIDER=openai
+AI_MODEL=gpt-3.5-turbo
 ```
 
-⚠️ **IMPORTANTE:** En producción, genera un JWT_SECRET seguro:
+⚠️ **IMPORTANTE:** 
+- En producción, genera un JWT_SECRET seguro:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+- Para usar el chatbot con IA, necesitas una clave de API de OpenAI. Obtén una en https://platform.openai.com/api-keys
+- Si no configuras `AI_API_KEY`, el chatbot no funcionará pero el resto de la aplicación seguirá operativa.
 
 ### 🌐 Frontend (.env)
 Copia el archivo `.env.example`:
