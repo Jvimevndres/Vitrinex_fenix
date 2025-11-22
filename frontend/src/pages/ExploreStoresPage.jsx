@@ -123,13 +123,13 @@ export default function ExploreStoresPage() {
 
   const [paletteMode, setPaletteMode] = useState(() => {
     try {
-      if (typeof window === "undefined") return "auto";
+      if (typeof window === "undefined") return "warm";
       const v = localStorage.getItem("explore:paletteMode");
-      return v === "auto" || v === "warm" || v === "cool" ? v : "auto";
+      return v === "warm" || v === "cool" ? v : "warm";
     } catch (e) {
-      return "auto";
+      return "warm";
     }
-  }); // 'auto' | 'warm' | 'cool'
+  }); // 'warm' | 'cool'
 
   useEffect(() => {
     try {
@@ -234,13 +234,6 @@ export default function ExploreStoresPage() {
 
   // define mode-specific backgrounds + blob gradients + header bar (GALAXY STYLE)
   const modePresets = {
-    auto: {
-      base: "radial-gradient(ellipse at top, #1a0b2e 0%, #16213e 35%, #0f3460 70%, #533483 100%)",
-      headerBar: "linear-gradient(135deg, rgba(67, 56, 202, 0.95) 0%, rgba(139, 92, 246, 0.95) 50%, rgba(168, 85, 247, 0.95) 100%)",
-      blob1: "radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, rgba(99, 102, 241, 0.3) 40%, transparent 70%)",
-      blob2: "radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, rgba(168, 85, 247, 0.25) 40%, transparent 70%)",
-      stars: true,
-    },
     warm: {
       base: "radial-gradient(ellipse at top, #2d1b3d 0%, #4a1942 35%, #7c2d5e 70%, #a0416d 100%)",
       headerBar: "linear-gradient(135deg, rgba(219, 39, 119, 0.95) 0%, rgba(236, 72, 153, 0.95) 50%, rgba(249, 115, 22, 0.95) 100%)",
@@ -259,7 +252,6 @@ export default function ExploreStoresPage() {
 
   // small mapping for accent colors/gradients used across UI elements (GALAXY STYLE)
   const accents = {
-    auto: { color: "#a78bfa", gradient: "linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)", glow: "0 0 20px rgba(139, 92, 246, 0.4)" },
     warm: { color: "#f472b6", gradient: "linear-gradient(135deg, #ec4899 0%, #f97316 100%)", glow: "0 0 20px rgba(236, 72, 153, 0.4)" },
     cool: { color: "#3b82f6", gradient: "linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%)", glow: "0 0 20px rgba(59, 130, 246, 0.4)" },
   };
@@ -274,7 +266,7 @@ export default function ExploreStoresPage() {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  const accent = accents[paletteMode] || accents.auto;
+  const accent = accents[paletteMode] || accents.warm;
 
   const uiTransition = 'background 1520ms ease, border-color 420ms ease, color 420ms ease, box-shadow 420ms ease, opacity 420ms ease, transform 420ms ease';
 
@@ -282,7 +274,7 @@ export default function ExploreStoresPage() {
   const headerBarBg = modePresets[paletteMode].headerBar;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden pt-20" style={{ background: baseBackground, transition: 'background 420ms ease' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: baseBackground, transition: 'background 420ms ease' }}>
 
       {/* Animated stars background */}
       {modePresets[paletteMode].stars && (
@@ -411,66 +403,29 @@ export default function ExploreStoresPage() {
         );
       })()}
 
-      <MainHeader subtitle="Explora negocios dentro de la plataforma" />
+      <MainHeader 
+        subtitle="Explora negocios dentro de la plataforma"
+        showTemperatureControls={true}
+        paletteMode={paletteMode}
+        onPaletteModeChange={setPaletteMode}
+      />
 
-      {/* Spacer para compensar el header fixed */}
-      <div className="header-spacer" />
-
-      {/* Palette selector: Auto / Cálido / Frío - GALAXY STYLE */}
-      <div className="w-full flex justify-center mt-4 mb-2">
-        <div className="inline-flex items-center bg-black/60 backdrop-blur-lg border border-white/30 rounded-full p-1.5 shadow-2xl text-sm" style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }}>
-          <button
-            type="button"
-            onClick={() => setPaletteMode("auto")}
-            className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
-              paletteMode === "auto" 
-                ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/50" 
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            🌌 Auto
-          </button>
-          <button
-            type="button"
-            onClick={() => setPaletteMode("warm")}
-            className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
-              paletteMode === "warm" 
-                ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-lg shadow-pink-500/50" 
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            🔥 Cálido
-          </button>
-          <button
-            type="button"
-            onClick={() => setPaletteMode("cool")}
-            className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
-              paletteMode === "cool" 
-                ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/50" 
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            ❄️ Frío
-          </button>
-        </div>
-      </div>
-
-      <main className="flex-1 w-full px-3 md:px-6 py-6">
-        <div className="mx-auto w-full max-w-7xl space-y-5">
-          <div className="grid gap-5 lg:grid-cols-[260px,minmax(0,2.6fr),360px] items-start">
+      <main className="flex-1 w-full px-3 md:px-6 pt-[68px] pb-6">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <div className="grid gap-3 lg:grid-cols-[280px,1fr,380px] items-start">
             {/* Filtros - GALAXY STYLE MEJORADO */}
-            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-2xl self-start sticky top-24" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
-              <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                <span className="text-2xl">🔍</span>
+            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-2xl self-start sticky top-[60px]" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
+              <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                <span className="text-lg">🔍</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-200 to-pink-200">
                   Filtros de Búsqueda
                 </span>
               </h2>
               
-              <div className="space-y-4 text-sm">
+              <div className="space-y-3 text-sm">
                 {/* Búsqueda rápida */}
                 <div>
-                  <label className="flex text-xs font-semibold text-white/80 mb-2 items-center gap-1">
+                  <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
                     <span>🔎</span>
                     Búsqueda Rápida
                   </label>
@@ -479,15 +434,15 @@ export default function ExploreStoresPage() {
                     name="search"
                     value={filters.search}
                     onChange={handleFilterChange}
-                    placeholder="Buscar por nombre, categoría o comuna..."
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white/20 backdrop-blur-sm text-white placeholder-white/60 focus:bg-white/30 focus:outline-none focus:ring-2 transition-all"
+                    placeholder="Buscar por nombre..."
+                    className="w-full border rounded-lg px-3 py-2 text-xs bg-white/20 backdrop-blur-sm text-white placeholder-white/60 focus:bg-white/30 focus:outline-none focus:ring-2 transition-all"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   />
                 </div>
 
                 {/* Comuna */}
                 <div>
-                  <label className="flex text-xs font-semibold text-white/80 mb-2 items-center gap-1">
+                  <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
                     <span>📍</span>
                     Comuna
                   </label>
@@ -495,7 +450,7 @@ export default function ExploreStoresPage() {
                     name="comuna"
                     value={filters.comuna}
                     onChange={handleFilterChange}
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all"
+                    className="w-full border rounded-lg px-3 py-2 text-xs bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   >
                     <option value="" className="bg-slate-900">🌎 Todas las comunas</option>
@@ -507,7 +462,7 @@ export default function ExploreStoresPage() {
 
                 {/* Tipo de negocio */}
                 <div>
-                  <label className="flex text-xs font-semibold text-white/80 mb-2 items-center gap-1">
+                  <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
                     <span>🏪</span>
                     Tipo de Negocio
                   </label>
@@ -515,7 +470,7 @@ export default function ExploreStoresPage() {
                     name="tipoNegocio"
                     value={filters.tipoNegocio}
                     onChange={handleFilterChange}
-                    className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all max-h-48"
+                    className="w-full border rounded-lg px-3 py-2 text-xs bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all max-h-48"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   >
                     <option value="" className="bg-slate-900">🎯 Todos los tipos</option>
@@ -595,14 +550,14 @@ export default function ExploreStoresPage() {
 
             {/* Mapa - GALAXY STYLE */}
             <section className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl overflow-hidden relative" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)` }}>
-              <div className="border-b border-white/10 px-5 py-3 bg-gradient-to-r from-black/30 to-transparent backdrop-blur-sm">
+              <div className="border-b border-white/10 px-4 py-2.5 bg-gradient-to-r from-black/30 to-transparent backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                      <span className="text-xl">🗺️</span>
+                    <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <span className="text-lg">🗺️</span>
                       Mapa de negocios
                     </h2>
-                    <p className="text-xs text-white/60">Visualiza los negocios registrados en Vitrinex.</p>
+                    <p className="text-[11px] text-white/60">Visualiza los negocios registrados en Vitrinex.</p>
                   </div>
                   <div className="text-sm text-white/80 flex items-center gap-3">
                     <div
@@ -621,7 +576,7 @@ export default function ExploreStoresPage() {
                 </div>
               </div>
 
-              <div className="h-[460px] md:h-[520px] lg:h-[600px] relative">
+              <div className="h-[520px] md:h-[580px] lg:h-[660px] relative">
                 <MapContainer
                   key={`${mapCenter[0]}-${mapCenter[1]}-${mapZoom}`}
                   center={mapCenter}
@@ -651,7 +606,7 @@ export default function ExploreStoresPage() {
                     ))}
                 </MapContainer>
 
-                <div className="absolute top-4 left-4 z-20">
+                <div className="absolute bottom-4 left-4 z-[1000] flex gap-2">
                   <button
                     type="button"
                     onClick={() => { setMapCenter(INITIAL_CENTER); setMapZoom(INITIAL_ZOOM); setSelectedStoreId(null); }}
@@ -663,6 +618,35 @@ export default function ExploreStoresPage() {
                     }}
                   >
                     🎯 Recentrar
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            const { latitude, longitude } = position.coords;
+                            setMapCenter([latitude, longitude]);
+                            setMapZoom(15);
+                          },
+                          (error) => {
+                            console.error('Error obteniendo ubicación:', error);
+                            alert('❌ No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
+                          }
+                        );
+                      } else {
+                        alert('❌ Tu navegador no soporta geolocalización.');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg shadow-lg text-sm border border-white/20 font-medium backdrop-blur-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 transition-all"
+                    style={{
+                      background: accent.gradient,
+                      color: '#fff',
+                      boxShadow: accent.glow,
+                    }}
+                  >
+                    📍 Mi Ubicación
                   </button>
                 </div>
 
@@ -681,13 +665,13 @@ export default function ExploreStoresPage() {
             </section>
 
             {/* Lista de negocios a la derecha - GALAXY STYLE */}
-            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-2xl h-[460px] md:h-[520px] lg:h-[600px] flex flex-col" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
-              <div className="mb-3">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2" style={{ transition: uiTransition }}>
-                  <span className="text-xl">🏪</span>
+            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-3 shadow-2xl flex flex-col" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition, height: 'calc(520px + 3rem)', maxHeight: 'calc(660px + 3rem)' }}>
+              <div className="mb-2.5">
+                <h2 className="text-sm font-semibold text-white flex items-center gap-2" style={{ transition: uiTransition }}>
+                  <span className="text-lg">🏪</span>
                   Negocios encontrados
                 </h2>
-                <p className="text-xs text-white/60">{loading ? "Cargando negocios…" : `${stores.length} negocio(s) encontrados`}</p>
+                <p className="text-[11px] text-white/60">{loading ? "Cargando negocios…" : `${stores.length} negocio(s) encontrados`}</p>
               </div>
 
               {error && (

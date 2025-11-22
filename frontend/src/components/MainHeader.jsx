@@ -13,12 +13,18 @@ import axios from "../api/axios";
  *  - variant: "vitrinex" (por defecto) | "store"
  *  - headerStyle: estilos extra para el fondo (se usan en variant="store")
  *  - logoSrc: logo opcional (para tiendas). Si no se pasa, usa el logo de Vitrinex.
+ *  - paletteMode: modo de temperatura ("warm" | "cool")
+ *  - onPaletteModeChange: callback para cambiar el modo de temperatura
+ *  - showTemperatureControls: si se deben mostrar los controles de temperatura (default: false)
  */
 export default function MainHeader({
   subtitle,
   variant = "vitrinex",
   headerStyle,
   logoSrc,
+  paletteMode,
+  onPaletteModeChange,
+  showTemperatureControls = false,
 }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
@@ -476,7 +482,7 @@ export default function MainHeader({
       {/* Efecto de brillo superior */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
       
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex items-center justify-between">
         {/* Logo + subtítulo */}
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center">
@@ -500,6 +506,34 @@ export default function MainHeader({
 
         {/* Panel derecho */}
         <div className="flex items-center gap-2">
+          {/* Controles de temperatura (Cálido/Frío) */}
+          {showTemperatureControls && (
+            <div className="inline-flex items-center bg-black/60 backdrop-blur-lg border border-white/30 rounded-full p-0.5 shadow-lg text-xs mr-1" style={{ boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                onClick={() => onPaletteModeChange?.("warm")}
+                className={`px-2.5 py-1.5 rounded-full font-semibold transition-all duration-300 text-xs ${
+                  paletteMode === "warm" 
+                    ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-md shadow-pink-500/40" 
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                🔥 Cálido
+              </button>
+              <button
+                type="button"
+                onClick={() => onPaletteModeChange?.("cool")}
+                className={`px-2.5 py-1.5 rounded-full font-semibold transition-all duration-300 text-xs ${
+                  paletteMode === "cool" 
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md shadow-blue-500/40" 
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                ❄️ Frío
+              </button>
+            </div>
+          )}
+          
           {!isAuthenticated ? (
             <div className="flex items-center gap-2 text-xs" style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif" }}>
               <Link
@@ -915,13 +949,12 @@ export default function MainHeader({
                     setOpenNotifications(false);
                     setOpenMessages(false);
                   }}
-                  className="border border-white/30 text-white rounded-lg px-3 py-1.5 bg-white/15 backdrop-blur-sm hover:bg-white/25 flex items-center gap-1.5 text-xs font-semibold transition-all duration-200"
-                  style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif" }}
+                  className="p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/30 hover:bg-white/25 transition-all duration-200"
+                  title="Menú"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
-                  <span className={`text-[10px] transition-transform duration-200 ${openMenu ? 'rotate-180' : ''}`}>▼</span>
                 </button>
 
                 {openMenu && (

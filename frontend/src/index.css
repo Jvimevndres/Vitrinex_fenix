@@ -35,7 +35,7 @@ body {
 
 /* Espaciador para compensar el header fixed */
 .header-spacer {
-  height: 60px;
+  height: 56px;
   flex-shrink: 0;
 }
 
