@@ -1,16 +1,15 @@
 // src/libs/aiClient.js
 /**
- * Cliente para interactuar con la API de OpenAI u otro proveedor de IA.
- * Usa la variable de entorno AI_API_KEY para autenticación.
- * Configurable para diferentes modelos y proveedores.
+ * Cliente para interactuar con la API de OpenAI.
+ * Usa la variable de entorno OPENAI_API_KEY para autenticación.
+ * Modelo configurable via OPENAI_MODEL (default: gpt-4-turbo-mini).
  */
 
 import logger from "../utils/logger.js";
 
-const AI_API_KEY = process.env.AI_API_KEY;
-const AI_PROVIDER = process.env.AI_PROVIDER || "openai"; // openai, anthropic, etc.
-const AI_MODEL = process.env.AI_MODEL || "gpt-3.5-turbo"; // Modelo por defecto
-const DEMO_MODE = !AI_API_KEY || AI_API_KEY === "sk-proj-placeholder-reemplaza-con-tu-api-key-real";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini"; // Modelo por defecto
+const DEMO_MODE = !OPENAI_API_KEY || OPENAI_API_KEY === "sk-proj-placeholder-reemplaza-con-tu-api-key-real";
 
 /**
  * Respuestas de demostración cuando no hay API key configurada
@@ -69,10 +68,10 @@ async function callOpenAI(userMessage) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${AI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: AI_MODEL,
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
@@ -115,42 +114,84 @@ async function callOpenAI(userMessage) {
  * @returns {Promise<string>} - Respuesta de la IA
  */
 async function callOpenAIPremium(userMessage, context) {
+  // Construir contexto detallado del negocio
   const contextInfo = `
-Contexto del usuario:
-- Negocios: ${context.storesCount}
-- Productos: ${context.productsCount}
-- Pedidos recientes: ${context.recentOrdersCount}
-${context.topProducts && context.topProducts.length > 0 ? `
-Productos principales:
-${context.topProducts.map(p => `• ${p.name} - $${p.price} (Stock: ${p.stock})`).join('\n')}
+DATOS DEL NEGOCIO (${context.username}):
+
+📊 RESUMEN GENERAL:
+- Tiendas activas: ${context.storesCount}
+${context.stores && context.stores.length > 0 ? context.stores.map(s => `  • ${s.name} (${s.category || 'Sin categoría'})`).join('\n') : ''}
+- Productos en inventario: ${context.productsCount}
+- Valor total del inventario: $${context.totalProductsValue || 0}
+
+💰 VENTAS Y RENDIMIENTO:
+- Órdenes recientes (último mes): ${context.ordersCount}
+- Ingresos totales: $${context.totalRevenue || 0}
+- Valor promedio por orden: $${context.averageOrderValue || 0}
+${context.topSellingProducts && context.topSellingProducts.length > 0 ? `
+📈 Top 5 productos más vendidos:
+${context.topSellingProducts.map(p => `  • ${p.name}: ${p.unitsSold} unidades vendidas`).join('\n')}
 ` : ''}
+
+📦 INVENTARIO:
+${context.lowStockCount > 0 ? `⚠️ ${context.lowStockCount} productos con bajo stock (< 5 unidades):
+${context.lowStockProducts.map(p => `  • ${p.name}: ${p.stock} unidades - $${p.price}`).join('\n')}
+` : '✅ No hay alertas de stock bajo'}
+
+${context.recentProducts && context.recentProducts.length > 0 ? `
+📋 Productos recientes:
+${context.recentProducts.slice(0, 5).map(p => `  • ${p.name} - $${p.price} (Stock: ${p.stock})`).join('\n')}
+` : ''}
+
+📅 RESERVAS (si aplica):
+- Total de reservas: ${context.bookingsCount || 0}
+${context.bookingStats ? `  • Confirmadas: ${context.bookingStats.confirmed}
+  • Pendientes: ${context.bookingStats.pending}
+  • Canceladas: ${context.bookingStats.cancelled}` : ''}
 `;
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${AI_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: AI_MODEL,
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
           content:
-            "Eres un asistente empresarial premium de Vitrinex. Tienes acceso a datos reales del negocio del usuario " +
-            "y puedes dar consejos específicos basados en sus productos, ventas y estadísticas. " +
-            "Proporciona análisis inteligentes, recomendaciones de ventas, alertas de stock bajo, " +
-            "sugerencias de precios, estrategias de marketing y predicciones basadas en los datos. " +
-            "Sé profesional, analítico y orientado a resultados.",
+            "Eres un ASISTENTE EMPRESARIAL PREMIUM de Vitrinex, especializado en análisis de negocios y estrategia comercial. " +
+            "Tienes acceso COMPLETO a los datos reales del negocio del usuario y DEBES usarlos para dar respuestas ESPECÍFICAS y ACCIONABLES.\n\n" +
+            "TUS CAPACIDADES:\n" +
+            "✅ Analizar ventas y tendencias con datos reales\n" +
+            "✅ Identificar productos más y menos rentables\n" +
+            "✅ Alertar sobre problemas de stock\n" +
+            "✅ Recomendar estrategias de precios basadas en el inventario\n" +
+            "✅ Sugerir acciones de marketing específicas para los productos del usuario\n" +
+            "✅ Proyectar ventas y sugerir objetivos realistas\n" +
+            "✅ Optimizar gestión de inventario\n\n" +
+            "ESTILO DE RESPUESTA:\n" +
+            "- Sé ESPECÍFICO: usa nombres de productos, cifras exactas y datos reales\n" +
+            "- Sé ACCIONABLE: da pasos concretos que el usuario pueda ejecutar YA\n" +
+            "- Sé PROFESIONAL pero cercano: eres un consultor experto pero amigable\n" +
+            "- Usa EMOJIS relevantes (📊 📈 💰 ⚠️ ✅) para hacer el mensaje más visual\n" +
+            "- Organiza la información con viñetas y estructura clara\n" +
+            "- Si detectas problemas, menciónalos pero SIEMPRE da soluciones\n\n" +
+            "IMPORTANTE:\n" +
+            "- NO inventes datos, SOLO usa la información proporcionada\n" +
+            "- Si faltan datos para responder algo, pregunta al usuario\n" +
+            "- Prioriza insights que generen VALOR INMEDIATO al negocio\n" +
+            "- Mantén respuestas concisas pero completas (máx 500 palabras)",
         },
         {
           role: "user",
-          content: `${contextInfo}\n\nPregunta: ${userMessage}`,
+          content: `${contextInfo}\n\n❓ PREGUNTA DEL USUARIO:\n${userMessage}`,
         },
       ],
       temperature: 0.7,
-      max_tokens: 700,
+      max_tokens: 800, // Aumentado para respuestas más completas
     }),
   });
 
@@ -189,12 +230,8 @@ export async function getChatbotResponse(message) {
   }
 
   try {
-    // Por ahora solo soportamos OpenAI, pero se puede extender fácilmente
-    if (AI_PROVIDER === "openai") {
-      return await callOpenAI(message);
-    } else {
-      throw new Error(`Proveedor de IA no soportado: ${AI_PROVIDER}`);
-    }
+    // Llamar directamente a OpenAI (único proveedor soportado)
+    return await callOpenAI(message);
   } catch (error) {
     // Si hay error de cuota insuficiente, cambiar automáticamente a modo demo
     if (error.message.includes('insufficient_quota') || error.message.includes('429')) {
@@ -227,11 +264,8 @@ export async function getChatbotResponsePremium(message, context = {}) {
   }
 
   try {
-    if (AI_PROVIDER === "openai") {
-      return await callOpenAIPremium(message, context);
-    } else {
-      throw new Error(`Proveedor de IA no soportado: ${AI_PROVIDER}`);
-    }
+    // Llamar directamente a OpenAI Premium
+    return await callOpenAIPremium(message, context);
   } catch (error) {
     // Si hay error de cuota, usar respuesta básica
     if (error.message.includes('insufficient_quota') || error.message.includes('429')) {

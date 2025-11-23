@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { sendChatbotMessage, checkChatbotHealth } from '../api/chatbot';
+import { sendChatbotMessage, sendPremiumChatbotMessage, checkChatbotHealth } from '../api/chatbot';
 import { useAuth } from '../context/AuthContext';
 import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown } from 'react-icons/fa';
 
@@ -24,12 +24,17 @@ export default function ChatbotWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(true); // Asumir DEMO por defecto
   const [showQuickActions, setShowQuickActions] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const userPlan = user?.plan || 'free';
+
+  // Verificar estado del chatbot al montar el componente
+  useEffect(() => {
+    checkChatbotStatus();
+  }, []);
 
   // Auto-scroll al final cuando hay nuevos mensajes
   const scrollToBottom = () => {
@@ -44,7 +49,7 @@ export default function ChatbotWidget() {
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
-      // Verificar el estado del chatbot al abrir
+      // Re-verificar el estado del chatbot al abrir
       checkChatbotStatus();
     }
   }, [isOpen]);
@@ -84,9 +89,14 @@ export default function ChatbotWidget() {
   const checkChatbotStatus = async () => {
     try {
       const response = await checkChatbotHealth();
-      setIsDemoMode(response.data.mode === 'demo');
+      console.log('🔍 Chatbot Health Response:', response.data);
+      const isDemo = response.data.mode === 'demo';
+      console.log('🎯 isDemoMode:', isDemo);
+      setIsDemoMode(isDemo);
     } catch (err) {
-      console.error('Error al verificar estado del chatbot:', err);
+      console.error('❌ Error al verificar estado del chatbot:', err);
+      // Si hay error, asumir modo demo por seguridad
+      setIsDemoMode(true);
     }
   };
 
@@ -116,8 +126,18 @@ export default function ChatbotWidget() {
     setError(null);
 
     try {
-      // Llamar a la API del chatbot
-      const response = await sendChatbotMessage(messageText);
+      // Llamar a la API correcta según el plan del usuario
+      let response;
+      
+      if (isAuthenticated && userPlan === 'premium') {
+        // Usuario premium autenticado: usar endpoint premium con contexto
+        console.log('🎯 Llamando a chatbot PREMIUM con contexto de negocio');
+        response = await sendPremiumChatbotMessage(messageText);
+      } else {
+        // Usuario free o no autenticado: usar endpoint básico
+        console.log('💬 Llamando a chatbot FREE básico');
+        response = await sendChatbotMessage(messageText);
+      }
       
       // Agregar respuesta de la IA
       const assistantMessage = {
@@ -303,6 +323,79 @@ export default function ChatbotWidget() {
 
           {/* Input de mensaje */}
           <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-white p-4">
+            {/* Indicador de modo */}
+            {(() => {
+              console.log('🎨 Renderizando indicador - isDemoMode:', isDemoMode, 'userPlan:', userPlan);
+              
+              // MODO DEMO
+              if (isDemoMode) {
+                // Usuario PREMIUM sin saldo de admin
+                if (userPlan === 'premium') {
+                  return (
+                    <div className="mb-3 p-2 bg-orange-50 border border-orange-300 rounded-lg flex items-start gap-2">
+                      <span className="text-orange-600 text-lg">⚠️</span>
+                      <div className="flex-1">
+                        <p className="text-xs text-orange-900 font-bold">
+                          Plan Premium - Usando Modo Demo
+                        </p>
+                        <p className="text-xs text-orange-800 mt-0.5">
+                          El admin aún no ha recargado saldo en OpenAI. Mientras tanto usas el asistente básico.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Usuario FREE sin saldo
+                return (
+                  <div className="mb-3 p-2 bg-slate-100 border border-slate-300 rounded-lg flex items-start gap-2">
+                    <span className="text-slate-600 text-lg">💬</span>
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-800 font-medium">
+                        Plan Free - Modo Demo
+                      </p>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Respuestas predefinidas. <a href="/pricing" className="text-indigo-600 hover:underline font-semibold">Activa Premium</a> para IA personalizada.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // MODO IA ACTIVA
+              // Usuario PREMIUM con IA
+              if (userPlan === 'premium') {
+                return (
+                  <div className="mb-3 p-2 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-lg flex items-start gap-2">
+                    <span className="text-amber-600 text-lg">👑</span>
+                    <div className="flex-1">
+                      <p className="text-xs text-amber-900 font-bold">
+                        IA Premium Activada
+                      </p>
+                      <p className="text-xs text-amber-800 mt-0.5">
+                        Respuestas personalizadas con datos reales de tu negocio
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Usuario FREE con IA
+              return (
+                <div className="mb-3 p-2 bg-green-50 border border-green-300 rounded-lg flex items-start gap-2">
+                  <span className="text-green-600 text-lg">✨</span>
+                  <div className="flex-1">
+                    <p className="text-xs text-green-800 font-medium">
+                      Plan Free - IA Activada
+                    </p>
+                    <p className="text-xs text-green-700 mt-0.5">
+                      Respuestas inteligentes de OpenAI. <a href="/pricing" className="text-indigo-600 hover:underline font-semibold">Mejora a Premium</a> para análisis avanzados.
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex gap-2 mb-2">
               <button
                 type="button"

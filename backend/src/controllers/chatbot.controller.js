@@ -86,18 +86,56 @@ export const sendChatMessage = async (req, res) => {
  */
 export const checkChatbotHealth = async (req, res) => {
   try {
-    const AI_API_KEY = process.env.AI_API_KEY;
-    const isConfigured = AI_API_KEY && AI_API_KEY !== "sk-proj-placeholder-reemplaza-con-tu-api-key-real";
-    const isDemoMode = !isConfigured;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const isConfigured = OPENAI_API_KEY && OPENAI_API_KEY !== "sk-proj-placeholder-reemplaza-con-tu-api-key-real";
     
-    res.json({
-      status: "operational",
-      mode: isDemoMode ? "demo" : "ai",
-      message: isDemoMode
-        ? "El chatbot está en modo DEMO con respuestas predefinidas. Configura AI_API_KEY para usar IA real."
-        : "El chatbot está usando IA real de OpenAI",
-      timestamp: new Date(),
-    });
+    // Si no hay API key configurada, definitivamente es DEMO
+    if (!isConfigured) {
+      return res.json({
+        status: "operational",
+        mode: "demo",
+        message: "El chatbot está en modo DEMO con respuestas predefinidas. Configura OPENAI_API_KEY para usar IA real.",
+        timestamp: new Date(),
+      });
+    }
+    
+    // Si hay API key, intentar hacer una llamada de prueba para verificar si tiene saldo
+    try {
+      const testResponse = await fetch("https://api.openai.com/v1/models", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        signal: AbortSignal.timeout(3000), // 3 segundos timeout
+      });
+      
+      // Si la respuesta es 429 (sin cuota) o 401 (key inválida), es DEMO
+      if (testResponse.status === 429 || testResponse.status === 401 || testResponse.status === 403) {
+        return res.json({
+          status: "operational",
+          mode: "demo",
+          message: "El chatbot está en modo DEMO. La API key no tiene saldo o es inválida.",
+          timestamp: new Date(),
+        });
+      }
+      
+      // Si llegamos aquí, la API key funciona
+      return res.json({
+        status: "operational",
+        mode: "ai",
+        message: "El chatbot está usando IA real de OpenAI (" + (process.env.OPENAI_MODEL || "gpt-4o-mini") + ")",
+        timestamp: new Date(),
+      });
+    } catch (fetchError) {
+      // Si hay error de red o timeout, asumir DEMO
+      logger.log("Error verificando OpenAI, usando DEMO:", fetchError.message);
+      return res.json({
+        status: "operational",
+        mode: "demo",
+        message: "El chatbot está en modo DEMO (no se pudo verificar conexión con OpenAI).",
+        timestamp: new Date(),
+      });
+    }
   } catch (error) {
     logger.error("Error en health check del chatbot:", error);
     res.status(500).json({
@@ -155,34 +193,119 @@ export const sendPremiumChatMessage = async (req, res) => {
 
     logger.log(`Chatbot Premium - Usuario: ${user.username}, Mensaje: ${message.substring(0, 50)}...`);
 
-    // Obtener datos del contexto del usuario para respuestas más inteligentes
+    // Obtener datos completos del negocio para contexto rico
     const Store = (await import("../models/store.model.js")).default;
     const Product = (await import("../models/product.model.js")).default;
     const Order = (await import("../models/order.model.js")).default;
+    const Booking = (await import("../models/booking.model.js")).default;
 
-    const stores = await Store.find({ owner: userId });
+    const stores = await Store.find({ owner: userId }).select('name category phone address description');
     const storeIds = stores.map(s => s._id);
     
-    const products = await Product.find({ store: { $in: storeIds } }).limit(20);
-    const recentOrders = await Order.find({ store: { $in: storeIds } })
+    // Productos con más detalle
+    const products = await Product.find({ store: { $in: storeIds } })
+      .select('name price stock category description')
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(50);
+    
+    // Órdenes recientes con estadísticas
+    const recentOrders = await Order.find({ store: { $in: storeIds } })
+      .select('totalAmount status items createdAt')
+      .sort({ createdAt: -1 })
+      .limit(20);
+    
+    // Reservas recientes
+    const recentBookings = await Booking.find({ store: { $in: storeIds } })
+      .select('service date status totalPrice createdAt')
+      .sort({ createdAt: -1 })
+      .limit(15);
+    
+    // Calcular estadísticas de ventas
+    const totalRevenue = recentOrders
+      .filter(o => o.status === 'completed' || o.status === 'delivered')
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    
+    const averageOrderValue = recentOrders.length > 0 
+      ? totalRevenue / recentOrders.filter(o => o.status === 'completed' || o.status === 'delivered').length 
+      : 0;
+    
+    // Productos con bajo stock (menos de 5 unidades)
+    const lowStockProducts = products.filter(p => p.stock < 5);
+    
+    // Top 5 productos más vendidos (contar en órdenes)
+    const productSales = {};
+    recentOrders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          const productName = item.name || item.productName;
+          if (productName) {
+            productSales[productName] = (productSales[productName] || 0) + (item.quantity || 1);
+          }
+        });
+      }
+    });
+    
+    const topSellingProducts = Object.entries(productSales)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, sales]) => ({ name, unitsSold: sales }));
+    
+    // Estadísticas de reservas
+    const bookingStats = {
+      total: recentBookings.length,
+      confirmed: recentBookings.filter(b => b.status === 'confirmed').length,
+      pending: recentBookings.filter(b => b.status === 'pending').length,
+      cancelled: recentBookings.filter(b => b.status === 'cancelled').length,
+    };
 
-    // Preparar contexto para la IA
+    // Preparar contexto rico para la IA
     const userContext = {
+      // Información del usuario
       username: user.username,
+      email: user.email,
+      
+      // Información de tiendas
       storesCount: stores.length,
+      stores: stores.map(s => ({
+        name: s.name,
+        category: s.category,
+        phone: s.phone,
+        address: s.address,
+      })),
+      
+      // Inventario
       productsCount: products.length,
-      recentOrdersCount: recentOrders.length,
-      topProducts: products.slice(0, 5).map(p => ({
+      totalProductsValue: products.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0),
+      lowStockCount: lowStockProducts.length,
+      lowStockProducts: lowStockProducts.slice(0, 5).map(p => ({
+        name: p.name,
+        stock: p.stock,
+        price: p.price,
+      })),
+      
+      // Ventas
+      ordersCount: recentOrders.length,
+      totalRevenue: Math.round(totalRevenue),
+      averageOrderValue: Math.round(averageOrderValue),
+      topSellingProducts,
+      
+      // Reservas
+      bookingsCount: recentBookings.length,
+      bookingStats,
+      
+      // Productos recientes (para consultas específicas)
+      recentProducts: products.slice(0, 10).map(p => ({
         name: p.name,
         price: p.price,
-        stock: p.stock
+        stock: p.stock,
+        category: p.category,
       })),
+      
+      // Contexto adicional del usuario
       ...context
     };
 
-    // Llamar al cliente de IA Premium con contexto
+    // Llamar al cliente de IA Premium con contexto enriquecido
     const reply = await getChatbotResponsePremium(message, userContext);
 
     logger.success(`Chatbot Premium - Respuesta generada para ${user.username}`);
