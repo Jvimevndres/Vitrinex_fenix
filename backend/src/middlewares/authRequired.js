@@ -4,19 +4,29 @@ import { JWT_SECRET } from "../config.js";
 
 // Versión real del middleware
 export function authRequired(req, res, next) {
-  const { token } = req.cookies;
+  // Intentar obtener el token de cookies O del header Authorization
+  let token = req.cookies?.token;
+  
+  // Si no hay token en cookies, buscar en el header Authorization
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remover "Bearer " del inicio
+    }
+  }
 
   if (!token) {
-    return res.status(401).json({ message: "No autorizado" });
+    return res.status(401).json({ message: "No autorizado - Token no proporcionado" });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    // acá guardamos el usuario dentro del request
+    // Guardamos el usuario dentro del request
+    req.userId = decoded.id; // Importante: guardar el ID del usuario
     req.user = decoded;
     next();
   } catch (err) {
-    console.error("Error en authRequired:", err);
+    console.error("Error en authRequired:", err.message);
     return res.status(401).json({ message: "Token inválido o expirado" });
   }
 }

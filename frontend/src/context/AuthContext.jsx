@@ -73,6 +73,11 @@ export function AuthProvider({ children }) {
     setSessionChecked(true);
     localStorage.setItem("hasSession", "true"); // ✅ Setear flag de sesión
     
+    // ✅ Guardar token en localStorage para el interceptor de axios
+    if (res.data.token) {
+      localStorage.setItem("token", res.data.token);
+    }
+    
     // ✅ Disparar evento para que otros componentes recarguen datos del nuevo usuario
     window.dispatchEvent(new Event('userLogin'));
     
@@ -85,6 +90,11 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(true);
     setSessionChecked(true);
     localStorage.setItem("hasSession", "true"); // ✅ Setear flag de sesión
+    
+    // ✅ Guardar token en localStorage para el interceptor de axios
+    if (res.data.token) {
+      localStorage.setItem("token", res.data.token);
+    }
     
     // ✅ Disparar evento para que otros componentes recarguen datos del nuevo usuario
     window.dispatchEvent(new Event('userLogin'));
@@ -100,6 +110,7 @@ export function AuthProvider({ children }) {
       setIsAuthenticated(false);
       setSessionChecked(true);
       localStorage.removeItem("hasSession"); // ✅ Limpiar flag de sesión
+      localStorage.removeItem("token"); // ✅ Limpiar token
       
       // ✅ Disparar evento para que otros componentes limpien su estado
       window.dispatchEvent(new Event('userLogout'));

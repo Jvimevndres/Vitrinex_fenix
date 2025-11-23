@@ -51,6 +51,7 @@ export const register = async (req, res) => {
       bgColorBottom: newUser.bgColorBottom,
       bgPattern: newUser.bgPattern,
       bgImageUrl: newUser.bgImageUrl,
+      token, // ✅ Token para localStorage
     });
   } catch (err) {
     if (err?.code === 11000) {
@@ -114,6 +115,7 @@ export const login = async (req, res) => {
       bgColorBottom: userFound.bgColorBottom,
       bgPattern: userFound.bgPattern,
       bgImageUrl: userFound.bgImageUrl,
+      token, // ✅ Token para localStorage
     });
   } catch (err) {
     return res

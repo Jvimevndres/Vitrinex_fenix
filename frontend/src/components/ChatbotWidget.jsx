@@ -89,9 +89,7 @@ export default function ChatbotWidget() {
   const checkChatbotStatus = async () => {
     try {
       const response = await checkChatbotHealth();
-      console.log('🔍 Chatbot Health Response:', response.data);
       const isDemo = response.data.mode === 'demo';
-      console.log('🎯 isDemoMode:', isDemo);
       setIsDemoMode(isDemo);
     } catch (err) {
       console.error('❌ Error al verificar estado del chatbot:', err);
@@ -131,11 +129,9 @@ export default function ChatbotWidget() {
       
       if (isAuthenticated && userPlan === 'premium') {
         // Usuario premium autenticado: usar endpoint premium con contexto
-        console.log('🎯 Llamando a chatbot PREMIUM con contexto de negocio');
         response = await sendPremiumChatbotMessage(messageText);
       } else {
         // Usuario free o no autenticado: usar endpoint básico
-        console.log('💬 Llamando a chatbot FREE básico');
         response = await sendChatbotMessage(messageText);
       }
       
@@ -325,7 +321,7 @@ export default function ChatbotWidget() {
           <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-white p-4">
             {/* Indicador de modo */}
             {(() => {
-              console.log('🎨 Renderizando indicador - isDemoMode:', isDemoMode, 'userPlan:', userPlan);
+
               
               // MODO DEMO
               if (isDemoMode) {
