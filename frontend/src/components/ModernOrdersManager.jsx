@@ -91,66 +91,66 @@ export default function ModernOrdersManager({ storeId }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header con estadísticas */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">📦 Pedidos recibidos</h3>
-            <p className="text-sm text-slate-600 mt-1">Administra las compras de tus clientes</p>
+            <h3 className="text-xl font-bold text-slate-900">📦 Pedidos Recibidos</h3>
+            <p className="text-sm text-slate-600 mt-1.5">Administra las compras de tus clientes</p>
           </div>
           <button
             onClick={load}
-            className="px-4 py-2 bg-white border border-blue-300 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+            className="px-5 py-2.5 bg-white border border-blue-300 rounded-xl text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors shadow-sm"
           >
             🔄 Actualizar
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-white rounded-lg p-3 border border-slate-200">
-            <p className="text-xs text-slate-600">Total</p>
-            <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <p className="text-xs font-medium text-slate-600 mb-1">Total Pedidos</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
           </div>
-          <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-            <p className="text-xs text-yellow-700">⏳ Pendientes</p>
-            <p className="text-2xl font-bold text-yellow-800">{stats.pending}</p>
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border border-yellow-300 shadow-sm">
+            <p className="text-xs font-medium text-yellow-700 mb-1 flex items-center gap-1"><span>⏳</span> Pendientes</p>
+            <p className="text-3xl font-bold text-yellow-800">{stats.pending}</p>
           </div>
-          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-            <p className="text-xs text-green-700">✅ Confirmados</p>
-            <p className="text-2xl font-bold text-green-800">{stats.confirmed}</p>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-300 shadow-sm">
+            <p className="text-xs font-medium text-green-700 mb-1 flex items-center gap-1"><span>✅</span> Confirmados</p>
+            <p className="text-3xl font-bold text-green-800">{stats.confirmed}</p>
           </div>
-          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-            <p className="text-xs text-blue-700">📦 Completados</p>
-            <p className="text-2xl font-bold text-blue-800">{stats.fulfilled}</p>
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-300 shadow-sm">
+            <p className="text-xs font-medium text-blue-700 mb-1 flex items-center gap-1"><span>📦</span> Completados</p>
+            <p className="text-3xl font-bold text-blue-800">{stats.fulfilled}</p>
           </div>
-          <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-            <p className="text-xs text-red-700">❌ Cancelados</p>
-            <p className="text-2xl font-bold text-red-800">{stats.cancelled}</p>
+          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-300 shadow-sm">
+            <p className="text-xs font-medium text-red-700 mb-1 flex items-center gap-1"><span>❌</span> Cancelados</p>
+            <p className="text-3xl font-bold text-red-800">{stats.cancelled}</p>
           </div>
         </div>
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="bg-white border rounded-2xl p-4 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-slate-700 mb-1">🔍 Buscar cliente</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-2">🔍 Buscar cliente</label>
             <input
               type="text"
               placeholder="Nombre, email o teléfono..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
             />
           </div>
-          <div className="md:w-48">
-            <label className="block text-xs font-medium text-slate-700 mb-1">Estado</label>
+          <div className="md:w-56">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">Estado</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm font-medium"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">⏳ Pendientes</option>
@@ -160,8 +160,8 @@ export default function ModernOrdersManager({ storeId }) {
             </select>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Mostrando {filteredOrders.length} de {orders.length} reservas
+        <p className="text-xs font-medium text-slate-600 mt-3">
+          Mostrando {filteredOrders.length} de {orders.length} pedidos
         </p>
       </div>
 

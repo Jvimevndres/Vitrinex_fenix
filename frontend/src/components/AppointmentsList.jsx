@@ -202,58 +202,64 @@ export default function AppointmentsList({ storeId }) {
   }
 
   return (
-    <section className="bg-white border rounded-2xl p-6 shadow-sm space-y-6">
+    <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
       {/* 🆕 HEADER CON ESTADÍSTICAS */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="space-y-5">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-slate-800">
+            <h3 className="text-xl font-bold text-slate-900">
               📝 Gestión de Reservas
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-slate-600 mt-1.5">
               Administra las citas de tus clientes
             </p>
           </div>
           <button
             type="button"
             onClick={load}
-            className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+            className="px-5 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-blue-200 shadow-sm"
           >
             🔄 Actualizar
           </button>
         </div>
 
         {/* 🆕 TARJETAS DE ESTADÍSTICAS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-            <div className="text-2xl font-bold text-slate-800">{stats.total}</div>
-            <div className="text-xs text-slate-600 mt-1">Total</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="text-3xl font-bold text-slate-900">{stats.total}</div>
+            <div className="text-xs font-medium text-slate-600 mt-2">Total Reservas</div>
           </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="text-2xl font-bold text-amber-700">{stats.pending}</div>
-            <div className="text-xs text-amber-600 mt-1">⏳ Pendientes</div>
+          <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-300 rounded-xl p-5 shadow-sm">
+            <div className="text-3xl font-bold text-amber-800">{stats.pending}</div>
+            <div className="text-xs font-medium text-amber-700 mt-2 flex items-center gap-1">
+              <span>⏳</span> Pendientes
+            </div>
           </div>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <div className="text-2xl font-bold text-emerald-700">{stats.confirmed}</div>
-            <div className="text-xs text-emerald-600 mt-1">✅ Confirmadas</div>
+          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-300 rounded-xl p-5 shadow-sm">
+            <div className="text-3xl font-bold text-emerald-800">{stats.confirmed}</div>
+            <div className="text-xs font-medium text-emerald-700 mt-2 flex items-center gap-1">
+              <span>✅</span> Confirmadas
+            </div>
           </div>
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
-            <div className="text-2xl font-bold text-rose-700">{stats.cancelled}</div>
-            <div className="text-xs text-rose-600 mt-1">❌ Canceladas</div>
+          <div className="bg-gradient-to-br from-rose-50 to-rose-100 border border-rose-300 rounded-xl p-5 shadow-sm">
+            <div className="text-3xl font-bold text-rose-800">{stats.cancelled}</div>
+            <div className="text-xs font-medium text-rose-700 mt-2 flex items-center gap-1">
+              <span>❌</span> Canceladas
+            </div>
           </div>
         </div>
       </div>
 
       {/* 🆕 BARRA DE FILTROS */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-700">🔍 Filtros:</span>
+          <span className="text-sm font-bold text-slate-800">🔍 Filtros de Búsqueda</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Búsqueda */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
               Buscar cliente
             </label>
             <input
@@ -261,19 +267,19 @@ export default function AppointmentsList({ storeId }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Nombre, email o teléfono..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
             />
           </div>
 
           {/* Filtro por estado */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
               Estado
             </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm font-medium"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">⏳ Pendientes</option>
@@ -284,13 +290,13 @@ export default function AppointmentsList({ storeId }) {
 
           {/* Filtro por fecha */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
               Período
             </label>
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm font-medium"
             >
               <option value="all">Todas las fechas</option>
               <option value="upcoming">📅 Próximas</option>
@@ -344,91 +350,73 @@ export default function AppointmentsList({ storeId }) {
           {groupedByDate.map((group) => (
             <article
               key={group.date}
-              className="border border-slate-200 rounded-xl overflow-hidden"
+              className="border border-slate-200 rounded-xl overflow-hidden shadow-sm"
             >
               {/* Encabezado de fecha */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 px-5 py-3">
-                <h4 className="font-bold text-slate-800 text-base flex items-center gap-2">
+              <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
+                <h4 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
                   📅 {formatDate(group.date)}
-                  <span className="text-xs font-normal text-slate-600 bg-white px-2 py-1 rounded-full border border-slate-200">
+                  <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                     {group.items.length} {group.items.length === 1 ? "cita" : "citas"}
                   </span>
                 </h4>
               </div>
 
               {/* Lista de citas */}
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-200">
                 {group.items.map((appt) => (
                   <div
                     key={appt._id}
                     className="px-5 py-4 hover:bg-slate-50 transition-colors"
                   >
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4">
                       {/* Información del cliente */}
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                          {/* Hora */}
-                          <span className="inline-flex items-center justify-center shrink-0 rounded-lg bg-blue-100 text-blue-700 px-3 py-2 text-sm font-bold border border-blue-200">
-                            🕐 {appt.slot}
-                          </span>
+                      <div className="flex items-center gap-4 flex-1">
+                        {/* Hora */}
+                        <span className="inline-flex items-center justify-center shrink-0 rounded-lg bg-blue-100 text-blue-800 px-3 py-2 text-sm font-semibold border border-blue-200">
+                          🕐 {appt.slot}
+                        </span>
 
-                          {/* Nombre */}
-                          <div>
-                            <div className="font-semibold text-slate-800 text-base">
-                              {appt.customerName}
-                            </div>
-                            <div className="text-xs text-slate-500 flex items-center gap-3 mt-0.5">
-                              <span>📧 {appt.customerEmail}</span>
-                              <span>📱 {appt.customerPhone}</span>
-                            </div>
+                        {/* Info Cliente */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-slate-900 text-sm">
+                            {appt.customerName}
                           </div>
-                        </div>
-
-                        {/* Servicio (si existe) */}
-                        {appt.service && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200">
-                              🛎️ {appt.service.name || "Servicio"}
+                          <div className="text-xs text-slate-600 flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              📧 {appt.customerEmail}
                             </span>
-                            {appt.duration && (
-                              <span className="text-slate-600">
-                                ⏱️ {appt.duration} min
-                              </span>
-                            )}
-                            {appt.price != null && (
-                              <span className="text-slate-600">
-                                💰 ${appt.price.toLocaleString("es-CL")}
-                              </span>
-                            )}
+                            <span className="flex items-center gap-1">
+                              📱 {appt.customerPhone}
+                            </span>
                           </div>
-                        )}
-
-                        {/* Notas */}
-                        {appt.notes && (
-                          <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded px-3 py-2">
-                            💬 <strong>Nota:</strong> {appt.notes}
-                          </div>
-                        )}
+                          
+                          {/* Notas inline */}
+                          {appt.notes && (
+                            <div className="text-xs text-slate-600 mt-1 flex items-start gap-1">
+                              <span className="shrink-0">💬</span>
+                              <span><strong>Nota:</strong> {appt.notes}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Estado y acciones */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      {/* Badge de estado y acciones */}
+                      <div className="flex items-center gap-3 shrink-0">
                         {/* Badge de estado */}
                         <span
                           className={
-                            "inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold " +
+                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap " +
                             (STATUS_COLORS[appt.status] ||
                               "bg-slate-100 text-slate-700 border border-slate-200")
                           }
                         >
-                          {STATUS_ICONS[appt.status] || "⚪"}
-                          {STATUS_LABELS[appt.status] ||
-                            appt.status ||
-                            "Sin estado"}
+                          <span>{STATUS_ICONS[appt.status] || "⚪"}</span>
+                          {STATUS_LABELS[appt.status] || appt.status || "Sin estado"}
                         </span>
 
                         {/* Botones de acción */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
                           {appt.status !== "confirmed" && (
                             <button
                               type="button"
@@ -439,7 +427,7 @@ export default function AppointmentsList({ storeId }) {
                                 )
                               }
                               disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {updatingId === appt._id ? "..." : "✅ Confirmar"}
                             </button>
@@ -455,7 +443,7 @@ export default function AppointmentsList({ storeId }) {
                                 )
                               }
                               disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {updatingId === appt._id ? "..." : "❌ Cancelar"}
                             </button>
@@ -471,18 +459,17 @@ export default function AppointmentsList({ storeId }) {
                                 )
                               }
                               disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {updatingId === appt._id ? "..." : "⏳ Pendiente"}
                             </button>
                           )}
 
-                          {/* 🆕 Botón Eliminar */}
                           <button
                             type="button"
                             onClick={() => handleDelete(appt._id)}
                             disabled={updatingId === appt._id}
-                            className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
                             {updatingId === appt._id ? "..." : "🗑️ Eliminar"}
                           </button>

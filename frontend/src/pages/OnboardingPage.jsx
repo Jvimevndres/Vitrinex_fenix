@@ -182,7 +182,7 @@ export default function OnboardingPage() {
 >
       <MainHeader subtitle="Configura tus negocios en la plataforma" />
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold text-slate-800">

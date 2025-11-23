@@ -353,7 +353,7 @@ export default function StoreProfilePage() {
       />
 
       {/* CONTENIDO PRINCIPAL */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-6">
+      <main className="flex-1 max-w-7xl mx-auto px-8 py-8">
         <div className={gridColsClass}>
           {/* ╔════════════════════════════╗
              ║   SIDEBAR IZQUIERDO       ║

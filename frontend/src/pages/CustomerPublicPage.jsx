@@ -1,468 +1,517 @@
 // frontend/src/pages/CustomerPublicPage.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
-import UserChatModal from "../components/UserChatModal"; // 🆕 Chat usuario-usuario
+import UserChatModal from "../components/UserChatModal";
 import { getPublicUser } from "../api/user";
-import { useAuth } from "../context/AuthContext"; // 🆕 Para verificar autenticación
+import { useAuth } from "../context/AuthContext";
+import axios from "../api/axios";
 
-const buildBg = () => {
-  return {
-    background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)",
-  };
-};
-
-function StatCard({ title, value, subtitle }) {
-  return (
-    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-xl p-4 shadow-lg hover:shadow-purple-500/20 transition-all">
-      <div className="text-xs font-medium text-purple-300/80 uppercase tracking-wider">{title}</div>
-      <div className="mt-2 text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{value}</div>
-      {subtitle && <div className="text-xs text-slate-400 mt-1">{subtitle}</div>}
-    </div>
-  );
-}
-
-function ProgressBar({ label, value, max = 100, color = "#a855f7" }) {
-  const percent = Math.min((value / max) * 100, 100);
-  return (
-    <div className="mb-3">
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-xs font-medium text-slate-300">{label}</span>
-        <span className="text-xs text-purple-400 font-semibold">{Math.round(percent)}%</span>
-      </div>
-      <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SmallDonut({ percent = 70, color = "#7c3aed" }) {
-  const r = 24;
-  const c = 2 * Math.PI * r;
-  const dash = (percent / 100) * c;
-  return (
-    <svg width="64" height="64" viewBox="0 0 64 64" className="inline-block">
-      <circle cx="32" cy="32" r={r} stroke="#eef2ff" strokeWidth="8" fill="none" />
-      <circle
-        cx="32"
-        cy="32"
-        r={r}
-        stroke={color}
-        strokeWidth="8"
-        strokeLinecap="round"
-        strokeDasharray={`${dash} ${c - dash}`}
-        transform="rotate(-90 32 32)"
-        fill="none"
-      />
-    </svg>
-  );
-}
+// Estilos CSS en línea para animaciones
+const styles = `
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.2); }
+  }
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slideIn {
+    animation: slideIn 0.3s ease-out;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+`;
 
 export default function CustomerPublicPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser, isAuthenticated } = useAuth(); // 🆕 Usuario autenticado
+  const { user: currentUser, isAuthenticated } = useAuth();
 
   const [user, setUser] = useState(null);
+  const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openContact, setOpenContact] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadUserSafe = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await getPublicUser(id);
-        // Normalizar posible respuesta de axios
-        const data = res?.data ?? res;
-        const u = data?.user ?? data;
-        if (!mounted) return;
-        if (!u) {
-          setError("Respuesta de usuario vacía desde la API.");
-          setUser(null);
-        } else {
-          setUser(u);
-        }
-      } catch (err) {
-        if (!mounted) return;
-        setError(err?.message || "No se pudo cargar el perfil del usuario.");
-        setUser(null);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
+  // Estadísticas calculadas
+  const [stats, setStats] = useState({
+    productsPublished: 0,
+    savedItems: 0,
+    queriesMade: 0,
+    rating: 0,
+    reviews: 0,
+    activeTime: "",
+    accountCreated: "",
+  });
 
-    loadUserSafe();
-    return () => {
-      mounted = false;
-    };
+  useEffect(() => {
+    loadUser();
   }, [id]);
 
-  const pageStyle = useMemo(() => buildBg(), []);
+  const loadUser = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      const res = await getPublicUser(id);
+      const data = res?.data ?? res;
+      const userData = data?.user ?? data;
+      
+      if (!userData) {
+        setError("No se encontró información del usuario.");
+        return;
+      }
+
+      setUser(userData);
+
+      // Calcular estadísticas
+      const accountCreated = userData?.createdAt 
+        ? new Date(userData.createdAt).toLocaleDateString('es-CL', { 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric' 
+          })
+        : "No disponible";
+
+      const now = new Date();
+      const created = userData?.createdAt ? new Date(userData.createdAt) : now;
+      const diffTime = Math.abs(now - created);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      let activeTime = "";
+      if (diffDays < 30) {
+        activeTime = `${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+      } else if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30);
+        activeTime = `${months} mes${months !== 1 ? 'es' : ''}`;
+      } else {
+        const years = Math.floor(diffDays / 365);
+        activeTime = `${years} año${years !== 1 ? 's' : ''}`;
+      }
+
+      setStats(prev => ({
+        ...prev,
+        accountCreated,
+        activeTime,
+        rating: userData?.rating || 0,
+      }));
+
+      // Cargar tiendas del usuario
+      try {
+        const storesRes = await axios.get(`/users/${id}/stores`);
+        const userStores = storesRes.data || [];
+        setStores(userStores);
+
+        // Contar productos publicados
+        let totalProducts = 0;
+        for (const store of userStores) {
+          try {
+            const productsRes = await axios.get(`/stores/${store._id}/products`);
+            totalProducts += (productsRes.data || []).length;
+          } catch (err) {
+            console.error(`Error loading products for store ${store._id}:`, err);
+          }
+        }
+        
+        setStats(prev => ({ ...prev, productsPublished: totalProducts }));
+      } catch (err) {
+        console.error('Error loading user stores:', err);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "No se pudo cargar el perfil del usuario.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pageBackgroundStyle = {
+    background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)",
+  };
 
   const avatarSrc = user?.avatarUrl || user?.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
-  // Datos de personalidad
-  const personality = user?.personality || {
-    introvert: 50,
-    analytical: 50,
-    loyal: 50,
-    passive: 50
-  };
-
-  // Motivaciones
-  const motivations = user?.motivations || {
-    price: 50,
-    comfort: 50,
-    convenience: 50,
-    speed: 50,
-    transparency: 50
-  };
-
-  // Frustraciones
-  const frustrations = user?.frustrations || [];
-
-  // Objetivos
-  const goals = user?.goals || [];
-
-  // Marcas favoritas
-  const favoriteBrands = user?.favoriteBrands || [];
-
-  // Tags de arquetipos
-  const archetypes = user?.archetypes || [];
-
-  const sanitizePhone = (p) => (p ? p.replace(/\D/g, "") : "");
-  const whatsappLink = (p) => {
-    const num = sanitizePhone(p);
-    return num ? `https://wa.me/${num}` : null;
-  };
-  const instagramLink = (handle) => (handle ? `https://instagram.com/${handle.replace(/^@/, "")}` : null);
-  const facebookLink = (id) => (id ? `https://facebook.com/${id}` : null);
-  const mailto = (email) => (email ? `mailto:${email}` : null);
-
   if (loading) {
     return (
-      <div className="min-h-screen" style={buildBg()}>
-        <MainHeader subtitle="Cargando perfil público..." />
-        <div className="header-spacer" />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-sm text-slate-400">Cargando información del perfil...</p>
+      <>
+        <style>{styles}</style>
+        <div className="min-h-screen relative" style={pageBackgroundStyle}>
+          {/* Estrellas animadas */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          <MainHeader subtitle="Cargando perfil público..." />
+          <div className="header-spacer" />
+          
+          <div className="relative z-10 flex items-center justify-center py-20">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-400 mx-auto"></div>
+              <div className="space-y-2">
+                <p className="text-base text-white font-semibold">Cargando perfil público</p>
+                <p className="text-sm text-slate-400">Obteniendo información del usuario...</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  const stats = {
-    revenue: user?.stats?.revenue ?? "—",
-    orders: user?.stats?.orders ?? 0,
-    interactions: user?.stats?.interactions ?? 0,
-    responseRate: user?.stats?.responseRate ?? 78,
-  };
+  if (error || !user) {
+    return (
+      <>
+        <style>{styles}</style>
+        <div className="min-h-screen relative" style={pageBackgroundStyle}>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                }}
+              />
+            ))}
+          </div>
 
-  // Normalización de posibles campos de la API
-  const instaHandle = user?.social?.instagram ?? user?.instagram ?? user?.instagramHandle ?? null;
-  const fbId = user?.social?.facebook ?? user?.facebook ?? null;
-  const waPhone = user?.phone ?? user?.whatsapp ?? user?.contact?.phone ?? null;
-  const emailAddr = user?.email ?? user?.contact?.email ?? null;
-
-  const instaUrl = instaHandle ? instagramLink(instaHandle) : null;
-  const fbUrl = fbId ? facebookLink(fbId) : null;
-  const waUrl = waPhone ? whatsappLink(waPhone) : null;
-  const mailUrl = emailAddr ? mailto(emailAddr) : null;
-
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden pt-20" style={pageStyle}>
-      {/* Animated stars background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ opacity: 0.4 }}>
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              width: Math.random() * 2 + 1 + 'px',
-              height: Math.random() * 2 + 1 + 'px',
-              top: Math.random() * 100 + '%',
-              left: Math.random() * 100 + '%',
-              opacity: Math.random() * 0.5 + 0.3,
-              animation: `twinkle ${Math.random() * 5 + 3}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.2); }
-        }
-      `}</style>
-
-      <MainHeader subtitle="Perfil de usuario" />
-      <div className="header-spacer" />
-
-      {error && (
-        <div className="max-w-7xl mx-auto px-4 py-3 relative z-10">
-          <div className="bg-red-900/80 backdrop-blur-md text-red-200 border border-red-500/30 rounded-xl p-4 text-sm">
-            {error}
+          <MainHeader subtitle="Perfil no encontrado" />
+          <div className="header-spacer" />
+          
+          <div className="relative z-10 max-w-2xl mx-auto px-6 py-20">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-red-500/30 rounded-2xl p-8 text-center space-y-4 animate-slideIn">
+              <div className="text-6xl">🔍</div>
+              <h2 className="text-2xl font-bold text-white">Usuario no encontrado</h2>
+              <p className="text-slate-300">{error || "No se pudo cargar la información del perfil."}</p>
+              <button
+                onClick={() => navigate(-1)}
+                className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+              >
+                ← Volver atrás
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </>
+    );
+  }
 
-      {(!user && !loading) && (
-        <main className="flex-1 max-w-7xl mx-auto px-4 py-8 relative z-10">
-          <div className="bg-slate-800/90 backdrop-blur-md border border-slate-700 rounded-2xl p-8 text-center">
-            <p className="text-sm text-slate-300">No se encontró información del usuario.</p>
-            <button onClick={() => navigate(-1)} className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all">
-              Volver atrás
-            </button>
-          </div>
-        </main>
-      )}
+  return (
+    <>
+      <style>{styles}</style>
+      <div className="min-h-screen flex flex-col relative" style={pageBackgroundStyle}>
+        {/* Estrellas animadas de fondo */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(80)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+              }}
+            />
+          ))}
+        </div>
 
-      {user && (
-        <main className="flex-1 max-w-7xl mx-auto px-4 py-8 relative z-10">
-          {/* Card principal tipo User Persona */}
-          <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-purple-500/30 rounded-3xl shadow-2xl overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-8">
-              
-              {/* COLUMNA IZQUIERDA - Perfil del usuario */}
-              <div className="space-y-6">
-                {/* Avatar y datos básicos */}
-                <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-md border border-purple-500/30 rounded-2xl p-6 text-center">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-50"></div>
-                    <img 
-                      src={avatarSrc} 
-                      alt={user.username || user.name || "Usuario"} 
-                      className="relative w-32 h-32 rounded-full object-cover border-4 border-purple-500/50 mx-auto shadow-2xl"
-                    />
-                  </div>
-                  
-                  <h1 className="mt-4 text-2xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                    {user.username || user.name || "Usuario"}
-                  </h1>
-                  
-                  <p className="text-sm text-purple-300/80 font-medium mt-1">
-                    {user.title || ""}
-                  </p>
+        <MainHeader subtitle="Perfil público de usuario" />
+        <div className="header-spacer" />
 
-                  {/* Quote/Bio corta */}
-                  {user.quote && (
-                    <div className="mt-4 p-4 bg-slate-800/50 rounded-xl border-l-4 border-purple-500">
-                      <div className="text-4xl text-purple-400/50 leading-none">"</div>
-                      <p className="text-xs text-slate-300 italic leading-relaxed">
-                        {user.quote}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Información básica */}
-                  <div className="mt-6 space-y-2 text-left">
-                    {user.age && (
-                      <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
-                        <span className="text-xs text-slate-400 font-medium">Edad:</span>
-                        <span className="text-sm text-white font-semibold">{user.age}</span>
-                      </div>
-                    )}
-                    {user.status && (
-                      <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
-                        <span className="text-xs text-slate-400 font-medium">Estado:</span>
-                        <span className="text-sm text-white font-semibold">{user.status}</span>
-                      </div>
-                    )}
-                    {(user.location || user.city) && (
-                      <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
-                        <span className="text-xs text-slate-400 font-medium">Ubicación:</span>
-                        <span className="text-sm text-white font-semibold">{user.location || user.city}</span>
-                      </div>
-                    )}
-                    {user.archetype && (
-                      <div className="flex items-center justify-between py-2">
-                        <span className="text-xs text-slate-400 font-medium">Arquetipo:</span>
-                        <span className="text-sm text-purple-400 font-semibold">{user.archetype}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tags de arquetipos */}
-                  {archetypes.length > 0 && (
-                    <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                      {archetypes.slice(0, 6).map((tag, i) => (
-                        <span key={i} className="px-3 py-1 bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/40 text-red-300 rounded-full text-xs font-semibold">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Botones de acción */}
-                <div className="flex flex-col gap-3">
-                  <button 
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        alert("Debes iniciar sesión para contactar a este usuario");
-                        navigate("/login");
-                        return;
-                      }
-                      if (currentUser._id === id) {
-                        alert("No puedes contactarte a ti mismo");
-                        return;
-                      }
-                      setOpenContact(true);
-                    }}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-purple-500/50 hover:scale-105 transition-all"
-                  >
-                    💬 Contactar
-                  </button>
-                  <button 
-                    onClick={() => navigate(-1)}
-                    className="w-full px-6 py-3 bg-slate-700/50 border border-slate-600 text-slate-300 rounded-xl font-semibold hover:bg-slate-700 transition-all"
-                  >
-                    ← Volver atrás
-                  </button>
+        <main className="flex-1 max-w-6xl mx-auto px-6 py-10 relative z-10 w-full">
+          {/* Header del Perfil */}
+          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-2xl border-2 border-purple-500/30 rounded-3xl shadow-2xl p-8 mb-8 animate-slideIn">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              {/* Avatar */}
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-xl opacity-60 group-hover:opacity-80 transition-opacity animate-float"></div>
+                <img
+                  src={avatarSrc}
+                  alt={user.username || "Usuario"}
+                  className="relative w-32 h-32 rounded-full object-cover border-4 border-purple-400 shadow-2xl"
+                />
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900">
+                  ⭐ {stats.rating.toFixed(1)}
                 </div>
               </div>
 
-              {/* COLUMNA CENTRAL - Bio, Personalidad, Objetivos */}
-              <div className="space-y-6">
-                {/* Bio */}
+              {/* Info Principal */}
+              <div className="flex-1 text-center md:text-left space-y-3">
+                <h1 className="text-3xl md:text-4xl font-bold text-white">
+                  {user.username || user.name || "Usuario"}
+                </h1>
+                <p className="text-slate-300 text-sm md:text-base">
+                  {user.email || "correo@ejemplo.com"}
+                </p>
                 {user.bio && (
-                  <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                      <span className="text-xl">📖</span> Biografía
-                    </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      {user.bio}
-                    </p>
-                  </div>
+                  <p className="text-slate-400 text-sm max-w-2xl">
+                    {user.bio}
+                  </p>
                 )}
-
-                {/* Personalidad */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-purple-300 mb-4 flex items-center gap-2">
-                    <span className="text-xl">🧠</span> Personalidad
-                  </h3>
-                  <div className="space-y-3">
-                    <ProgressBar label="Introvertido ← → Extrovertido" value={personality.introvert} color="#ef4444" />
-                    <ProgressBar label="Analítico ← → Creativo" value={personality.analytical} color="#f59e0b" />
-                    <ProgressBar label="Leal ← → Voluble" value={personality.loyal} color="#10b981" />
-                    <ProgressBar label="Pasivo ← → Activo" value={personality.passive} color="#3b82f6" />
-                  </div>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    📅 Desde {stats.accountCreated}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    ⏱️ {stats.activeTime} activo
+                  </span>
                 </div>
-
-                {/* Objetivos */}
-                {goals.length > 0 && (
-                  <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                      <span className="text-xl">🎯</span> Objetivos
-                    </h3>
-                    <ul className="space-y-2">
-                      {goals.map((goal, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                          <span className="text-purple-400 mt-0.5">✓</span>
-                          <span>{goal}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
 
-              {/* COLUMNA DERECHA - Motivaciones, Frustraciones, Marcas */}
-              <div className="space-y-6">
-                {/* Motivaciones */}
-                <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-purple-300 mb-4 flex items-center gap-2">
-                    <span className="text-xl">💪</span> Motivaciones
-                  </h3>
-                  <div className="space-y-3">
-                    <ProgressBar label="Precio" value={motivations.price} />
-                    <ProgressBar label="Comodidad" value={motivations.comfort} />
-                    <ProgressBar label="Conveniencia" value={motivations.convenience} />
-                    <ProgressBar label="Velocidad" value={motivations.speed} />
-                    <ProgressBar label="Transparencia" value={motivations.transparency} />
-                  </div>
-                </div>
-
-                {/* Frustraciones */}
-                {frustrations.length > 0 && (
-                  <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                      <span className="text-xl">😤</span> Frustraciones
-                    </h3>
-                    <ul className="space-y-2">
-                      {frustrations.map((frust, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                          <span className="text-red-400 mt-0.5">●</span>
-                          <span>{frust}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Marcas favoritas */}
-                {favoriteBrands.length > 0 && (
-                  <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-md border border-purple-500/20 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-purple-300 mb-4 flex items-center gap-2">
-                      <span className="text-xl">⭐</span> Marcas Favoritas
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {favoriteBrands.map((brand, i) => (
-                        <div key={i} className="bg-slate-700/40 border border-slate-600/50 rounded-lg p-3 text-center hover:bg-slate-700/60 hover:border-purple-500/50 transition-all">
-                          <div className="text-2xl mb-1">{brand.logo}</div>
-                          <div className="text-xs font-semibold text-slate-300">{brand.name}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              {/* Botones de acción */}
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      alert("Debes iniciar sesión para contactar a este usuario");
+                      navigate("/login");
+                      return;
+                    }
+                    if (currentUser?._id === id || currentUser?.id === id) {
+                      alert("No puedes contactarte a ti mismo");
+                      return;
+                    }
+                    setOpenContact(true);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                >
+                  💬 Contactar
+                </button>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="px-6 py-2.5 bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 rounded-xl font-medium border border-slate-600/50 transition-all"
+                >
+                  ← Volver atrás
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Sección adicional de estadísticas */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard 
-              title="Calificación" 
-              value={user.rating ? `${user.rating} ⭐` : "—"} 
-              subtitle="Calificación general" 
-            />
-            <StatCard 
-              title="Negocios" 
-              value={user.stats?.businesses || 0} 
-              subtitle="Negocios activos" 
-            />
-            <StatCard 
-              title="Respuesta" 
-              value={user.stats?.responseRate ? `${user.stats.responseRate}%` : "—"} 
-              subtitle="Tasa de respuesta" 
-            />
-          </div>
-        </main>
-      )}
+          {/* Contenido en 3 columnas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slideIn">
+            
+            {/* COLUMNA 1: Perfil Público */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span>👤</span> Perfil Público
+                </h2>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Nombre completo</p>
+                    <p className="text-lg text-white font-semibold">{user.username || user.name || "No especificado"}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Correo electrónico</p>
+                    <p className="text-lg text-white font-semibold break-all">{user.email || "No especificado"}</p>
+                  </div>
+                  {user.phone && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-400">Teléfono</p>
+                      <p className="text-lg text-white font-semibold">{user.phone}</p>
+                    </div>
+                  )}
+                  {user.address && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-400">Dirección</p>
+                      <p className="text-lg text-white font-semibold">{user.address}</p>
+                    </div>
+                  )}
+                  <div className="space-y-2 pt-2 border-t border-slate-700/50">
+                    <p className="text-sm text-slate-400">Miembro desde</p>
+                    <p className="text-lg text-white font-semibold">{stats.accountCreated}</p>
+                  </div>
+                </div>
+              </div>
 
-      {/* 🆕 Modal de chat usuario-usuario (reemplaza el formulario viejo) */}
-      {openContact && user && isAuthenticated && (
-        <UserChatModal
-          targetUserId={id}
-          targetUsername={user.username || user.name || user.email}
-          onClose={() => setOpenContact(false)}
-        />
-      )}
-      <Footer paletteMode="warm" />
-    </div>
+              {/* Datos de contacto adicionales */}
+              {(user.rut || user.location || user.city) && (
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span>📋</span> Información Adicional
+                  </h3>
+                  <div className="space-y-3">
+                    {user.rut && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
+                        <span className="text-sm text-slate-400">RUT:</span>
+                        <span className="text-sm text-white font-semibold">{user.rut}</span>
+                      </div>
+                    )}
+                    {(user.location || user.city) && (
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-slate-400">Ubicación:</span>
+                        <span className="text-sm text-white font-semibold">{user.location || user.city}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* COLUMNA 2: Actividad */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <span>🏷️</span> Actividad en la Plataforma
+                </h2>
+                <div className="space-y-4">
+                  {/* Productos publicados */}
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-xl p-5">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl">📦</div>
+                      <p className="text-3xl font-bold text-white">{stats.productsPublished}</p>
+                      <p className="text-sm text-slate-300">Productos Publicados</p>
+                    </div>
+                  </div>
+
+                  {/* Guardados */}
+                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl p-5">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl">❤️</div>
+                      <p className="text-3xl font-bold text-white">{stats.savedItems}</p>
+                      <p className="text-sm text-slate-300">Guardados</p>
+                      <p className="text-xs text-slate-500">(Próximamente)</p>
+                    </div>
+                  </div>
+
+                  {/* Consultas */}
+                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-xl p-5">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl">💬</div>
+                      <p className="text-3xl font-bold text-white">{stats.queriesMade}</p>
+                      <p className="text-sm text-slate-300">Consultas Hechas</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* COLUMNA 3: Confiabilidad */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <span>⭐</span> Confiabilidad
+                </h2>
+                <div className="space-y-4">
+                  {/* Calificación */}
+                  <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 rounded-xl p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-5xl">⭐</div>
+                      <p className="text-4xl font-bold text-white">{stats.rating.toFixed(1)}</p>
+                      <p className="text-sm text-slate-300">Calificación Promedio</p>
+                      <div className="flex justify-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`text-2xl ${
+                              star <= Math.round(stats.rating)
+                                ? "text-yellow-400"
+                                : "text-slate-600"
+                            }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Opiniones */}
+                  <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-2 border-blue-500/30 rounded-xl p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-5xl">💭</div>
+                      <p className="text-4xl font-bold text-white">{stats.reviews}</p>
+                      <p className="text-sm text-slate-300">Opiniones Recibidas</p>
+                      <p className="text-xs text-slate-500">(Próximamente)</p>
+                    </div>
+                  </div>
+
+                  {/* Tiempo activo */}
+                  <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl p-6">
+                    <div className="text-center space-y-3">
+                      <div className="text-5xl">⏰</div>
+                      <p className="text-4xl font-bold text-white">{stats.activeTime}</p>
+                      <p className="text-sm text-slate-300">Tiempo Activo</p>
+                      <p className="text-xs text-slate-400">En la plataforma</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tiendas del usuario */}
+          {stores.length > 0 && (
+            <div className="mt-8 animate-slideIn">
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <span>🏪</span> Negocios de {user.username || "este usuario"}
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {stores.map((store) => (
+                    <div
+                      key={store._id}
+                      onClick={() => navigate(`/negocio/${store._id}`)}
+                      className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-700/60 hover:border-purple-500/50 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={store.logoUrl || "https://cdn-icons-png.flaticon.com/512/869/869636.png"}
+                          alt={store.name}
+                          className="w-12 h-12 rounded-lg object-cover border border-purple-400/30 bg-slate-700"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate group-hover:text-purple-300 transition-colors">
+                            {store.name}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {store.category || store.tipoNegocio || "Sin categoría"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Modal de chat usuario-usuario */}
+        {openContact && user && isAuthenticated && (
+          <UserChatModal
+            targetUserId={id}
+            targetUsername={user.username || user.name || user.email}
+            onClose={() => setOpenContact(false)}
+          />
+        )}
+
+        <Footer paletteMode="warm" />
+      </div>
+    </>
   );
 }

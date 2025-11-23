@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -26,11 +26,45 @@ html, body {
   flex-direction: column;
 }
 
-/* Opcional: pequeños ajustes globales */
+/* Fuente moderna y elegante aplicada globalmente */
+*, *::before, *::after {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 body {
-  @apply bg-slate-100 text-slate-900;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  @apply bg-slate-50 text-slate-900;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* Títulos con Poppins */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Asegurar que inputs, buttons, labels, y otros elementos usen Inter */
+input, textarea, select, button, label, span, p, div, a, li, option {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Forzar fuente en badges, pills y etiquetas */
+.badge, .pill, .tag, [class*="badge"], [class*="pill"], [class*="tag"],
+[class*="rounded-full"], [class*="inline-flex"] {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Forzar fuente en selects y options */
+select, option {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Forzar fuente en todos los elementos con clases de Tailwind comunes */
+[class*="text-"], [class*="font-"], [class*="bg-"], [class*="border-"] {
+  font-family: inherit;
 }
 
 /* Espaciador para compensar el header fixed */
@@ -173,16 +207,11 @@ main {
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
 }
 
-/* Variables globales (ajusta si tienes más reglas en :root) */
-:root {
-  /* ...existing code... */
-}
-
-/* Fuente / estilo "beauty" para headers */
+/* Fuente / estilo "beauty" para headers - Actualizado a Poppins */
 .font-beauty {
-  font-family: 'Bebas Neue', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  font-family: 'Poppins', 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
 /* ==== EFECTOS VISUALES MEJORADOS ==== */

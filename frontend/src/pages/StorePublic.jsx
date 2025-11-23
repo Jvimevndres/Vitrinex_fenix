@@ -1447,12 +1447,12 @@ export default function StorePublicPage() {
         />
 
         {/* Banner Superior */}
-        <div className="max-w-7xl mx-auto px-4 pt-4">
+        <div className="max-w-7xl mx-auto px-6 pt-6">
           <PromotionalBanner position="top" store={store} />
         </div>
 
         {/* Layout con Sidebars */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex gap-6">
             {/* Sidebar Izquierda */}
             <aside className="hidden lg:block w-64 flex-shrink-0">

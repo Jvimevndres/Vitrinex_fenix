@@ -411,11 +411,11 @@ export default function ExploreStoresPage() {
         onPaletteModeChange={setPaletteMode}
       />
 
-      <main className="flex-1 w-full px-3 md:px-6 pt-[68px] pb-6">
+      <main className="flex-1 w-full px-4 md:px-8 pt-[68px] pb-8">
         <div className="mx-auto w-full max-w-[1600px]">
-          <div className="grid gap-3 lg:grid-cols-[280px,1fr,380px] items-start">
+          <div className="grid gap-4 lg:grid-cols-[280px,1fr,380px] items-start">
             {/* Filtros - GALAXY STYLE MEJORADO */}
-            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-2xl self-start sticky top-[60px]" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
+            <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-2xl self-start sticky top-[72px]" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
               <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                 <span className="text-lg">🔍</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-200 to-pink-200">
@@ -423,7 +423,7 @@ export default function ExploreStoresPage() {
                 </span>
               </h2>
               
-              <div className="space-y-3 text-sm">
+              <div className="space-y-4 text-sm">
                 {/* Búsqueda rápida */}
                 <div>
                   <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
@@ -679,7 +679,7 @@ export default function ExploreStoresPage() {
                 <p className="text-xs text-red-300 bg-red-900/30 border border-red-500/30 rounded-lg px-2 py-1 mb-2 backdrop-blur-sm">{error}</p>
               )}
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
                 {!loading && stores.length === 0 && !error && (
                   <p className="text-xs text-white/50">No se encontraron negocios con esos filtros.</p>
                 )}
@@ -687,7 +687,7 @@ export default function ExploreStoresPage() {
                 {stores.map((store) => (
                   <article
                     key={store._id}
-                    className={`rounded-lg px-3 py-3 text-sm cursor-pointer transition-all duration-200 ease-in-out hover:scale-[1.02]`}
+                    className={`rounded-lg px-4 py-4 text-sm cursor-pointer transition-all duration-200 ease-in-out hover:scale-[1.02]`}
                     onClick={() => handleFocusOnStore(store)}
                     style={
                       selectedStoreId === store._id

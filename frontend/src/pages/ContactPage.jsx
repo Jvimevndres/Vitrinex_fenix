@@ -52,11 +52,11 @@ export default function ContactPage() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       <MainHeader variant="vitrinex" />
       
-      <main className="flex-1 pt-20 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-24 pb-20">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           
           {/* Hero Section */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <div className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br ${theme.gradient} rounded-2xl shadow-2xl mb-6 animate-pulse`}>
               <FaGraduationCap className="text-4xl text-white" />
             </div>

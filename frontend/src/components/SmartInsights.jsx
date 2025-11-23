@@ -24,16 +24,16 @@ function SectionTitle({ title, subtitle, badge }) {
 
 function StatCard({ label, value, className, trend }) {
   return (
-    <div className={`bg-white border border-slate-100 rounded-2xl p-4 shadow-sm min-w-0 flex flex-col ${className || ""}`}>
-      <div className="flex items-center justify-between">
-        <p className="text-[12px] text-slate-500">{label}</p>
+    <div className={`bg-white border-2 border-slate-200 rounded-xl p-5 shadow-md hover:shadow-lg transition-shadow flex flex-col min-w-[170px] ${className || ""}`}>
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <p className="text-sm text-slate-600 font-medium leading-snug flex-1">{label}</p>
         {trend && (
-          <span className={`text-xs font-medium ${trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+          <span className={`text-xs font-semibold flex-shrink-0 ${trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-slate-400'}`}>
             {trend > 0 ? '↗' : trend < 0 ? '↘' : '→'} {Math.abs(trend)}%
           </span>
         )}
       </div>
-      <p className="text-lg font-bold text-slate-900 mt-1 leading-tight break-words">{value}</p>
+      <p className="text-2xl font-bold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -148,7 +148,7 @@ export default function SmartInsights({ storeId, mode }) {
       {/* KPIs */}
       {mode === "products" ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
             <StatCard label="Pedidos totales" value={summary?.totalOrders ?? 0} />
             <StatCard label="Unidades vendidas" value={summary?.totalItemsSold ?? 0} />
             <StatCard label="Ingresos generados" value={summary?.totalRevenue ? `$${summary.totalRevenue.toLocaleString('es-CL')}` : '$0'} />
@@ -170,7 +170,7 @@ export default function SmartInsights({ storeId, mode }) {
         </>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-4">
             <StatCard label="Citas totales" value={summary?.totalAppointments ?? 0} />
             <StatCard label="✅ Confirmadas" value={summary?.confirmed ?? 0} className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200" />
             <StatCard label="⏳ Pendientes" value={summary?.pending ?? 0} className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200" />
