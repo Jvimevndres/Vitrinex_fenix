@@ -300,3 +300,30 @@ export const updateUserRole = async (req, res) => {
     res.status(500).json({ message: 'Error actualizando rol', error: error.message });
   }
 };
+
+// Actualizar plan de usuario
+export const updateUserPlan = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { plan } = req.body;
+
+    if (!['free', 'premium'].includes(plan)) {
+      return res.status(400).json({ message: 'Plan inválido' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { plan },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json({ message: 'Plan actualizado', user });
+  } catch (error) {
+    console.error('Error actualizando plan:', error);
+    res.status(500).json({ message: 'Error actualizando plan', error: error.message });
+  }
+};

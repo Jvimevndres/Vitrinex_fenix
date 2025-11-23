@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllUsers, updateUserRole } from '../api/admin';
+import { getAllUsers, updateUserRole, updateUserPlan } from '../api/admin';
 
 export default function AdminUsersManager() {
   const [users, setUsers] = useState([]);
@@ -25,6 +25,16 @@ export default function AdminUsersManager() {
       loadUsers();
     } catch (error) {
       alert('Error actualizando rol');
+    }
+  };
+
+  const changePlan = async (userId, newPlan) => {
+    if (!confirm(`¿Cambiar plan a ${newPlan.toUpperCase()}?`)) return;
+    try {
+      await updateUserPlan(userId, newPlan);
+      loadUsers();
+    } catch (error) {
+      alert('Error actualizando plan');
     }
   };
 
@@ -59,6 +69,7 @@ export default function AdminUsersManager() {
                 <th className="text-left p-3 text-sm font-semibold">Usuario</th>
                 <th className="text-left p-3 text-sm font-semibold">Email</th>
                 <th className="text-left p-3 text-sm font-semibold">Rol</th>
+                <th className="text-left p-3 text-sm font-semibold">Plan</th>
                 <th className="text-left p-3 text-sm font-semibold">Registro</th>
                 <th className="text-left p-3 text-sm font-semibold">Acciones</th>
               </tr>
@@ -82,18 +93,35 @@ export default function AdminUsersManager() {
                       {user.role}
                     </span>
                   </td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      user.plan === 'premium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {user.plan === 'premium' ? 'Premium' : 'Gratis'}
+                    </span>
+                  </td>
                   <td className="p-3 text-sm text-slate-600">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-3">
-                    <select
-                      value={user.role}
-                      onChange={(e) => changeRole(user._id, e.target.value)}
-                      className="text-sm border rounded px-2 py-1"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    <div className="flex gap-2">
+                      <select
+                        value={user.role}
+                        onChange={(e) => changeRole(user._id, e.target.value)}
+                        className="text-sm border rounded px-2 py-1"
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <select
+                        value={user.plan || 'free'}
+                        onChange={(e) => changePlan(user._id, e.target.value)}
+                        className="text-sm border rounded px-2 py-1"
+                      >
+                        <option value="free">Free</option>
+                        <option value="premium">Premium</option>
+                      </select>
+                    </div>
                   </td>
                 </tr>
               ))}

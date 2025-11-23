@@ -14,3 +14,5 @@ export const updateStorePlan = (storeId, plan, expiresAt) =>
 export const getAllUsers = (params) => axios.get('/admin/users', { params });
 export const updateUserRole = (userId, role) => 
   axios.patch(`/admin/users/${userId}/role`, { role });
+export const updateUserPlan = (userId, plan) => 
+  axios.patch(`/admin/users/${userId}/plan`, { plan });

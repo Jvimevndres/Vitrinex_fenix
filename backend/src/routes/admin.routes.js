@@ -8,6 +8,7 @@ import {
   updateStorePlan,
   getAllUsers,
   updateUserRole,
+  updateUserPlan,
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -26,5 +27,6 @@ router.patch('/stores/:storeId/plan', updateStorePlan);
 // Gestión de usuarios
 router.get('/users', getAllUsers);
 router.patch('/users/:userId/role', updateUserRole);
+router.patch('/users/:userId/plan', updateUserPlan);
 
 export default router;
