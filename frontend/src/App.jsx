@@ -22,6 +22,7 @@ import AdminStoresManager from "./pages/AdminStoresManager";
 import AdminUsersManager from "./pages/AdminUsersManager";
 import AdminSponsorsManager from "./pages/AdminSponsorsManager";
 import AdminCommentsViewer from "./pages/AdminCommentsViewer";
+import AdminChatbotMonitor from "./pages/AdminChatbotMonitor";
 
 // Chatbot Widget
 import ChatbotWidget from "./components/ChatbotWidget";
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="users" element={<AdminUsersManager />} />
           <Route path="sponsors" element={<AdminSponsorsManager />} />
           <Route path="comments" element={<AdminCommentsViewer />} />
+          <Route path="chatbot" element={<AdminChatbotMonitor />} />
         </Route>
 
         {/* Fallback */}

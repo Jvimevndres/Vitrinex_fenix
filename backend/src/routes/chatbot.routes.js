@@ -5,7 +5,7 @@
  */
 
 import { Router } from "express";
-import { sendChatMessage, sendPremiumChatMessage, checkChatbotHealth } from "../controllers/chatbot.controller.js";
+import { sendChatMessage, sendPremiumChatMessage, checkChatbotHealth, getChatbotStats } from "../controllers/chatbot.controller.js";
 import { authRequired } from "../middlewares/authRequired.js";
 
 const router = Router();
@@ -30,5 +30,12 @@ router.post("/premium", authRequired, sendPremiumChatMessage);
  * Verifica el estado del servicio de chatbot
  */
 router.get("/health", checkChatbotHealth);
+
+/**
+ * GET /api/chatbot/stats
+ * Obtiene estadísticas de uso del chatbot (solo admin)
+ * Query params: timeRange (7d, 30d, 90d, all)
+ */
+router.get("/stats", authRequired, getChatbotStats);
 
 export default router;

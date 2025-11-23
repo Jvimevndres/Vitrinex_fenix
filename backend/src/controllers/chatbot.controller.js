@@ -7,6 +7,7 @@
 
 import { getChatbotResponse, getChatbotResponsePremium } from "../libs/aiClient.js";
 import logger from "../utils/logger.js";
+import ChatbotUsage from "../models/ChatbotUsage.js";
 
 /**
  * POST /api/chatbot
@@ -306,14 +307,39 @@ export const sendPremiumChatMessage = async (req, res) => {
     };
 
     // Llamar al cliente de IA Premium con contexto enriquecido
-    const reply = await getChatbotResponsePremium(message, userContext);
+    const aiResponse = await getChatbotResponsePremium(message, userContext);
 
-    logger.success(`Chatbot Premium - Respuesta generada para ${user.username}`);
+    // Calcular costo estimado (gpt-4o-mini pricing)
+    // Input: $0.15 per 1M tokens, Output: $0.60 per 1M tokens
+    const inputCost = (aiResponse.usage.promptTokens / 1_000_000) * 0.15;
+    const outputCost = (aiResponse.usage.completionTokens / 1_000_000) * 0.60;
+    const totalCost = inputCost + outputCost;
+
+    // Guardar registro de uso
+    const usageRecord = new ChatbotUsage({
+      storeId: stores[0]?._id, // Primera tienda del usuario
+      userId: user._id,
+      messageType: 'premium',
+      promptTokens: aiResponse.usage.promptTokens,
+      completionTokens: aiResponse.usage.completionTokens,
+      totalTokens: aiResponse.usage.totalTokens,
+      estimatedCost: totalCost,
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      success: true
+    });
+    
+    await usageRecord.save();
+
+    logger.success(`Chatbot Premium - Respuesta generada para ${user.username} (${aiResponse.usage.totalTokens} tokens, $${totalCost.toFixed(6)})`);
 
     res.json({
-      reply,
+      reply: aiResponse.message,
       timestamp: new Date(),
-      plan: 'premium'
+      plan: 'premium',
+      usage: {
+        tokens: aiResponse.usage.totalTokens,
+        cost: totalCost
+      }
     });
   } catch (error) {
     logger.error("Error en chatbot premium controller:", error.message);
@@ -326,6 +352,152 @@ export const sendPremiumChatMessage = async (req, res) => {
 
     res.status(500).json({
       message: "Error al procesar tu mensaje. Por favor, intenta de nuevo.",
+    });
+  }
+};
+
+/**
+ * GET /api/chatbot/stats
+ * Obtiene estadísticas de uso del chatbot (solo admin)
+ */
+export const getChatbotStats = async (req, res) => {
+  try {
+    const { timeRange = '30d' } = req.query;
+    
+    // Calcular fecha de inicio según el rango
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch(timeRange) {
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case 'all':
+        startDate = new Date(0); // Desde el principio
+        break;
+      default:
+        startDate.setDate(now.getDate() - 30);
+    }
+
+    // Obtener todos los registros en el rango
+    const usageRecords = await ChatbotUsage.find({
+      createdAt: { $gte: startDate }
+    }).sort({ createdAt: -1 });
+
+    // Calcular estadísticas generales
+    const totalQueries = usageRecords.length;
+    const premiumQueries = usageRecords.filter(r => r.messageType === 'premium').length;
+    const freeQueries = usageRecords.filter(r => r.messageType === 'free').length;
+    
+    const totalTokens = usageRecords.reduce((sum, r) => sum + r.totalTokens, 0);
+    const totalCost = usageRecords.reduce((sum, r) => sum + r.estimatedCost, 0);
+    
+    const avgTokensPerQuery = totalQueries > 0 ? Math.round(totalTokens / totalQueries) : 0;
+    const avgCostPerQuery = totalQueries > 0 ? totalCost / totalQueries : 0;
+
+    // Proyección de saldo (asumiendo $5 USD iniciales)
+    const initialBalance = 5.00;
+    const remainingBalance = Math.max(0, initialBalance - totalCost);
+    const estimatedQueriesRemaining = remainingBalance > 0 && avgCostPerQuery > 0 
+      ? Math.floor(remainingBalance / avgCostPerQuery) 
+      : 0;
+
+    // Estimación de meses restantes (basado en uso diario promedio)
+    const daysInRange = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+    const avgQueriesPerDay = daysInRange > 0 ? totalQueries / daysInRange : 0;
+    const estimatedDaysRemaining = avgQueriesPerDay > 0 
+      ? Math.floor(estimatedQueriesRemaining / avgQueriesPerDay) 
+      : 0;
+    const estimatedMonthsRemaining = Math.floor(estimatedDaysRemaining / 30);
+
+    // Datos para gráfico diario (últimos 30 días)
+    const last30Days = [];
+    const dailyData = {};
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      last30Days.push(dateKey);
+      dailyData[dateKey] = { queries: 0, cost: 0, tokens: 0 };
+    }
+
+    usageRecords.forEach(record => {
+      const dateKey = record.createdAt.toISOString().split('T')[0];
+      if (dailyData[dateKey]) {
+        dailyData[dateKey].queries += 1;
+        dailyData[dateKey].cost += record.estimatedCost;
+        dailyData[dateKey].tokens += record.totalTokens;
+      }
+    });
+
+    const dailyStats = last30Days.map(date => ({
+      date,
+      queries: dailyData[date].queries,
+      cost: parseFloat(dailyData[date].cost.toFixed(6)),
+      tokens: dailyData[date].tokens
+    }));
+
+    // Top usuarios (por uso)
+    const userUsage = {};
+    await Promise.all(usageRecords.map(async (record) => {
+      const userId = record.userId.toString();
+      if (!userUsage[userId]) {
+        const User = (await import("../models/user.model.js")).default;
+        const user = await User.findById(record.userId).select('username email');
+        userUsage[userId] = {
+          username: user?.username || 'Usuario desconocido',
+          email: user?.email || '',
+          queries: 0,
+          cost: 0,
+          tokens: 0
+        };
+      }
+      userUsage[userId].queries += 1;
+      userUsage[userId].cost += record.estimatedCost;
+      userUsage[userId].tokens += record.totalTokens;
+    }));
+
+    const topUsers = Object.values(userUsage)
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 10)
+      .map(u => ({
+        ...u,
+        cost: parseFloat(u.cost.toFixed(6))
+      }));
+
+    res.json({
+      summary: {
+        totalQueries,
+        premiumQueries,
+        freeQueries,
+        totalTokens,
+        totalCost: parseFloat(totalCost.toFixed(4)),
+        avgTokensPerQuery,
+        avgCostPerQuery: parseFloat(avgCostPerQuery.toFixed(6))
+      },
+      balance: {
+        initial: initialBalance,
+        spent: parseFloat(totalCost.toFixed(4)),
+        remaining: parseFloat(remainingBalance.toFixed(4)),
+        estimatedQueriesRemaining,
+        estimatedMonthsRemaining
+      },
+      dailyStats,
+      topUsers,
+      timeRange
+    });
+
+  } catch (error) {
+    logger.error("Error obteniendo stats de chatbot:", error);
+    res.status(500).json({
+      message: "Error al obtener estadísticas del chatbot"
     });
   }
 };

@@ -28,3 +28,13 @@ export const sendPremiumChatbotMessage = (message, context = {}) =>
  */
 export const checkChatbotHealth = () => 
   axios.get('/chatbot/health');
+
+/**
+ * Obtiene estadísticas de uso del chatbot (solo admin)
+ * @param {string} timeRange - Rango de tiempo (7d, 30d, 90d, all)
+ * @returns {Promise<object>} Estadísticas completas
+ */
+export const getChatbotStats = async (timeRange = '30d') => {
+  const response = await axios.get(`/chatbot/stats?timeRange=${timeRange}`);
+  return response.data;
+};

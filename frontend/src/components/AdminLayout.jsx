@@ -17,6 +17,7 @@ export default function AdminLayout() {
     { path: '/admin/users', icon: '👥', label: 'Usuarios' },
     { path: '/admin/sponsors', icon: '📢', label: 'Anuncios' },
     { path: '/admin/comments', icon: '💬', label: 'Comentarios' },
+    { path: '/admin/chatbot', icon: '🤖', label: 'Chatbot IA' },
   ];
 
   return (

@@ -207,7 +207,16 @@ ${context.bookingStats ? `  • Confirmadas: ${context.bookingStats.confirmed}
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || "No pude generar una respuesta.";
+  
+  // Retornar respuesta con datos de uso
+  return {
+    message: data.choices[0]?.message?.content || "No pude generar una respuesta.",
+    usage: {
+      promptTokens: data.usage?.prompt_tokens || 0,
+      completionTokens: data.usage?.completion_tokens || 0,
+      totalTokens: data.usage?.total_tokens || 0
+    }
+  };
 }
 
 /**
