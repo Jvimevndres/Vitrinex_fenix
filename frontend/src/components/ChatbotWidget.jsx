@@ -3,13 +3,16 @@
  * ChatbotWidget - Widget flotante de chatbot con IA
  * Botón de burbuja que abre una ventana de chat donde el usuario puede hacer preguntas
  * y recibir respuestas generadas por IA sobre el uso de la plataforma.
+ * Incluye menú de acciones rápidas diferenciadas por plan (FREE/PREMIUM).
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { sendChatbotMessage, checkChatbotHealth } from '../api/chatbot';
-import { FaRobot, FaTimes, FaPaperPlane } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown } from 'react-icons/fa';
 
 export default function ChatbotWidget() {
+  const { user, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -22,8 +25,11 @@ export default function ChatbotWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const userPlan = user?.plan || 'free';
 
   // Auto-scroll al final cuando hay nuevos mensajes
   const scrollToBottom = () => {
@@ -43,6 +49,37 @@ export default function ChatbotWidget() {
     }
   }, [isOpen]);
 
+  // Acciones rápidas según el plan
+  const quickActions = {
+    free: [
+      { icon: FaShoppingCart, label: 'Ver productos', query: '¿Qué productos puedo vender?' },
+      { icon: FaBoxOpen, label: 'Revisar stock', query: '¿Cómo reviso mi inventario?' },
+      { icon: FaQuestionCircle, label: 'Ayuda general', query: '¿Cómo funciona Vitrinex?' },
+      { icon: FaUser, label: 'Mi cuenta', query: '¿Cómo edito mi perfil?' },
+    ],
+    premium: [
+      { icon: FaChartBar, label: 'Estadísticas', query: 'Muéstrame las estadísticas de mis ventas' },
+      { icon: FaTrophy, label: 'Top productos', query: '¿Cuáles son mis productos más vendidos?' },
+      { icon: FaLightbulb, label: 'Consejos', query: 'Dame consejos para mejorar mis ventas' },
+      { icon: FaBell, label: 'Alertas', query: 'Revisa si hay productos con bajo stock' },
+      { icon: FaShoppingCart, label: 'Ver productos', query: '¿Qué productos tengo?' },
+      { icon: FaQuestionCircle, label: 'Ayuda', query: '¿Qué puedo hacer con mi plan premium?' },
+    ],
+  };
+
+  const currentActions = quickActions[userPlan] || quickActions.free;
+
+  // Manejar clic en acción rápida
+  const handleQuickAction = (query) => {
+    setInputMessage(query);
+    setShowQuickActions(false);
+    // Enviar automáticamente
+    setTimeout(() => {
+      const event = { preventDefault: () => {} };
+      handleSendMessage(event, query);
+    }, 100);
+  };
+
   // Verificar si el chatbot está en modo demo
   const checkChatbotStatus = async () => {
     try {
@@ -54,10 +91,10 @@ export default function ChatbotWidget() {
   };
 
   // Manejar envío de mensaje
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = async (e, directQuery = null) => {
     e.preventDefault();
     
-    const messageText = inputMessage.trim();
+    const messageText = (directQuery || inputMessage).trim();
     if (!messageText) return;
     
     // Validar longitud
@@ -155,6 +192,11 @@ export default function ChatbotWidget() {
                       DEMO
                     </span>
                   )}
+                  {userPlan === 'premium' && (
+                    <span className="text-xs bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <FaCrown className="text-xs" /> PREMIUM
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-white/80">Siempre disponible para ayudarte</p>
               </div>
@@ -167,6 +209,45 @@ export default function ChatbotWidget() {
               <FaTimes className="text-xl" />
             </button>
           </div>
+
+          {/* Menú de acciones rápidas */}
+          {showQuickActions && (
+            <div className="bg-white border-b border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-slate-700">Acciones Rápidas</h4>
+                {userPlan === 'free' && (
+                  <button
+                    onClick={() => window.location.href = '/pricing'}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                  >
+                    <FaCrown className="text-xs" /> Mejorar a Premium
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {currentActions.map((action, idx) => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleQuickAction(action.query)}
+                      className="flex items-center gap-2 p-3 bg-slate-50 hover:bg-indigo-50 rounded-lg border border-slate-200 hover:border-indigo-300 transition-all text-left group"
+                    >
+                      <Icon className="text-indigo-600 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-medium text-slate-700 group-hover:text-indigo-700">
+                        {action.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {userPlan === 'free' && (
+                <p className="text-xs text-slate-500 mt-3 text-center">
+                  💡 Mejora a Premium para acceder a estadísticas y consejos personalizados
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Mensajes */}
           <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-4">
@@ -222,6 +303,19 @@ export default function ChatbotWidget() {
 
           {/* Input de mensaje */}
           <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-white p-4">
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setShowQuickActions(!showQuickActions)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  showQuickActions
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                ⚡ Acciones
+              </button>
+            </div>
             <div className="flex gap-2">
               <input
                 ref={inputRef}

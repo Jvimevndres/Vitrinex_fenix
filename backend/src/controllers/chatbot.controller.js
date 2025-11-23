@@ -2,9 +2,10 @@
 /**
  * Controlador para el chatbot con IA.
  * Maneja las peticiones de chat del usuario y devuelve respuestas generadas por IA.
+ * Soporta dos planes: FREE (básico) y PREMIUM (con datos reales)
  */
 
-import { getChatbotResponse } from "../libs/aiClient.js";
+import { getChatbotResponse, getChatbotResponsePremium } from "../libs/aiClient.js";
 import logger from "../utils/logger.js";
 
 /**
@@ -102,6 +103,106 @@ export const checkChatbotHealth = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Error al verificar el estado del chatbot",
+    });
+  }
+};
+
+/**
+ * POST /api/chatbot/premium
+ * Chatbot premium con acceso a datos reales del usuario/tienda
+ * Requiere autenticación
+ */
+export const sendPremiumChatMessage = async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    const userId = req.userId; // Del middleware de autenticación
+
+    // Validaciones básicas
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({
+        message: "El campo 'message' es requerido y debe ser texto.",
+      });
+    }
+
+    if (message.trim().length === 0) {
+      return res.status(400).json({
+        message: "El mensaje no puede estar vacío.",
+      });
+    }
+
+    if (message.length > 2000) {
+      return res.status(400).json({
+        message: "El mensaje es demasiado largo. Máximo 2000 caracteres.",
+      });
+    }
+
+    // Verificar plan del usuario
+    const User = (await import("../models/user.model.js")).default;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuario no encontrado.",
+      });
+    }
+
+    if (user.plan !== 'premium') {
+      return res.status(403).json({
+        message: "Esta función requiere el plan Premium.",
+        requiresPremium: true,
+      });
+    }
+
+    logger.log(`Chatbot Premium - Usuario: ${user.username}, Mensaje: ${message.substring(0, 50)}...`);
+
+    // Obtener datos del contexto del usuario para respuestas más inteligentes
+    const Store = (await import("../models/store.model.js")).default;
+    const Product = (await import("../models/product.model.js")).default;
+    const Order = (await import("../models/order.model.js")).default;
+
+    const stores = await Store.find({ owner: userId });
+    const storeIds = stores.map(s => s._id);
+    
+    const products = await Product.find({ store: { $in: storeIds } }).limit(20);
+    const recentOrders = await Order.find({ store: { $in: storeIds } })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // Preparar contexto para la IA
+    const userContext = {
+      username: user.username,
+      storesCount: stores.length,
+      productsCount: products.length,
+      recentOrdersCount: recentOrders.length,
+      topProducts: products.slice(0, 5).map(p => ({
+        name: p.name,
+        price: p.price,
+        stock: p.stock
+      })),
+      ...context
+    };
+
+    // Llamar al cliente de IA Premium con contexto
+    const reply = await getChatbotResponsePremium(message, userContext);
+
+    logger.success(`Chatbot Premium - Respuesta generada para ${user.username}`);
+
+    res.json({
+      reply,
+      timestamp: new Date(),
+      plan: 'premium'
+    });
+  } catch (error) {
+    logger.error("Error en chatbot premium controller:", error.message);
+
+    if (error.message.includes("insufficient_quota") || error.message.includes('429')) {
+      return res.status(503).json({
+        message: "El servicio de IA no está disponible temporalmente. Intenta de nuevo más tarde.",
+      });
+    }
+
+    res.status(500).json({
+      message: "Error al procesar tu mensaje. Por favor, intenta de nuevo.",
     });
   }
 };

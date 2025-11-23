@@ -38,6 +38,7 @@ export const register = async (req, res) => {
       username: newUser.username,
       email: newUser.email,
       role: newUser.role || 'user',
+      plan: newUser.plan || 'free',
       avatarUrl: newUser.avatarUrl || null,
       bio: newUser.bio || "",
       rut: newUser.rut || "",
@@ -99,6 +100,7 @@ export const login = async (req, res) => {
       id: userFound._id,
       username: userFound.username,
       email: userFound.email,
+      plan: userFound.plan || 'free',
       role: userFound.role || 'user',
       avatarUrl: userFound.avatarUrl || null,
       bio: userFound.bio || "",
@@ -226,6 +228,7 @@ export const updateProfile = async (req, res) => {
       id: user._id,
       username: user.username,
       email: user.email,
+      plan: user.plan || 'free',
       avatarUrl: user.avatarUrl || null,
       bio: user.bio || "",
       rut: user.rut || "",
@@ -295,5 +298,40 @@ export const getPublicProfile = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error al obtener el perfil público" });
+  }
+};
+
+// 💳 ACTUALIZAR PLAN DEL USUARIO
+export const updateUserPlan = async (req, res) => {
+  try {
+    const { plan } = req.body;
+    const userId = req.userId;
+
+    // Validar que el plan sea válido
+    if (!plan || !['free', 'premium'].includes(plan)) {
+      return res.status(400).json({
+        message: "Plan inválido. Debe ser 'free' o 'premium'."
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Actualizar el plan
+    user.plan = plan;
+    await user.save();
+
+    return res.json({
+      message: `Plan actualizado exitosamente a ${plan}`,
+      plan: user.plan
+    });
+  } catch (err) {
+    console.error("❌ Error al actualizar plan:", err);
+    return res.status(500).json({
+      message: "Error al actualizar el plan"
+    });
   }
 };

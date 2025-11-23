@@ -30,3 +30,8 @@ export const profileRequest = async () => {
     throw error;
   }
 };
+
+/**
+ * 💳 Actualizar plan del usuario (free o premium)
+ */
+export const updateUserPlanRequest = (plan) => api.put("/auth/plan", { plan });

@@ -13,6 +13,7 @@ import ExploreStoresPage from "./pages/ExploreStoresPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import BookingChatPage from "./pages/BookingChatPage";
 import ContactPage from "./pages/ContactPage";
+import PricingPage from "./pages/PricingPage";
 
 // Admin Panel
 import AdminLayout from "./components/AdminLayout";
@@ -60,6 +61,7 @@ export default function App() {
         
         {/* Páginas públicas */}
         <Route path="/contacto" element={<ContactPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* Cliente (privado y público) */}
         <Route

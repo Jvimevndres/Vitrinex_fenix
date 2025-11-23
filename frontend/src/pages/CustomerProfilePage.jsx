@@ -279,9 +279,24 @@ export default function CustomerProfilePage() {
 
               {/* Info Principal */}
               <div className="flex-1 text-center md:text-left space-y-3">
-                <h1 className="text-3xl md:text-4xl font-bold text-white">
-                  {form.username || "Usuario"}
-                </h1>
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-3">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white">
+                    {form.username || "Usuario"}
+                  </h1>
+                  {/* Badge de plan */}
+                  {userData?.plan === 'premium' ? (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-900 shadow-lg border-2 border-amber-300">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      PREMIUM
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium bg-slate-700/50 text-slate-300 border border-slate-600">
+                      FREE
+                    </span>
+                  )}
+                </div>
                 <p className="text-slate-300 text-sm md:text-base">
                   {form.email || "correo@ejemplo.com"}
                 </p>
@@ -640,6 +655,86 @@ export default function CustomerProfilePage() {
                         placeholder="Cuenta algo sobre ti..."
                         className="w-full bg-slate-900/60 border border-slate-600/50 text-white placeholder-slate-500 rounded-lg px-4 py-3 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
                       />
+                    </div>
+                  </div>
+
+                  {/* Sección de Plan/Suscripción */}
+                  <div className="border-t border-slate-700/50 pt-6">
+                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                      💳 Plan de Suscripción
+                    </h3>
+                    
+                    <div className="bg-slate-900/60 border border-slate-600/50 rounded-lg p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-400 mb-1">Plan Actual</p>
+                          <div className="flex items-center gap-2">
+                            {userData?.plan === 'premium' ? (
+                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-base font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-900 shadow-lg border-2 border-amber-300">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                PREMIUM
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-base font-medium bg-slate-700/50 text-slate-300 border border-slate-600">
+                                FREE
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => window.location.href = '/pricing'}
+                          className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                        >
+                          {userData?.plan === 'premium' ? '✨ Ver Planes' : '⬆️ Mejorar Plan'}
+                        </button>
+                      </div>
+
+                      {/* Beneficios del plan actual */}
+                      <div className="border-t border-slate-700/50 pt-4">
+                        <p className="text-xs text-slate-400 mb-3">Beneficios incluidos:</p>
+                        <ul className="space-y-2">
+                          {userData?.plan === 'premium' ? (
+                            <>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Chatbot avanzado con IA
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Estadísticas completas
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Análisis de productos top
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Consejos personalizados
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Soporte prioritario
+                              </li>
+                            </>
+                          ) : (
+                            <>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Chatbot básico
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Gestión de productos
+                              </li>
+                              <li className="text-sm text-slate-300 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Información de stock
+                              </li>
+                              <li className="text-sm text-slate-400 flex items-center gap-2">
+                                <span className="text-slate-600">○</span> <span className="line-through">Estadísticas avanzadas</span>
+                              </li>
+                              <li className="text-sm text-slate-400 flex items-center gap-2">
+                                <span className="text-slate-600">○</span> <span className="line-through">Consejos con IA</span>
+                              </li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
                     </div>
                   </div>
 

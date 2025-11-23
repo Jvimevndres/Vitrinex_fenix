@@ -23,6 +23,13 @@ const userSchema = new mongoose.Schema(
       default: 'user',
     },
 
+    // Plan de suscripción del usuario
+    plan: {
+      type: String,
+      enum: ['free', 'premium'],
+      default: 'free',
+    },
+
     // Datos extra del usuario
     rut: { type: String, trim: true },
     phone: { type: String, trim: true },

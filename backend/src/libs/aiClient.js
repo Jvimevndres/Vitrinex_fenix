@@ -109,6 +109,67 @@ async function callOpenAI(userMessage) {
 }
 
 /**
+ * Llama a OpenAI con contexto premium (datos reales del usuario)
+ * @param {string} userMessage - Mensaje del usuario
+ * @param {object} context - Contexto del usuario (tiendas, productos, ventas)
+ * @returns {Promise<string>} - Respuesta de la IA
+ */
+async function callOpenAIPremium(userMessage, context) {
+  const contextInfo = `
+Contexto del usuario:
+- Negocios: ${context.storesCount}
+- Productos: ${context.productsCount}
+- Pedidos recientes: ${context.recentOrdersCount}
+${context.topProducts && context.topProducts.length > 0 ? `
+Productos principales:
+${context.topProducts.map(p => `• ${p.name} - $${p.price} (Stock: ${p.stock})`).join('\n')}
+` : ''}
+`;
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Eres un asistente empresarial premium de Vitrinex. Tienes acceso a datos reales del negocio del usuario " +
+            "y puedes dar consejos específicos basados en sus productos, ventas y estadísticas. " +
+            "Proporciona análisis inteligentes, recomendaciones de ventas, alertas de stock bajo, " +
+            "sugerencias de precios, estrategias de marketing y predicciones basadas en los datos. " +
+            "Sé profesional, analítico y orientado a resultados.",
+        },
+        {
+          role: "user",
+          content: `${contextInfo}\n\nPregunta: ${userMessage}`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 700,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    
+    if (errorData.error?.code === 'insufficient_quota' || response.status === 429) {
+      throw new Error('insufficient_quota');
+    }
+    
+    logger.error("Error en API de OpenAI Premium:", errorData);
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content || "No pude generar una respuesta.";
+}
+
+/**
  * Función principal que llama al proveedor de IA configurado
  * @param {string} message - Mensaje del usuario
  * @returns {Promise<string>} - Respuesta de la IA
@@ -142,6 +203,43 @@ export async function getChatbotResponse(message) {
     }
     
     logger.error("Error al obtener respuesta del chatbot:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Función premium que llama al proveedor de IA con contexto del usuario
+ * @param {string} message - Mensaje del usuario
+ * @param {object} context - Contexto con datos del negocio
+ * @returns {Promise<string>} - Respuesta de la IA
+ */
+export async function getChatbotResponsePremium(message, context = {}) {
+  // Validar que el mensaje no esté vacío
+  if (!message || message.trim().length === 0) {
+    throw new Error("El mensaje no puede estar vacío.");
+  }
+
+  // Si estamos en modo demo, usar respuestas predefinidas (no premium)
+  if (DEMO_MODE) {
+    logger.log("Chatbot Premium en modo DEMO - usando respuestas básicas");
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return getDemoResponse(message) + "\n\n💡 Con el plan Premium y IA real activada, recibirías análisis personalizados basados en tus datos reales de negocio.";
+  }
+
+  try {
+    if (AI_PROVIDER === "openai") {
+      return await callOpenAIPremium(message, context);
+    } else {
+      throw new Error(`Proveedor de IA no soportado: ${AI_PROVIDER}`);
+    }
+  } catch (error) {
+    // Si hay error de cuota, usar respuesta básica
+    if (error.message.includes('insufficient_quota') || error.message.includes('429')) {
+      logger.log("⚠️ Cuota agotada en Premium, usando respuesta básica");
+      return getDemoResponse(message) + "\n\n⚠️ El servicio de IA Premium no está disponible temporalmente.";
+    }
+    
+    logger.error("Error al obtener respuesta premium del chatbot:", error.message);
     throw error;
   }
 }

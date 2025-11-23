@@ -8,6 +8,7 @@ import {
   getProfile,
   updateProfile,
   getPublicProfile,
+  updateUserPlan
 } from "../controllers/auth.controller.js";
 import { authRequired } from "../middlewares/authRequired.js";
 
@@ -35,6 +36,7 @@ router.post("/logout", logout);
 // Perfil privado (usuario logueado)
 router.get("/profile", authRequired, getProfile);
 router.put("/profile", authRequired, updateProfile);
+router.put("/plan", authRequired, updateUserPlan); // 💳 Actualizar plan
 
 // Perfil público de un usuario por ID (sin auth)
 // 👉 Esto es lo que está usando CustomerPublicPage: /api/auth/users/:id
