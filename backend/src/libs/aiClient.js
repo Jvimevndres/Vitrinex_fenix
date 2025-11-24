@@ -114,41 +114,110 @@ async function callOpenAI(userMessage) {
  * @returns {Promise<string>} - Respuesta de la IA
  */
 async function callOpenAIPremium(userMessage, context) {
-  // Construir contexto detallado del negocio
+  // Construir contexto detallado del negocio con formato optimizado
   const contextInfo = `
-DATOS DEL NEGOCIO (${context.username}):
+═══════════════════════════════════════════════════════════════
+📊 DATOS COMPLETOS DEL NEGOCIO - ${context.username}
+═══════════════════════════════════════════════════════════════
+📅 Fecha del análisis: ${context.analysisDate || new Date().toLocaleDateString('es-ES')}
 
-📊 RESUMEN GENERAL:
-- Tiendas activas: ${context.storesCount}
-${context.stores && context.stores.length > 0 ? context.stores.map(s => `  • ${s.name} (${s.category || 'Sin categoría'})`).join('\n') : ''}
-- Productos en inventario: ${context.productsCount}
-- Valor total del inventario: $${context.totalProductsValue || 0}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏪 TIENDAS (${context.storesCount})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${context.stores && context.stores.length > 0 ? context.stores.map(s => `
+  • ${s.name}
+    - Categoría: ${s.category || 'No especificada'}
+    - Plan: ${s.plan || 'FREE'}
+    - Servicios: ${s.services?.length || 0} configurados
+    - Teléfono: ${s.phone || 'No especificado'}
+    - Dirección: ${s.address || 'No especificada'}
+    ${s.description ? `- Descripción: ${s.description}` : ''}
+`).join('\n') : '  ⚠️ No hay tiendas registradas'}
 
-💰 VENTAS Y RENDIMIENTO:
-- Órdenes recientes (último mes): ${context.ordersCount}
-- Ingresos totales: $${context.totalRevenue || 0}
-- Valor promedio por orden: $${context.averageOrderValue || 0}
-${context.topSellingProducts && context.topSellingProducts.length > 0 ? `
-📈 Top 5 productos más vendidos:
-${context.topSellingProducts.map(p => `  • ${p.name}: ${p.unitsSold} unidades vendidas`).join('\n')}
-` : ''}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 VENTAS Y ÓRDENES (Últimos 3 meses)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📦 Total de órdenes: ${context.orders?.total || 0}
+  ✅ Completadas: ${context.orders?.completed || 0} (${context.orders?.conversionRate || 0}% conversión)
+  ⏳ Pendientes: ${context.orders?.pending || 0}
+  ❌ Canceladas: ${context.orders?.cancelled || 0}
+  
+  💵 Ingresos totales: $${(context.orders?.totalRevenue || 0).toLocaleString()}
+  📊 Ticket promedio: $${(context.orders?.averageOrderValue || 0).toLocaleString()}
+  
+${context.orders?.monthlyRevenue && context.orders.monthlyRevenue.length > 0 ? `  📈 Ingresos por mes:
+${context.orders.monthlyRevenue.map(m => `    - ${m.month}: $${m.revenue.toLocaleString()}`).join('\n')}` : ''}
 
-📦 INVENTARIO:
-${context.lowStockCount > 0 ? `⚠️ ${context.lowStockCount} productos con bajo stock (< 5 unidades):
-${context.lowStockProducts.map(p => `  • ${p.name}: ${p.stock} unidades - $${p.price}`).join('\n')}
-` : '✅ No hay alertas de stock bajo'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 INVENTARIO Y PRODUCTOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📋 Total de productos: ${context.products?.total || 0}
+  💎 Valor total del inventario: $${(context.products?.totalValue || 0).toLocaleString()}
+  💵 Precio promedio: $${(context.products?.avgPrice || 0).toLocaleString()}
+  
+  ⚠️ ALERTAS DE STOCK:
+  - Bajo stock (< 5 unidades): ${context.products?.lowStock || 0} productos
+  - Sin stock: ${context.products?.outOfStock || 0} productos
+  - Sin ventas: ${context.products?.withoutSales || 0} productos
+  
+${context.products?.byCategory && Object.keys(context.products.byCategory).length > 0 ? `  📊 Productos por categoría:
+${Object.entries(context.products.byCategory).map(([cat, count]) => `    - ${cat}: ${count} productos`).join('\n')}` : ''}
 
-${context.recentProducts && context.recentProducts.length > 0 ? `
-📋 Productos recientes:
-${context.recentProducts.slice(0, 5).map(p => `  • ${p.name} - $${p.price} (Stock: ${p.stock})`).join('\n')}
-` : ''}
+${context.products?.topSelling && context.products.topSelling.length > 0 ? `
+  🏆 TOP 10 PRODUCTOS MÁS VENDIDOS:
+${context.products.topSelling.map((p, i) => `    ${i + 1}. ${p.name}
+       - Unidades vendidas: ${p.unitsSold}
+       - Ingresos generados: $${Math.round(p.revenue).toLocaleString()}
+       - Precio promedio: $${Math.round(p.avgPrice).toLocaleString()}`).join('\n')}` : ''}
 
-📅 RESERVAS (si aplica):
-- Total de reservas: ${context.bookingsCount || 0}
-${context.bookingStats ? `  • Confirmadas: ${context.bookingStats.confirmed}
-  • Pendientes: ${context.bookingStats.pending}
-  • Canceladas: ${context.bookingStats.cancelled}` : ''}
+${context.products?.bottomSelling && context.products.bottomSelling.length > 0 ? `
+  ⚠️ PRODUCTOS CON MENOS VENTAS:
+${context.products.bottomSelling.map(p => `    • ${p.name}: ${p.unitsSold} unidades ($${Math.round(p.revenue).toLocaleString()} ingresos)`).join('\n')}` : ''}
+
+${context.products?.lowStockList && context.products.lowStockList.length > 0 ? `
+  🚨 PRODUCTOS CON BAJO STOCK:
+${context.products.lowStockList.map(p => `    • ${p.name}: ${p.stock} unidades - $${p.price} (${p.category || 'Sin categoría'})`).join('\n')}` : ''}
+
+${context.products?.outOfStockList && context.products.outOfStockList.length > 0 ? `
+  ❌ PRODUCTOS AGOTADOS:
+${context.products.outOfStockList.map(p => `    • ${p.name} - $${p.price}`).join('\n')}` : ''}
+
+${context.products?.withoutSalesList && context.products.withoutSalesList.length > 0 ? `
+  💤 PRODUCTOS SIN VENTAS (en últimos 3 meses):
+${context.products.withoutSalesList.map(p => `    • ${p.name} - $${p.price} (Stock: ${p.stock})`).join('\n')}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 RESERVAS Y SERVICIOS (Últimos 3 meses)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📋 Total de reservas: ${context.bookings?.total || 0}
+  ✅ Confirmadas: ${context.bookings?.confirmed || 0}
+  ⏳ Pendientes: ${context.bookings?.pending || 0}
+  ❌ Canceladas: ${context.bookings?.cancelled || 0} (${context.bookings?.cancellationRate || 0}% tasa de cancelación)
+  
+  💵 Ingresos por reservas: $${(context.bookings?.totalRevenue || 0).toLocaleString()}
+  📊 Valor promedio por reserva: $${(context.bookings?.avgValue || 0).toLocaleString()}
+
+${context.bookings?.topServices && context.bookings.topServices.length > 0 ? `  
+  🏆 SERVICIOS MÁS SOLICITADOS:
+${context.bookings.topServices.map((s, i) => `    ${i + 1}. ${s.service}: ${s.bookings} reservas`).join('\n')}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👥 CLIENTES Y RETENCIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  👤 Total de clientes: ${context.customers?.total || 0}
+  🔄 Clientes recurrentes: ${context.customers?.repeat || 0}
+  📈 Tasa de retención: ${context.customers?.retentionRate || 0}%
+  📊 Órdenes promedio por cliente: ${context.customers?.avgOrdersPerCustomer || 0}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💬 MENSAJERÍA Y COMUNICACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📨 Mensajes recientes: ${context.messages?.total || 0}
+  ⚠️ Mensajes sin leer: ${context.messages?.unread || 0}
+
+═══════════════════════════════════════════════════════════════
 `;
+
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -162,28 +231,52 @@ ${context.bookingStats ? `  • Confirmadas: ${context.bookingStats.confirmed}
         {
           role: "system",
           content:
-            "Eres un ASISTENTE EMPRESARIAL PREMIUM de Vitrinex, especializado en análisis de negocios y estrategia comercial. " +
-            "Tienes acceso COMPLETO a los datos reales del negocio del usuario y DEBES usarlos para dar respuestas ESPECÍFICAS y ACCIONABLES.\n\n" +
-            "TUS CAPACIDADES:\n" +
-            "✅ Analizar ventas y tendencias con datos reales\n" +
-            "✅ Identificar productos más y menos rentables\n" +
-            "✅ Alertar sobre problemas de stock\n" +
-            "✅ Recomendar estrategias de precios basadas en el inventario\n" +
-            "✅ Sugerir acciones de marketing específicas para los productos del usuario\n" +
-            "✅ Proyectar ventas y sugerir objetivos realistas\n" +
-            "✅ Optimizar gestión de inventario\n\n" +
-            "ESTILO DE RESPUESTA:\n" +
-            "- Sé ESPECÍFICO: usa nombres de productos, cifras exactas y datos reales\n" +
-            "- Sé ACCIONABLE: da pasos concretos que el usuario pueda ejecutar YA\n" +
-            "- Sé PROFESIONAL pero cercano: eres un consultor experto pero amigable\n" +
-            "- Usa EMOJIS relevantes (📊 📈 💰 ⚠️ ✅) para hacer el mensaje más visual\n" +
-            "- Organiza la información con viñetas y estructura clara\n" +
-            "- Si detectas problemas, menciónalos pero SIEMPRE da soluciones\n\n" +
-            "IMPORTANTE:\n" +
-            "- NO inventes datos, SOLO usa la información proporcionada\n" +
-            "- Si faltan datos para responder algo, pregunta al usuario\n" +
-            "- Prioriza insights que generen VALOR INMEDIATO al negocio\n" +
-            "- Mantén respuestas concisas pero completas (máx 500 palabras)",
+            "Eres un CONSULTOR DE NEGOCIOS EXPERTO y ASISTENTE EMPRESARIAL PREMIUM de Vitrinex, especializado en análisis de datos comerciales, estrategia de ventas y optimización de negocios.\n\n" +
+            "🎯 TU MISIÓN:\n" +
+            "Analizar los datos REALES del negocio del usuario y proporcionar insights ACCIONABLES que generen RESULTADOS INMEDIATOS.\n\n" +
+            "✅ TUS CAPACIDADES PREMIUM:\n" +
+            "• Analizar ventas, tendencias y patrones de compra con datos reales\n" +
+            "• Identificar productos rentables y productos problemáticos\n" +
+            "• Detectar oportunidades de crecimiento y áreas de mejora\n" +
+            "• Alertar sobre problemas críticos (stock, ventas bajas, cancelaciones)\n" +
+            "• Recomendar estrategias de precios basadas en rendimiento real\n" +
+            "• Sugerir acciones de marketing específicas para productos del usuario\n" +
+            "• Proyectar ventas y establecer objetivos alcanzables\n" +
+            "• Optimizar gestión de inventario y flujo de caja\n" +
+            "• Analizar comportamiento de clientes y retención\n" +
+            "• Comparar rendimiento entre productos, categorías y períodos\n\n" +
+            "📊 CÓMO RESPONDER:\n" +
+            "1. USA DATOS REALES: Siempre referencia números, nombres y estadísticas específicas del negocio\n" +
+            "2. SÉ ESPECÍFICO: En lugar de 'algunos productos', di 'Árbol (10 unidades en stock)'\n" +
+            "3. SÉ ACCIONABLE: Da pasos concretos que el usuario pueda ejecutar HOY\n" +
+            "4. PRIORIZA: Identifica lo MÁS IMPORTANTE primero (problemas críticos, oportunidades grandes)\n" +
+            "5. CUANTIFICA: Usa números, porcentajes, comparaciones y proyecciones\n" +
+            "6. SÉ VISUAL: Usa emojis estratégicamente (📊 📈 💰 ⚠️ ✅ 🎯 🔥 💡)\n" +
+            "7. ESTRUCTURA: Usa viñetas, títulos y secciones claras\n\n" +
+            "💼 ESTILO:\n" +
+            "• Profesional pero cercano (como un mentor de negocios)\n" +
+            "• Directo y sin rodeos\n" +
+            "• Positivo pero realista (si hay problemas, menciónalos CON soluciones)\n" +
+            "• Motivador y orientado a resultados\n\n" +
+            "⚠️ IMPORTANTE:\n" +
+            "• NUNCA inventes datos - solo usa información proporcionada\n" +
+            "• Si faltan datos para una consulta específica, pregúntale al usuario\n" +
+            "• Enfócate en insights que generen VALOR COMERCIAL inmediato\n" +
+            "• Si detectas alertas críticas (stock agotado, ventas cero), menciónalas primero\n" +
+            "• Adapta tu respuesta al contexto: si pregunta por productos, enfócate en productos\n\n" +
+            "📏 LONGITUD:\n" +
+            "• Para consultas simples: 100-200 palabras\n" +
+            "• Para análisis completos: 300-500 palabras máximo\n" +
+            "• Mantén respuestas concisas pero completas\n\n" +
+            "🎓 TIPOS DE ANÁLISIS QUE PUEDES HACER:\n" +
+            "• 'Analiza mis ventas' → Tendencias, comparativas, oportunidades\n" +
+            "• 'Productos más vendidos' → Top sellers con números y recomendaciones\n" +
+            "• 'Qué productos no venden' → Identificar productos lentos y acciones\n" +
+            "• 'Cómo mejorar ingresos' → Estrategias específicas basadas en datos\n" +
+            "• 'Revisar inventario' → Alertas de stock, optimización, inversión\n" +
+            "• 'Análisis de clientes' → Retención, lealtad, oportunidades de fidelización\n" +
+            "• 'Reservas y servicios' → Demanda, cancelaciones, optimización de horarios\n\n" +
+            "Recuerda: Tu objetivo es ser el MEJOR CONSULTOR DE NEGOCIOS del usuario, usando DATOS REALES para generar RESULTADOS REALES.",
         },
         {
           role: "user",

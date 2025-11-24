@@ -1,0 +1,319 @@
+<mxfile host="65bd71144e">
+    <diagram id="flujo-completo-cliente" name="Flujo Completo del Cliente">
+        <mxGraphModel dx="1140" dy="787" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="VITRINEX - Flujo Completo del Cliente en la Plataforma" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=28;fontStyle=1;fontColor=#1a237e;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="20" width="1200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="🌐 Cliente accede a Vitrinex" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a237e;strokeColor=#0d47a1;fontColor=#ffffff;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="110" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="¿Qué desea hacer?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff4e6;strokeColor=#ff9800;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="220" width="240" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#1a237e;" parent="1" source="3" target="4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Explorar Tiendas 🗺️" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#2196f3;" parent="1" vertex="1">
+                    <mxGeometry x="550" y="250" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="📍 Mapa Interactivo&#xa;(ExploreStoresPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#2196f3;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="340" y="380" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#2196f3;" parent="1" source="4" target="11" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="780" y="280"/>
+                            <mxPoint x="450" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="13" value="Ver tiendas cercanas&#xa;Filtrar por categoría&#xa;Ver patrocinadores" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="340" y="480" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="11" target="13" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="Hacer clic en una tienda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="340" y="570" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="13" target="15" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="Registrarse / Login 🔐" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#9c27b0;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="250" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="📝 Registro / Login&#xa;(RegisterPage / LoginPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#9c27b0;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="380" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9c27b0;" parent="1" source="4" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1020" y="280"/>
+                            <mxPoint x="1380" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="23" value="Crear cuenta&#xa;Iniciar sesión&#xa;Recibir JWT token" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="480" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="21" target="23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="¿Es negocio o cliente?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff4e6;strokeColor=#ff9800;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1290" y="570" width="180" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="23" target="25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="Ver Precios 💰" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#ff5722;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="360" width="130" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="💳 Página de Precios&#xa;(PricingPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#f44336;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="480" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#f44336;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="4" target="31" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="33" value="Ver planes FREE y PREMIUM&#xa;Comparar funcionalidades" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="570" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="31" target="33" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="Contactar 📧" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontStyle=1;fontColor=#00bcd4;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="360" width="130" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="📬 Formulario Contacto&#xa;(ContactPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f7fa;strokeColor=#00bcd4;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="920" y="480" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#00bcd4;entryX=0.473;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="4" target="36" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="40" value="NEGOCIO" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#e91e63;" parent="1" vertex="1">
+                    <mxGeometry x="1510" y="595" width="80" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="🏪 Onboarding&#xa;Crear tienda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#e91e63;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1540" y="700" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#e91e63;" parent="1" source="25" target="41" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1470" y="615"/>
+                            <mxPoint x="1630" y="615"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="43" value="Gestionar productos&#xa;Configurar horarios&#xa;Ver reservas/pedidos&#xa;Chat con clientes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="1540" y="790" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="41" target="43" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" value="CLIENTE" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#2196f3;" parent="1" vertex="1">
+                    <mxGeometry x="1130" y="595" width="80" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" value="👤 Perfil del Cliente&#xa;(CustomerProfilePage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#2196f3;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="700" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#2196f3;" parent="1" source="25" target="51" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1290" y="615"/>
+                            <mxPoint x="1180" y="615"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" value="Ver mis pedidos&#xa;Ver mis reservas&#xa;Editar perfil&#xa;Ver historial" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="790" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="51" target="53" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="60" value="🏪 Página Pública Tienda&#xa;(StorePublicPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#ff6f00;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="700" width="300" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="61" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#ff6f00;" parent="1" source="15" target="60" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="450" y="650"/>
+                            <mxPoint x="450" y="650"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="62" value="📋 Ver información de la tienda&#xa;📦 Ver productos disponibles&#xa;⭐ Ver reseñas y rating&#xa;📍 Ver ubicación en mapa" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="800" width="300" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="63" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="60" target="62" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="70" value="¿Qué quiere hacer?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff4e6;strokeColor=#ff9800;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="345" y="920" width="210" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="71" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="62" target="70" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="72" value="Hacer Pedido 🛒" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#4caf50;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="940" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="73" value="🛍️ Seleccionar Productos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="1060" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="74" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4caf50;" parent="1" source="70" target="73" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="345" y="970"/>
+                            <mxPoint x="150" y="970"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="75" value="Agregar al carrito&#xa;Confirmar pedido&#xa;Enviar datos de contacto" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="1150" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="76" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="73" target="75" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="77" value="✅ Pedido Creado&#xa;Backend: POST /api/orders" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="1240" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="78" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="75" target="77" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="80" value="Hacer Reserva 📅" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#2196f3;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="1030" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="81" value="📆 Ver Horarios Disponibles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#2196f3;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="1150" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="82" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#2196f3;" parent="1" source="70" target="81" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="380" y="1020"/>
+                            <mxPoint x="380" y="1020"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="83" value="Seleccionar fecha&#xa;Elegir slot disponible&#xa;Confirmar reserva" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="1240" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="84" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="81" target="83" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="85" value="✅ Reserva Confirmada&#xa;Backend: POST /api/bookings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1976d2;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="1330" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="86" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="83" target="85" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="90" value="Dejar Reseña ⭐" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#ff9800;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="1030" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="91" value="⭐ Escribir Comentario" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#ff9800;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="1150" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="92" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#ff9800;" parent="1" source="70" target="91" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="555" y="970"/>
+                            <mxPoint x="610" y="970"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="93" value="Dar rating (1-5 estrellas)&#xa;Escribir comentario&#xa;Enviar reseña" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="1240" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="94" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="91" target="93" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="95" value="✅ Reseña Publicada&#xa;Backend: POST /api/comments" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#f57c00;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="1330" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="96" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="93" target="95" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="100" value="🤖 CHATBOT&#xa;(Disponible en todas las páginas)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="700" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="101" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9673a6;dashed=1;dashPattern=8 8;" parent="1" source="60" target="100" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="650" y="735"/>
+                            <mxPoint x="650" y="735"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="102" value="Hacer preguntas&#xa;Obtener ayuda&#xa;Ver análisis (PREMIUM)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#9673a6;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="800" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="103" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="100" target="102" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="110" value="💬 Chat con Negocio&#xa;(BookingChatPage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="1240" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="111" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#fbc02d;dashed=1;dashPattern=8 8;" parent="1" source="85" target="110" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="380" y="1410"/>
+                            <mxPoint x="900" y="1410"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="112" value="Cliente puede chatear&#xa;con el negocio sobre&#xa;su reserva" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#4caf50;fontSize=11;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="1330" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="113" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;" parent="1" source="110" target="112" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="120" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="920" width="620" height="400" as="geometry"/>
+                </mxCell>
+                <mxCell id="121" value="LEYENDA Y RESUMEN DE FUNCIONALIDADES" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="930" width="580" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="122" value="🗺️ EXPLORACIÓN: Ver mapa con tiendas cercanas, filtros por categoría" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="970" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="123" value="🏪 TIENDAS: Ver perfil público con productos, horarios, ubicación, reseñas" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1000" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="124" value="🛒 PEDIDOS: Agregar productos al carrito, hacer pedidos con datos de contacto" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1030" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="125" value="📅 RESERVAS: Ver horarios disponibles, seleccionar slots, confirmar reservas" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1060" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="126" value="⭐ RESEÑAS: Dejar comentarios y ratings (1-5 estrellas) en tiendas" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1090" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="127" value="💬 MENSAJERÍA: Chat directo con negocios sobre reservas específicas" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1120" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="128" value="🤖 CHATBOT: Asistente IA disponible en todas las páginas (FREE y PREMIUM)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1150" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="129" value="👤 PERFIL: Ver historial de pedidos, reservas, editar información personal" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1180" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="130" value="🔐 AUTENTICACIÓN: Registro e inicio de sesión con JWT para acceso completo" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1210" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="131" value="💳 PLANES: Ver precios y comparar funcionalidades FREE vs PREMIUM" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1240" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="132" value="📧 CONTACTO: Formulario para enviar mensajes al equipo de Vitrinex" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1270" width="580" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="133" value="TECNOLOGÍAS: React + Vite, TailwindCSS, Node.js + Express, MongoDB, OpenAI" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="1300" width="580" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

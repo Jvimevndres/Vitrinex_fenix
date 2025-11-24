@@ -199,110 +199,284 @@ export const sendPremiumChatMessage = async (req, res) => {
     const Product = (await import("../models/product.model.js")).default;
     const Order = (await import("../models/order.model.js")).default;
     const Booking = (await import("../models/booking.model.js")).default;
+    const Message = (await import("../models/message.model.js")).default;
 
-    const stores = await Store.find({ owner: userId }).select('name category phone address description');
+    // Obtener TODAS las tiendas del usuario con información completa
+    const stores = await Store.find({ owner: userId })
+      .select('name category phone address description plan services schedule weeklySchedule specialDays createdAt')
+      .lean();
+    
     const storeIds = stores.map(s => s._id);
     
-    // Productos con más detalle
+    // Si no tiene tiendas, notificar
+    if (storeIds.length === 0) {
+      logger.log(`Usuario ${user.username} no tiene tiendas`);
+    }
+    
+    // Productos con TODO el detalle
     const products = await Product.find({ store: { $in: storeIds } })
-      .select('name price stock category description')
+      .select('name price stock category description images createdAt updatedAt')
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(100) // Aumentado para tener más contexto
+      .lean();
     
-    // Órdenes recientes con estadísticas
-    const recentOrders = await Order.find({ store: { $in: storeIds } })
-      .select('totalAmount status items createdAt')
+    // Órdenes TODAS (últimos 3 meses para análisis completo)
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    const allOrders = await Order.find({ 
+      store: { $in: storeIds },
+      createdAt: { $gte: threeMonthsAgo }
+    })
+      .select('totalAmount status items customerName customerEmail createdAt updatedAt')
       .sort({ createdAt: -1 })
-      .limit(20);
+      .lean();
     
-    // Reservas recientes
-    const recentBookings = await Booking.find({ store: { $in: storeIds } })
-      .select('service date status totalPrice createdAt')
+    // Reservas TODAS (últimos 3 meses)
+    const allBookings = await Booking.find({ 
+      store: { $in: storeIds },
+      createdAt: { $gte: threeMonthsAgo }
+    })
+      .select('service date time status totalPrice customerName customerEmail notes createdAt')
       .sort({ createdAt: -1 })
-      .limit(15);
+      .lean();
     
-    // Calcular estadísticas de ventas
-    const totalRevenue = recentOrders
-      .filter(o => o.status === 'completed' || o.status === 'delivered')
-      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    // Mensajes recientes (para análisis de interacción con clientes)
+    const recentMessages = await Message.find({ 
+      store: { $in: storeIds }
+    })
+      .select('content sender receiver read createdAt')
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
     
-    const averageOrderValue = recentOrders.length > 0 
-      ? totalRevenue / recentOrders.filter(o => o.status === 'completed' || o.status === 'delivered').length 
-      : 0;
+    // ============ ANÁLISIS PROFUNDO DE DATOS ============
     
-    // Productos con bajo stock (menos de 5 unidades)
-    const lowStockProducts = products.filter(p => p.stock < 5);
+    // 1. ANÁLISIS DE VENTAS
+    const completedOrders = allOrders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    const pendingOrders = allOrders.filter(o => o.status === 'pending');
+    const cancelledOrders = allOrders.filter(o => o.status === 'cancelled');
     
-    // Top 5 productos más vendidos (contar en órdenes)
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const averageOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
+    
+    // Ingresos por mes (últimos 3 meses)
+    const monthlyRevenue = {};
+    completedOrders.forEach(order => {
+      const month = new Date(order.createdAt).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + order.totalAmount;
+    });
+    
+    // 2. ANÁLISIS DE PRODUCTOS
     const productSales = {};
-    recentOrders.forEach(order => {
+    const productRevenue = {};
+    
+    allOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
-          const productName = item.name || item.productName;
-          if (productName) {
-            productSales[productName] = (productSales[productName] || 0) + (item.quantity || 1);
-          }
+          const productName = item.name || item.productName || 'Producto sin nombre';
+          const quantity = item.quantity || 1;
+          const price = item.price || 0;
+          
+          productSales[productName] = (productSales[productName] || 0) + quantity;
+          productRevenue[productName] = (productRevenue[productName] || 0) + (price * quantity);
         });
       }
     });
     
     const topSellingProducts = Object.entries(productSales)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, sales]) => ({ name, unitsSold: sales }));
+      .slice(0, 10)
+      .map(([name, units]) => ({ 
+        name, 
+        unitsSold: units,
+        revenue: productRevenue[name] || 0,
+        avgPrice: (productRevenue[name] || 0) / units
+      }));
     
-    // Estadísticas de reservas
-    const bookingStats = {
-      total: recentBookings.length,
-      confirmed: recentBookings.filter(b => b.status === 'confirmed').length,
-      pending: recentBookings.filter(b => b.status === 'pending').length,
-      cancelled: recentBookings.filter(b => b.status === 'cancelled').length,
-    };
+    const bottomSellingProducts = Object.entries(productSales)
+      .sort((a, b) => a[1] - b[1])
+      .slice(0, 5)
+      .map(([name, units]) => ({ 
+        name, 
+        unitsSold: units,
+        revenue: productRevenue[name] || 0
+      }));
+    
+    // Productos sin ventas
+    const productsWithoutSales = products.filter(p => !productSales[p.name]);
+    
+    // Productos con bajo stock (menos de 5 unidades)
+    const lowStockProducts = products.filter(p => p.stock < 5 && p.stock > 0);
+    const outOfStockProducts = products.filter(p => p.stock === 0);
+    
+    // 3. ANÁLISIS DE RESERVAS
+    const confirmedBookings = allBookings.filter(b => b.status === 'confirmed');
+    const pendingBookings = allBookings.filter(b => b.status === 'pending');
+    const cancelledBookings = allBookings.filter(b => b.status === 'cancelled');
+    
+    const totalBookingRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const avgBookingValue = confirmedBookings.length > 0 ? totalBookingRevenue / confirmedBookings.length : 0;
+    
+    // Servicios más solicitados
+    const serviceCounts = {};
+    allBookings.forEach(booking => {
+      const service = booking.service || 'Servicio desconocido';
+      serviceCounts[service] = (serviceCounts[service] || 0) + 1;
+    });
+    
+    const topServices = Object.entries(serviceCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ service: name, bookings: count }));
+    
+    // 4. ANÁLISIS DE CLIENTES
+    const uniqueCustomers = new Set();
+    const customerOrders = {};
+    
+    allOrders.forEach(order => {
+      if (order.customerEmail) {
+        const customerId = order.customerEmail; // Usar email como identificador único
+        uniqueCustomers.add(customerId);
+        customerOrders[customerId] = (customerOrders[customerId] || 0) + 1;
+      }
+    });
+    
+    allBookings.forEach(booking => {
+      if (booking.customerEmail) {
+        const customerId = booking.customerEmail;
+        uniqueCustomers.add(customerId);
+        // No contar bookings en customerOrders para evitar duplicación
+      }
+    });
+    
+    const totalCustomers = uniqueCustomers.size;
+    const repeatCustomers = Object.values(customerOrders).filter(count => count > 1).length;
+    const customerRetentionRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers * 100) : 0;
+    
+    // 5. ANÁLISIS DE INVENTARIO
+    const totalProductsValue = products.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0);
+    const avgProductPrice = products.length > 0 
+      ? products.reduce((sum, p) => sum + (p.price || 0), 0) / products.length 
+      : 0;
+    
+    // Productos por categoría
+    const productsByCategory = {};
+    products.forEach(p => {
+      const category = p.category || 'Sin categoría';
+      productsByCategory[category] = (productsByCategory[category] || 0) + 1;
+    });
 
-    // Preparar contexto rico para la IA
+    // Preparar contexto SÚPER RICO para la IA
     const userContext = {
-      // Información del usuario
+      // ========== INFORMACIÓN BÁSICA ==========
       username: user.username,
       email: user.email,
+      plan: user.plan,
       
-      // Información de tiendas
+      // ========== TIENDAS ==========
       storesCount: stores.length,
       stores: stores.map(s => ({
         name: s.name,
         category: s.category,
         phone: s.phone,
         address: s.address,
+        description: s.description,
+        plan: s.plan,
+        services: s.services || [],
+        hasSchedule: !!s.schedule || !!s.weeklySchedule,
+        specialDaysCount: s.specialDays?.length || 0,
+        createdAt: s.createdAt
       })),
       
-      // Inventario
-      productsCount: products.length,
-      totalProductsValue: products.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0),
-      lowStockCount: lowStockProducts.length,
-      lowStockProducts: lowStockProducts.slice(0, 5).map(p => ({
-        name: p.name,
-        stock: p.stock,
-        price: p.price,
-      })),
+      // ========== VENTAS Y ÓRDENES ==========
+      orders: {
+        total: allOrders.length,
+        completed: completedOrders.length,
+        pending: pendingOrders.length,
+        cancelled: cancelledOrders.length,
+        totalRevenue: Math.round(totalRevenue),
+        averageOrderValue: Math.round(averageOrderValue),
+        monthlyRevenue: Object.entries(monthlyRevenue).map(([month, revenue]) => ({
+          month,
+          revenue: Math.round(revenue)
+        })),
+        conversionRate: allOrders.length > 0 
+          ? Math.round((completedOrders.length / allOrders.length) * 100) 
+          : 0
+      },
       
-      // Ventas
-      ordersCount: recentOrders.length,
-      totalRevenue: Math.round(totalRevenue),
-      averageOrderValue: Math.round(averageOrderValue),
-      topSellingProducts,
+      // ========== PRODUCTOS ==========
+      products: {
+        total: products.length,
+        totalValue: Math.round(totalProductsValue),
+        avgPrice: Math.round(avgProductPrice),
+        byCategory: productsByCategory,
+        lowStock: lowStockProducts.length,
+        outOfStock: outOfStockProducts.length,
+        withoutSales: productsWithoutSales.length,
+        
+        // Top productos
+        topSelling: topSellingProducts,
+        bottomSelling: bottomSellingProducts,
+        
+        // Alertas
+        lowStockList: lowStockProducts.slice(0, 10).map(p => ({
+          name: p.name,
+          stock: p.stock,
+          price: p.price,
+          category: p.category
+        })),
+        outOfStockList: outOfStockProducts.slice(0, 5).map(p => ({
+          name: p.name,
+          price: p.price
+        })),
+        withoutSalesList: productsWithoutSales.slice(0, 10).map(p => ({
+          name: p.name,
+          price: p.price,
+          stock: p.stock
+        }))
+      },
       
-      // Reservas
-      bookingsCount: recentBookings.length,
-      bookingStats,
+      // ========== RESERVAS ==========
+      bookings: {
+        total: allBookings.length,
+        confirmed: confirmedBookings.length,
+        pending: pendingBookings.length,
+        cancelled: cancelledBookings.length,
+        totalRevenue: Math.round(totalBookingRevenue),
+        avgValue: Math.round(avgBookingValue),
+        topServices: topServices,
+        cancellationRate: allBookings.length > 0 
+          ? Math.round((cancelledBookings.length / allBookings.length) * 100)
+          : 0
+      },
       
-      // Productos recientes (para consultas específicas)
-      recentProducts: products.slice(0, 10).map(p => ({
-        name: p.name,
-        price: p.price,
-        stock: p.stock,
-        category: p.category,
-      })),
+      // ========== CLIENTES ==========
+      customers: {
+        total: totalCustomers,
+        repeat: repeatCustomers,
+        retentionRate: Math.round(customerRetentionRate),
+        avgOrdersPerCustomer: totalCustomers > 0 
+          ? Math.round(allOrders.length / totalCustomers * 10) / 10 
+          : 0
+      },
       
-      // Contexto adicional del usuario
+      // ========== MENSAJERÍA ==========
+      messages: {
+        total: recentMessages.length,
+        unread: recentMessages.filter(m => !m.read).length
+      },
+      
+      // ========== CONTEXTO ADICIONAL ==========
+      analysisDate: new Date().toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
+      
+      // Contexto adicional del usuario (si lo envía desde el frontend)
       ...context
     };
 
