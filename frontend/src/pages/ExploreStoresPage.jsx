@@ -228,6 +228,7 @@ export default function ExploreStoresPage() {
   const resolveMediaUrl = (raw) => {
     if (!raw) return null;
     const s = String(raw).trim();
+    if (s.startsWith("data:")) return s; // Support Base64 data URLs
     if (s.startsWith("http://") || s.startsWith("https://")) return s;
     if (s.startsWith("/")) return `${API_ORIGIN}${s}`;
     return `${API_ORIGIN}/${s}`;

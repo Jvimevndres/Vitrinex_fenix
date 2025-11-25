@@ -302,6 +302,35 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-1 text-slate-700">
+                  Logo de la tienda
+                </label>
+                <div className="flex items-center gap-3">
+                  {form.logoUrl && (
+                    <img
+                      src={form.logoUrl}
+                      alt="Logo"
+                      className="w-12 h-12 object-cover rounded-lg border-2 border-slate-300"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setForm((prev) => ({ ...prev, logoUrl: reader.result }));
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="flex-1 border rounded-lg px-2 py-1 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-slate-700">
                   Tipo de tienda
                 </label>
                 <select

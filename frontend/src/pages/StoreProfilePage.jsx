@@ -646,6 +646,38 @@ export default function StoreProfilePage() {
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Logo de la tienda
+                      </label>
+                      <div className="flex items-center gap-4">
+                        {form.logoUrl && (
+                          <img
+                            src={form.logoUrl}
+                            alt="Logo"
+                            className="w-16 h-16 object-cover rounded-lg border-2 border-slate-300 shadow"
+                          />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setForm((prev) => ({ ...prev, logoUrl: reader.result }));
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          className="flex-1 bg-white border border-slate-300 text-slate-700 rounded-lg px-3 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Sube una imagen que represente tu negocio (se guardará automáticamente)
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
                         Descripción
                       </label>
                       <textarea

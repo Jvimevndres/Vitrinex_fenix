@@ -148,35 +148,27 @@ export default function ModernProductManager({ storeId }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("storeId", storeId);
-
     try {
       setUploadingImage(true);
-      console.log("📤 Subiendo imagen al servidor...");
+      console.log("📤 Convirtiendo imagen a Base64...");
       
-      const { data } = await axios.post(
-        "http://localhost:3000/api/upload/product-image",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
-      );
-
-      if (!data.imageUrl) {
-        alert("Error: no llegó URL desde el backend");
-        return;
-      }
-
-      console.log("✅ Imagen subida correctamente:", data.imageUrl);
-      setProductImages([...productImages, data.imageUrl]);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        console.log("✅ Imagen convertida a Base64");
+        setProductImages([...productImages, reader.result]);
+        setUploadingImage(false);
+      };
+      reader.onerror = () => {
+        console.error("❌ Error al leer imagen");
+        alert("No se pudo leer la imagen");
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
-      console.error("❌ Error al subir imagen:", err);
-      alert(err.response?.data?.message || "No se pudo subir la imagen");
-    } finally {
+      console.error("❌ Error al procesar imagen:", err);
+      alert("No se pudo procesar la imagen");
       setUploadingImage(false);
+    } finally {
       e.target.value = "";
     }
   };
