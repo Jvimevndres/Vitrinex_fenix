@@ -205,42 +205,73 @@ function getAppearanceColors(appearance, store) {
 }
 
 function buildAppearanceBackground(appearance, store) {
+  console.log('🎨 buildAppearanceBackground called:', {
+    hasAppearance: !!appearance,
+    hasBackground: !!appearance?.background,
+    mode: appearance?.background?.mode,
+    backgroundData: appearance?.background,
+    appearanceColors: appearance?.colors
+  });
+
   if (!appearance?.background) {
     // Fallback a sistema legacy
+    console.log('⚠️ No appearance.background, usando legacy');
     return buildBackgroundStyle(store);
   }
 
   const { mode, solid, gradient, image, pattern } = appearance.background;
 
   if (mode === "solid") {
-    return {
-      backgroundColor: solid?.color || "#ffffff",
+    const style = {
+      backgroundColor: solid?.color || appearance?.colors?.background || "#ffffff",
       backgroundAttachment: "fixed",
     };
+    console.log('✅ Background SOLID aplicado:', style);
+    return style;
   }
 
-  if (mode === "gradient" && gradient) {
+  if (mode === "gradient") {
+    const gradient = appearance.background.gradient;
+    
+    // Si no hay datos de gradient, usar colores primario y secundario por defecto
+    if (!gradient || !gradient.colors || gradient.colors.length < 2) {
+      const primary = appearance?.colors?.primary || "#3b82f6";
+      const secondary = appearance?.colors?.secondary || "#8b5cf6";
+      
+      const style = {
+        backgroundImage: `linear-gradient(to bottom, ${primary} 0%, ${secondary} 100%)`,
+        backgroundAttachment: "fixed",
+      };
+      console.log('✅ Background GRADIENT aplicado (usando colores por defecto):', style);
+      return style;
+    }
+    
+    // Si hay datos completos de gradient
     const { type, direction, colors, stops } = gradient;
-    const gradientColors = colors?.map((c, i) => 
+    const gradientColors = colors.map((c, i) => 
       `${c} ${stops?.[i] || (i * 100 / (colors.length - 1))}%`
     ).join(", ");
 
-    return {
+    const style = {
       backgroundImage: type === "radial"
         ? `radial-gradient(circle, ${gradientColors})`
         : `linear-gradient(${direction || "to bottom"}, ${gradientColors})`,
       backgroundAttachment: "fixed",
     };
+    console.log('✅ Background GRADIENT aplicado:', style);
+    return style;
   }
 
   if (mode === "image" && image?.url) {
-    return {
+    const style = {
       backgroundImage: `linear-gradient(to bottom, ${hexToRgba("#000", image.opacity || 0.5)} 0%, ${hexToRgba("#000", (image.opacity || 0.5) * 1.2)} 60%), url(${image.url})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: image.size || "cover",
       backgroundPosition: image.position || "center",
       backgroundAttachment: "fixed",
     };
+    console.log('✅ Background IMAGE aplicado:', style);
+    return style;
   }
 
   if (mode === "pattern" && pattern) {
@@ -262,15 +293,18 @@ function buildAppearanceBackground(appearance, store) {
         patternImage = `radial-gradient(${patternColor} ${scale}px, transparent ${scale}px)`;
     }
 
-    return {
+    const style = {
       backgroundColor: appearance.colors?.background || "#ffffff",
       backgroundImage: patternImage,
       backgroundSize: pattern.type === "grid" ? `${30 * scale}px ${30 * scale}px` : `${20 * scale}px ${20 * scale}px`,
       backgroundAttachment: "fixed",
     };
+    console.log('✅ Background PATTERN aplicado:', style);
+    return style;
   }
 
   // Fallback
+  console.log('⚠️ No mode matched, usando legacy');
   return buildBackgroundStyle(store);
 }
 
@@ -530,8 +564,15 @@ export default function StorePublicPage() {
         // 🎨 Cargar personalización visual (silently, no bloquea la tienda)
         try {
           const appearanceData = await getStoreAppearance(id);
+          console.log('🎨 Appearance cargado:', {
+            version: appearanceData.version,
+            theme: appearanceData.theme,
+            effectsCount: Object.keys(appearanceData.effects || {}).length,
+            effects: appearanceData.effects
+          });
           setAppearance(appearanceData);
         } catch (err) {
+          console.warn('⚠️ No hay personalización visual configurada');
           // No hay personalización visual configurada, usando valores por defecto
         }
       } catch (err) {

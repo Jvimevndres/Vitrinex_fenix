@@ -416,7 +416,7 @@ export default function MainHeader({
   };
 
   const defaultStoreStyle = {
-    background: "linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(30, 58, 138, 0.98) 50%, rgba(17, 24, 39, 0.98) 100%)",
+    backgroundImage: "linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(30, 58, 138, 0.98) 50%, rgba(17, 24, 39, 0.98) 100%)",
     backdropFilter: "blur(12px)",
     borderBottom: "1px solid rgba(59, 130, 246, 0.3)",
     boxShadow: "0 8px 32px rgba(59, 130, 246, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.15)",

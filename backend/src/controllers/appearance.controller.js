@@ -3,25 +3,38 @@ import StoreAppearance from "../models/storeAppearance.model.js";
 import Store from "../models/store.model.js";
 
 /**
- * Función helper para hacer merge profundo recursivo
- * Necesario para actualizar objetos anidados correctamente
+ * Función helper para hacer merge profundo recursivo MEJORADO
+ * Maneja correctamente booleanos, arrays y null
  */
 function deepMerge(target, source) {
+  // Si source es null, undefined, array, o no es objeto, reemplazar directamente
+  if (source === null || source === undefined || Array.isArray(source) || !isObject(source)) {
+    return source;
+  }
+  
+  // Si target no es objeto, usar source como base
+  if (!isObject(target)) {
+    return source;
+  }
+  
   const output = { ...target };
   
-  if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!(key in target)) {
-          output[key] = source[key];
-        } else {
-          output[key] = deepMerge(target[key], source[key]);
-        }
-      } else {
-        output[key] = source[key];
-      }
-    });
-  }
+  Object.keys(source).forEach(key => {
+    const sourceValue = source[key];
+    const targetValue = target[key];
+    
+    // Si es valor primitivo (boolean, string, number), null, o array, reemplazar directamente
+    if (sourceValue === null || 
+        sourceValue === undefined || 
+        typeof sourceValue !== 'object' || 
+        Array.isArray(sourceValue)) {
+      output[key] = sourceValue;
+    } 
+    // Si es objeto, hacer merge recursivo
+    else if (isObject(sourceValue)) {
+      output[key] = deepMerge(targetValue, sourceValue);
+    }
+  });
   
   return output;
 }
@@ -100,19 +113,24 @@ export const updateStoreAppearance = async (req, res) => {
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         // Usar merge profundo para objetos anidados
-        if (typeof req.body[field] === "object" && !Array.isArray(req.body[field])) {
+        if (typeof req.body[field] === "object" && !Array.isArray(req.body[field]) && req.body[field] !== null) {
           const existing = appearance[field] ? appearance[field].toObject() : {};
           appearance[field] = deepMerge(existing, req.body[field]);
         } else {
+          // Para arrays, strings, numbers, booleans, null -> reemplazar directamente
           appearance[field] = req.body[field];
         }
       }
     });
 
     appearance.version += 1;
+    appearance.markModified('effects'); // Forzar que Mongoose detecte cambios en objetos anidados
+    appearance.markModified('colors');
+    appearance.markModified('sections');
     await appearance.save();
 
     console.log(`✨ Apariencia actualizada para store: ${id} (v${appearance.version})`);
+    console.log(`📊 Efectos guardados:`, appearance.effects);
 
     return res.json(appearance);
   } catch (error) {

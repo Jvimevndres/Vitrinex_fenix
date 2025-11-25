@@ -1,12 +1,50 @@
 // src/components/StorePreviewRealistic.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ParticlesBackground from './ParticlesBackground';
 
 /**
  * 🎨 StorePreviewRealistic
  * Réplica COMPLETA de StorePublic.jsx - muestra TODAS las secciones como las verá el cliente
+ * Se actualiza en TIEMPO REAL con todos los cambios
  */
 const StorePreviewRealistic = ({ appearance, storeData }) => {
+  // Forzar re-render cuando cambian appearance o storeData
+  const [renderKey, setRenderKey] = useState(0);
+
+  useEffect(() => {
+    console.log('🔄 StorePreviewRealistic - Detectando cambios:', {
+      appearance: appearance?.theme,
+      colors: appearance?.colors?.primary,
+      storeMode: storeData?.mode,
+      storeName: storeData?.name,
+      customBoxes: storeData?.customBoxes?.length,
+      aboutDescription: !!storeData?.aboutDescription,
+      scheduleText: !!storeData?.scheduleText,
+      effects: {
+        glassmorphism: appearance?.effects?.glassmorphism,
+        neomorphism: appearance?.effects?.neomorphism,
+        shadows3D: appearance?.effects?.shadows3D,
+        colorShift: appearance?.effects?.colorShift,
+        '🔥 GLOW': appearance?.effects?.glow,
+        '🌈 ANIMATED_GRADIENT': appearance?.effects?.animatedGradient,
+        '🎈 FLOATING_HOVER': appearance?.effects?.floatingHover,
+        '🌫️ BLUR': appearance?.effects?.blur,
+        '🎨 COLOR_SHIFT': appearance?.effects?.colorShift,
+        '🔄 MORPHING': appearance?.effects?.morphing,
+        particles: appearance?.effects?.particles?.enabled
+      }
+    });
+    
+    // Log específico de efectos problemáticos
+    if (appearance?.effects?.glow) console.log('✨ Glow activado con color:', appearance?.colors?.primary);
+    if (appearance?.effects?.animatedGradient) console.log('🌈 Gradiente animado activado');
+    if (appearance?.effects?.blur) console.log('🌫️ Blur activado');
+    if (appearance?.effects?.morphing) console.log('🔄 Morphing activado');
+    if (appearance?.effects?.colorShift) console.log('🎨 Color shift activado');
+    
+    setRenderKey(prev => prev + 1);
+  }, [appearance, storeData]);
+
   // Colores del tema aplicado
   const colors = appearance?.colors || {
     primary: storeData?.primaryColor || '#2563eb',
@@ -32,46 +70,115 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
     fontFamily: appearance?.typography?.bodyFont || 'inherit',
   };
 
-  // Estilos de fondo según configuración
+  // Estilos de fondo según configuración CON EFECTOS
   const getBackgroundStyle = () => {
     const bg = appearance?.background || {};
+    const effects = appearance?.effects || {};
     const mode = bg.mode || 'gradient';
 
+    let style = {};
+    
     if (mode === 'solid') {
-      return {
+      style = {
         backgroundColor: bg.solid?.color || bg.solid || colors.background,
       };
-    }
-
-    if (mode === 'gradient') {
+    } else if (mode === 'gradient') {
       const top = bg.gradient?.from || colors.primary;
       const bottom = bg.gradient?.to || colors.background;
-      return {
+      style = {
         backgroundImage: `linear-gradient(to bottom, ${top}, ${bottom})`,
       };
-    }
-
-    if (mode === 'image' && bg.image?.url) {
-      return {
+    } else if (mode === 'image' && bg.image?.url) {
+      style = {
         backgroundImage: `url(${bg.image.url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       };
+    } else {
+      style = {
+        backgroundColor: colors.background,
+      };
     }
 
-    return {
-      backgroundColor: colors.background,
-    };
+    // Aplicar efectos de fondo
+    if (effects.animatedGradient && mode === 'gradient') {
+      style.backgroundSize = '200% 200%';
+      style.animation = 'gradient-shift 8s ease infinite';
+    }
+    
+    if (effects.parallaxBg) {
+      style.backgroundAttachment = 'fixed';
+    }
+
+    return style;
   };
 
-  // Estilos de tarjetas según configuración
+  // Estilos de tarjetas según configuración CON EFECTOS
   const getCardStyle = () => {
     const card = appearance?.cards || {};
-    return {
+    const effects = appearance?.effects || {};
+    
+    // Construir clases CSS para efectos
+    let cssClasses = [];
+    if (effects.glassmorphism) cssClasses.push('glass-card');
+    if (effects.neomorphism) cssClasses.push('neomorph-card');
+    if (effects.shadows3D) cssClasses.push('shadow-3d');
+    if (effects.colorShift) cssClasses.push('color-shift');
+    if (effects.glow) cssClasses.push('glow-effect');
+    if (effects.morphing) cssClasses.push('morphing');
+    if (effects.blur) cssClasses.push('blur-effect');
+    if (effects.fadeIn) cssClasses.push('animate-fade-in');
+    
+    const baseStyle = {
       backgroundColor: card.backgroundColor || colors.surface,
       borderRadius: `${card.borderRadius || 1}rem`,
       boxShadow: card.shadow ? '0 10px 30px rgba(0,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.1)',
       border: card.border ? `1px solid ${colors.border}` : `1px solid ${colors.border}`,
+    };
+    
+    // Aplicar estilos inline adicionales para efectos específicos
+    if (effects.glow) {
+      // Usar color primario dinámico para el glow
+      const glowColor = colors.primary || '#8b5cf6';
+      baseStyle.filter = `drop-shadow(0 0 12px ${hexToRgba(glowColor, 0.6)}) drop-shadow(0 0 20px ${hexToRgba(glowColor, 0.4)})`;
+      baseStyle.transition = 'filter 0.3s ease, transform 0.3s ease';
+      console.log('✨ Aplicando glow a tarjeta con color:', glowColor);
+    }
+    
+    if (effects.blur && !effects.glassmorphism) {
+      baseStyle.backdropFilter = 'blur(10px)';
+      baseStyle.WebkitBackdropFilter = 'blur(10px)';
+      baseStyle.backgroundColor = hexToRgba(colors.surface, 0.7);
+      console.log('🌫️ Aplicando blur a tarjeta');
+    }
+    
+    if (effects.morphing) {
+      // Iniciar con forma morphing
+      baseStyle.borderRadius = '30% 70% 70% 30% / 30% 30% 70% 70%';
+      baseStyle.willChange = 'border-radius';
+      console.log('🔄 Aplicando morphing a tarjeta');
+    }
+    
+    if (effects.animatedGradient && !effects.glassmorphism) {
+      // Aplicar gradiente animado a las tarjetas
+      baseStyle.backgroundImage = `linear-gradient(135deg, ${colors.primary}, ${colors.secondary}, ${colors.primary})`;
+      baseStyle.backgroundSize = '200% 200%';
+      baseStyle.color = '#ffffff';
+      console.log('🌈 Aplicando gradiente animado a tarjeta');
+    }
+    
+    console.log('🎨 Card style final:', {
+      cssClasses,
+      hasGlow: effects.glow,
+      hasBlur: effects.blur,
+      hasMorphing: effects.morphing,
+      hasAnimatedGradient: effects.animatedGradient,
+      styleKeys: Object.keys(baseStyle)
+    });
+    
+    return {
+      style: baseStyle,
+      className: cssClasses.join(' ')
     };
   };
 
@@ -103,19 +210,24 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
 
   return (
     <div
-      className="relative w-full overflow-y-auto"
+      key={renderKey}
+      className={`relative w-full overflow-y-auto ${
+        appearance?.effects?.animations ? 'animate-fade-in' : ''
+      } ${
+        appearance?.effects?.blur ? 'blur-effect' : ''
+      }`}
       style={{
         ...getBackgroundStyle(),
         minHeight: '100vh',
         padding: '1.5rem',
+        scrollBehavior: appearance?.effects?.smoothScroll ? 'smooth' : 'auto',
       }}
     >
       {/* Partículas si están activadas */}
-      {appearance?.effects?.particles && (
+      {appearance?.effects?.particles?.enabled && (
         <ParticlesBackground
-          color={colors.primary}
-          quantity={appearance.effects.particlesQuantity || 50}
-          speed={appearance.effects.particlesSpeed || 0.5}
+          config={appearance.effects.particles}
+          colors={colors}
         />
       )}
 
@@ -125,9 +237,9 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
         {/* HERO - Réplica exacta de StorePublic.jsx */}
         {appearance?.sections?.hero !== false && (
           <section
-            className="p-6 flex flex-col md:flex-row gap-6 items-start"
+            className={`p-6 flex flex-col md:flex-row gap-6 items-start ${getCardStyle().className}`}
             style={{
-              ...getCardStyle(),
+              ...getCardStyle().style,
               borderColor: colors.border,
             }}
           >
@@ -266,8 +378,8 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
         {/* Sección Quiénes Somos */}
         {storeData?.aboutDescription && appearance?.sections?.about !== false && (
           <section
-            className="rounded-2xl p-6 space-y-4"
-            style={getCardStyle()}
+            className={`rounded-2xl p-6 space-y-4 ${getCardStyle().className}`}
+            style={getCardStyle().style}
           >
             <h3
               className="font-bold text-center"
@@ -297,8 +409,8 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
             {storeData.customBoxes.map((box, idx) => (
               <div
                 key={box.id || idx}
-                className={`p-6 rounded-xl space-y-3 ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
-                style={getCardStyle()}
+                className={`p-6 rounded-xl space-y-3 ${getCardStyle().className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
+                style={getCardStyle().style}
               >
                 <div className="text-4xl">{box.icon}</div>
                 <h4
@@ -328,8 +440,8 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
         {/* Horarios de Atención */}
         {storeData?.scheduleText && appearance?.sections?.schedule !== false && (
           <section
-            className="rounded-2xl p-6 space-y-4"
-            style={getCardStyle()}
+            className={`rounded-2xl p-6 space-y-4 ${getCardStyle().className}`}
+            style={getCardStyle().style}
           >
             <h3
               className="font-bold text-center flex items-center justify-center gap-2"
@@ -354,11 +466,11 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
           </section>
         )}
 
-        {/* Sección de Agendamiento (Simulada) */}
+        {/* Sección de Agendamiento - Con Tarjetas de Servicios */}
         {storeData?.mode === 'bookings' && appearance?.sections?.booking !== false && (
           <section
-            className="rounded-2xl p-6 space-y-6"
-            style={getCardStyle()}
+            className={`rounded-2xl p-6 space-y-6 ${getCardStyle().className}`}
+            style={getCardStyle().style}
           >
             <div className="text-center">
               <h3
@@ -381,18 +493,94 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
                 Selecciona el servicio y horario que prefieras
               </p>
             </div>
-            {/* Aquí iría el calendario y servicios - simulado */}
-            <div className="p-8 rounded-lg text-center" style={{ backgroundColor: hexToRgba(colors.primary, 0.05) }}>
-              <p style={{ color: colors.textSecondary }}>Vista previa del sistema de agendamiento</p>
+            
+            {/* Grid de servicios de agendamiento - IGUAL QUE PRODUCTOS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { name: 'CANCHA 1', category: 'canchas', tags: ['FUTBOL'], price: 25000 },
+                { name: 'CANCHA 2', category: 'canchas', tags: ['FUTBOL'], price: 25000 },
+                { name: 'CANCHA 3', category: 'canchas', tags: ['PADEL'], price: 30000 }
+              ].map((service, i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl overflow-hidden ${getCardStyle().className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
+                  style={{
+                    ...getCardStyle().style,
+                    padding: 0,
+                  }}
+                >
+                  {/* Imagen del servicio */}
+                  <div 
+                    className="relative"
+                    style={{ 
+                      height: '150px', 
+                      backgroundColor: hexToRgba(colors.primary, 0.1),
+                      backgroundImage: 'linear-gradient(135deg, ' + hexToRgba(colors.primary, 0.2) + ' 0%, ' + hexToRgba(colors.secondary, 0.1) + ' 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '3rem' }}>⚽</span>
+                  </div>
+                  
+                  {/* Info del servicio */}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span 
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{ 
+                          backgroundColor: hexToRgba(colors.primary, 0.1),
+                          color: colors.primary
+                        }}
+                      >
+                        {service.category}
+                      </span>
+                      {service.tags.map((tag, idx) => (
+                        <span 
+                          key={idx}
+                          className="text-xs px-2 py-1 rounded-full"
+                          style={{ 
+                            backgroundColor: hexToRgba(colors.secondary, 0.1),
+                            color: colors.secondary
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: colors.text }}>
+                      {service.name}
+                    </h4>
+                    
+                    <p style={{ fontSize: '0.875rem', color: colors.textSecondary }}>
+                      Reserva tu hora y disfruta
+                    </p>
+                    
+                    <div className="flex items-center justify-between pt-2">
+                      <p style={{ fontSize: '1.25rem', fontWeight: '700', color: colors.primary }}>
+                        ${service.price.toLocaleString('es-CL')}
+                      </p>
+                      <button
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                        style={getButtonStyle()}
+                      >
+                        Reservar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
 
-        {/* Sección de Productos (Simulada) */}
+        {/* Sección de Productos */}
         {storeData?.mode === 'products' && appearance?.sections?.products !== false && (
           <section
-            className="rounded-2xl p-6 space-y-6"
-            style={getCardStyle()}
+            className={`rounded-2xl p-6 space-y-6 ${getCardStyle().className}`}
+            style={getCardStyle().style}
           >
             <div className="text-center">
               <h3
@@ -408,24 +596,49 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
             </div>
             {/* Grid de productos simulados */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
+              {[
+                { name: 'Producto 1', desc: 'Descripción del producto', price: 19990 },
+                { name: 'Producto 2', desc: 'Descripción del producto', price: 19990 },
+                { name: 'Producto 3', desc: 'Descripción del producto', price: 19990 }
+              ].map((product, i) => (
                 <div
                   key={i}
-                  className="rounded-xl overflow-hidden"
+                  className={`rounded-xl overflow-hidden ${getCardStyle().className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
                   style={{
-                    ...getCardStyle(),
+                    ...getCardStyle().style,
                     padding: 0,
                   }}
                 >
-                  <div style={{ height: '150px', backgroundColor: hexToRgba(colors.primary, 0.1) }}></div>
+                  <div 
+                    style={{ 
+                      height: '150px', 
+                      backgroundColor: hexToRgba(colors.primary, 0.1),
+                      backgroundImage: 'linear-gradient(135deg, ' + hexToRgba(colors.primary, 0.2) + ' 0%, ' + hexToRgba(colors.secondary, 0.1) + ' 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <span style={{ fontSize: '3rem' }}>📦</span>
+                  </div>
                   <div className="p-4">
-                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: colors.text }}>Producto {i}</h4>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: colors.text }}>
+                      {product.name}
+                    </h4>
                     <p style={{ fontSize: '0.875rem', color: colors.textSecondary, marginTop: '0.5rem' }}>
-                      Descripción del producto
+                      {product.desc}
                     </p>
-                    <p style={{ fontSize: '1.25rem', fontWeight: '700', color: colors.primary, marginTop: '0.5rem' }}>
-                      $19.990
-                    </p>
+                    <div className="flex items-center justify-between pt-3">
+                      <p style={{ fontSize: '1.25rem', fontWeight: '700', color: colors.primary }}>
+                        ${product.price.toLocaleString('es-CL')}
+                      </p>
+                      <button
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                        style={getButtonStyle()}
+                      >
+                        Comprar
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

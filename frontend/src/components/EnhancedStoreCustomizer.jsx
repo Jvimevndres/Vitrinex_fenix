@@ -144,12 +144,24 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
   };
 
   const handleUpdate = (field, value) => {
-    setAppearance((prev) => ({
-      ...prev,
-      [field]: typeof value === 'object' && !Array.isArray(value) 
-        ? { ...prev[field], ...value } 
-        : value,
-    }));
+    console.log(`🔧 Actualizando appearance.${field}:`, value);
+    setAppearance((prev) => {
+      // Para objetos anidados, hacer deep merge para preservar propiedades
+      if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+        return {
+          ...prev,
+          [field]: {
+            ...(prev[field] || {}),  // Preservar propiedades existentes
+            ...value,                 // Sobrescribir con nuevas
+          },
+        };
+      }
+      // Para arrays, strings, numbers, booleans, null -> reemplazar directamente
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
     setHasChanges(true);
   };
 
@@ -173,35 +185,56 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
       console.log('💾 === INICIANDO GUARDADO ===');
       console.log('📊 StoreData a guardar:', storeData);
       console.log('🎨 Appearance a guardar:', appearance);
-      console.log('🔲 Secciones específicamente:', appearance?.sections);
+      console.log('🔲 Secciones:', appearance?.sections);
+      console.log('✨ Efectos:', appearance?.effects);
+      console.log('🎨 Partículas:', appearance?.effects?.particles);
+      
+      // Validar que el objeto appearance esté completo
+      if (!appearance || typeof appearance !== 'object') {
+        throw new Error('Objeto appearance inválido');
+      }
       
       // Guardar datos básicos de la tienda
       if (storeData) {
         console.log('📤 Guardando storeData...');
-        console.log('  - customBoxes:', storeData.customBoxes);
-        console.log('  - aboutTitle:', storeData.aboutTitle);
-        console.log('  - aboutDescription:', storeData.aboutDescription);
-        console.log('  - scheduleText:', storeData.scheduleText);
-        
         const storeResult = await updateMyStore(storeId, storeData);
         console.log('✅ StoreData guardado:', storeResult);
       }
       
-      // Guardar apariencia
-      console.log('📤 Guardando appearance...');
-      console.log('  - sections a guardar:', appearance.sections);
+      // Guardar apariencia CON TODOS LOS EFECTOS
+      console.log('📤 Guardando appearance completo...');
       const updated = await updateStoreAppearance(storeId, appearance);
       console.log('✅ Appearance guardado:', updated);
-      console.log('  - sections guardadas:', updated.sections);
+      console.log('✨ Efectos guardados:', updated.effects);
+      console.log('🎨 Partículas guardadas:', updated.effects?.particles);
+      console.log('📊 Versión:', updated.version);
       
+      // Actualizar estado con la respuesta del servidor
       setAppearance(updated);
       setHasChanges(false);
       
       console.log('🎉 Guardado completado exitosamente');
-      alert('✅ Cambios guardados correctamente');
+      
+      // Notificar éxito con detalles
+      alert(`✅ Cambios guardados correctamente\\n\\n` +
+            `📊 Versión: ${updated.version}\\n` +
+            `✨ Efectos activos: ${Object.entries(updated.effects || {}).filter(([k, v]) => v === true).length}\\n` +
+            `🎨 Tema: ${updated.theme || 'custom'}`);
+            
+      // Forzar recarga del preview (por si hay cache)
+      setTimeout(() => {
+        window.location.hash = '#refresh-' + Date.now();
+      }, 100);
     } catch (error) {
       console.error('❌ Error guardando:', error);
-      alert('❌ Error al guardar los cambios: ' + (error.response?.data?.message || error.message));
+      console.error('❌ Detalles del error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert('❌ Error al guardar los cambios:\\n' + 
+            (error.response?.data?.message || error.message) +
+            '\\n\\nRevisa la consola para más detalles');
     } finally {
       setSaving(false);
     }
@@ -266,13 +299,13 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
   const storeMode = storeData?.mode || 'products';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
-      {/* Header Mejorado */}
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 flex flex-col">
+      {/* Header Mejorado - Estilo Vitrinex */}
+      <header className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 border-b border-purple-700 px-6 py-3 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="text-slate-600 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="text-white hover:text-purple-100 p-2 hover:bg-white/20 rounded-lg transition-colors"
             title="Volver"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,16 +313,16 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-white flex items-center gap-2">
               🎨 Constructor Visual 
             </h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-purple-100">
               <span className="font-semibold">{storeData?.name || 'Mi Tienda'}</span>
               {' • '}
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                 storeMode === 'bookings' 
-                  ? 'bg-purple-100 text-purple-700' 
-                  : 'bg-blue-100 text-blue-700'
+                  ? 'bg-purple-900/40 text-purple-100' 
+                  : 'bg-pink-900/40 text-pink-100'
               }`}>
                 {storeMode === 'bookings' ? '📅 Agendamiento' : '🛍️ Productos'}
               </span>
@@ -299,7 +332,7 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
 
         <div className="flex items-center gap-3">
           {/* Preview Mode Selector */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-white/20 rounded-lg p-1">
             {[
               { id: 'desktop', icon: '💻', label: 'Escritorio' },
               { id: 'tablet', icon: '📱', label: 'Tablet' },
@@ -310,8 +343,8 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
                 onClick={() => setPreviewMode(mode.id)}
                 className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
                   previewMode === mode.id
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-purple-100 hover:text-white hover:bg-white/10'
                 }`}
                 title={mode.label}
               >
@@ -321,15 +354,15 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
           </div>
 
           {hasChanges && (
-            <span className="text-sm text-amber-600 font-medium flex items-center gap-2">
-              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+            <span className="text-sm text-yellow-300 font-medium flex items-center gap-2">
+              <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
               Sin guardar
             </span>
           )}
 
           <button
             onClick={() => setShowWizard(true)}
-            className="px-4 py-2 text-sm text-purple-600 hover:text-purple-700 border border-purple-300 rounded-lg hover:bg-purple-50 disabled:opacity-50 font-medium"
+            className="px-4 py-2 text-sm text-white hover:text-purple-100 border border-white/30 rounded-lg hover:bg-white/20 disabled:opacity-50 font-medium"
           >
             🧙 Asistente
           </button>
@@ -337,7 +370,7 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
           <button
             onClick={handleReset}
             disabled={saving}
-            className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+            className="px-4 py-2 text-sm text-white hover:text-purple-100 border border-white/30 rounded-lg hover:bg-white/20 disabled:opacity-50"
           >
             🔄 Resetear
           </button>
@@ -345,7 +378,7 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
           <button
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+            className="px-6 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg hover:shadow-xl transition-all"
           >
             {saving ? '⏳ Guardando...' : '💾 Guardar Cambios'}
           </button>
@@ -370,7 +403,7 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
           )}
 
           {/* Tabs Navigation */}
-          <div className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
+          <div className="border-b border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 sticky top-0 z-10 shadow-sm">
             <nav className="grid grid-cols-3 grid-rows-2 gap-1 p-2">
               {[
                 { id: 'themes', icon: '🎨', label: 'Plantillas' },
@@ -388,8 +421,8 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
                   }}
                   className={`flex flex-col items-center px-2 py-2 text-xs font-medium rounded-lg transition-all ${
                     activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-600 hover:bg-slate-100'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                      : 'text-purple-700 hover:bg-purple-100'
                   }`}
                 >
                   <span className="text-lg mb-1">{tab.icon}</span>
@@ -400,12 +433,12 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
           </div>
 
           {/* Preview en tiempo real - Info destacada */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 p-3">
+          <div className="bg-gradient-to-r from-purple-100 to-pink-100 border-b border-purple-300 p-3">
             <div className="flex items-center gap-2 text-sm">
               <span className="text-xl">👁️</span>
               <div className="flex-1">
-                <p className="font-semibold text-green-900">Vista Previa en Tiempo Real</p>
-                <p className="text-xs text-green-700">Los cambios se ven al instante →</p>
+                <p className="font-semibold text-purple-900">Vista Previa en Tiempo Real</p>
+                <p className="text-xs text-purple-700">Los cambios se ven al instante →</p>
               </div>
             </div>
           </div>
@@ -486,13 +519,13 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
         </aside>
 
         {/* Preview Area Mejorado */}
-        <main className="flex-1 bg-gradient-to-br from-slate-100 to-slate-200 overflow-y-auto p-6">
+        <main className="flex-1 bg-gradient-to-br from-purple-100 via-pink-100 to-purple-200 overflow-y-auto p-6 relative">
           <div className={`mx-auto transition-all duration-300 pb-6 ${
             previewMode === 'desktop' ? 'max-w-7xl' :
             previewMode === 'tablet' ? 'max-w-3xl' :
             'max-w-sm'
           }`}>
-            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl border border-purple-200 overflow-hidden">
               <StorePreviewRealistic 
                 appearance={appearance} 
                 storeData={storeData} 
@@ -501,13 +534,50 @@ export default function EnhancedStoreCustomizer({ storeId, onClose }) {
             </div>
             
             {/* Preview Info */}
-            <div className="mt-4 text-center text-sm text-slate-600">
+            <div className="mt-4 text-center text-sm text-purple-700">
               Vista previa en modo <span className="font-semibold">{
                 previewMode === 'desktop' ? 'Escritorio' :
                 previewMode === 'tablet' ? 'Tablet' :
                 'Móvil'
               }</span>
             </div>
+          </div>
+
+          {/* Botón Flotante de Guardado - SIEMPRE VISIBLE */}
+          <div className="fixed bottom-8 right-8 z-50">
+            <button
+              onClick={handleSave}
+              disabled={saving || !hasChanges}
+              className={`group relative px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 ${
+                hasChanges
+                  ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white hover:shadow-purple-500/50 hover:scale-110 animate-pulse'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <span className="animate-spin inline-block mr-2">⏳</span>
+                  Guardando...
+                </>
+              ) : hasChanges ? (
+                <>
+                  💾 Guardar Todo
+                  <span className="absolute -top-2 -right-2 flex h-6 w-6">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-6 w-6 bg-pink-500 items-center justify-center text-xs text-white font-bold">
+                      !
+                    </span>
+                  </span>
+                </>
+              ) : (
+                <>✓ Todo Guardado</>
+              )}
+            </button>
+            {hasChanges && (
+              <p className="text-center text-xs text-purple-700 mt-2 font-medium animate-bounce">
+                Tienes cambios sin guardar
+              </p>
+            )}
           </div>
         </main>
       </div>
@@ -546,8 +616,8 @@ function ThemesTab({ themes, categories, selectedCategory, onCategoryChange, cur
             onClick={() => onCategoryChange(key)}
             className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
               selectedCategory === key
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
             }`}
           >
             {cat.icon} {cat.label}
@@ -563,8 +633,8 @@ function ThemesTab({ themes, categories, selectedCategory, onCategoryChange, cur
             onClick={() => onApplyTheme(theme.id)}
             className={`relative p-4 rounded-lg border-2 transition-all text-left hover:shadow-md ${
               currentTheme === theme.id
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-slate-200 bg-white hover:border-slate-300'
+                ? 'border-purple-600 bg-purple-50'
+                : 'border-purple-100 bg-white hover:border-purple-300'
             }`}
           >
             <div className="flex items-start gap-3">
@@ -573,11 +643,11 @@ function ThemesTab({ themes, categories, selectedCategory, onCategoryChange, cur
                 <h4 className="font-semibold text-slate-900 flex items-center gap-2">
                   {theme.name}
                   {currentTheme === theme.id && (
-                    <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Activo</span>
+                    <span className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-0.5 rounded-full">Activo</span>
                   )}
                 </h4>
                 <p className="text-xs text-slate-600 mt-1">{theme.description}</p>
-                <span className="inline-block mt-2 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                <span className="inline-block mt-2 text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
                   {categories[theme.category]?.label}
                 </span>
               </div>
@@ -1876,149 +1946,63 @@ function EffectsTab({ effects, onChange }) {
       {/* Efectos Visuales Modernos */}
       <div className="space-y-4">
         <h4 className="text-sm font-medium text-slate-700 border-b border-slate-200 pb-2">
-          ✨ Efectos Modernos
+          ✨ Efectos Visuales
         </h4>
         
         <label className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg hover:from-blue-100 hover:to-purple-100 transition-colors cursor-pointer border border-blue-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Glassmorphism</span>
-            <p className="text-xs text-slate-500">Efecto de vidrio esmerilado</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700">💎 Glassmorphism</span>
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Moderno</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Efecto de vidrio esmerilado con desenfoque de fondo</p>
+            <div className="mt-2 p-2 bg-white/50 backdrop-blur-sm rounded border border-white/30">
+              <span className="text-xs text-slate-600">Vista previa del efecto</span>
+            </div>
           </div>
           <input
             type="checkbox"
             checked={effects.glassmorphism}
             onChange={(e) => onChange({ ...effects, glassmorphism: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
+            className="w-5 h-5 text-blue-600 rounded ml-3"
           />
         </label>
 
-        <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Neomorphism</span>
-            <p className="text-xs text-slate-500">Estilo soft UI</p>
+        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg hover:from-slate-100 hover:to-slate-200 transition-colors cursor-pointer border border-slate-200">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700">🎨 Neomorphism</span>
+              <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">Soft UI</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Estilo suave con sombras internas y externas</p>
+            <div className="mt-2 p-2 rounded" style={{ boxShadow: '4px 4px 8px rgba(0,0,0,0.1), -4px -4px 8px rgba(255,255,255,0.8)' }}>
+              <span className="text-xs text-slate-600">Vista previa del efecto</span>
+            </div>
           </div>
           <input
             type="checkbox"
             checked={effects.neomorphism}
             onChange={(e) => onChange({ ...effects, neomorphism: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
+            className="w-5 h-5 text-slate-600 rounded ml-3"
           />
         </label>
 
-        <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Sombras 3D</span>
-            <p className="text-xs text-slate-500">Profundidad con sombras</p>
+        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg hover:from-indigo-100 hover:to-blue-100 transition-colors cursor-pointer border border-indigo-200">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700">📦 Sombras 3D</span>
+              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Profundidad</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Múltiples capas de sombras para efecto de profundidad</p>
+            <div className="mt-2 p-2 bg-white rounded" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.04)' }}>
+              <span className="text-xs text-slate-600">Vista previa del efecto</span>
+            </div>
           </div>
           <input
             type="checkbox"
             checked={effects.shadows3D}
             onChange={(e) => onChange({ ...effects, shadows3D: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg hover:from-yellow-100 hover:to-orange-100 transition-colors cursor-pointer border border-yellow-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Resplandor (Glow)</span>
-            <p className="text-xs text-slate-500">Efectos de luz y brillo</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.glow}
-            onChange={(e) => onChange({ ...effects, glow: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-pink-50 to-red-50 rounded-lg hover:from-pink-100 hover:to-red-100 transition-colors cursor-pointer border border-pink-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Gradiente Animado</span>
-            <p className="text-xs text-slate-500">Fondos con degradados en movimiento</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.animatedGradient}
-            onChange={(e) => onChange({ ...effects, animatedGradient: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-lg hover:from-green-100 hover:to-teal-100 transition-colors cursor-pointer border border-green-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Hover Flotante</span>
-            <p className="text-xs text-slate-500">Elementos flotan al pasar el mouse</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.floatingHover}
-            onChange={(e) => onChange({ ...effects, floatingHover: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg hover:from-indigo-100 hover:to-blue-100 transition-colors cursor-pointer border border-indigo-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Efecto Blur (Desenfoque)</span>
-            <p className="text-xs text-slate-500">Desenfoque selectivo en fondo</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.blur}
-            onChange={(e) => onChange({ ...effects, blur: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-rose-50 to-orange-50 rounded-lg hover:from-rose-100 hover:to-orange-100 transition-colors cursor-pointer border border-rose-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Cambio de Color Dinámico</span>
-            <p className="text-xs text-slate-500">Transición de colores suave</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.colorShift}
-            onChange={(e) => onChange({ ...effects, colorShift: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg hover:from-violet-100 hover:to-purple-100 transition-colors cursor-pointer border border-violet-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Efecto Morphing</span>
-            <p className="text-xs text-slate-500">Transformaciones fluidas</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.morphing}
-            onChange={(e) => onChange({ ...effects, morphing: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-cyan-50 to-sky-50 rounded-lg hover:from-cyan-100 hover:to-sky-100 transition-colors cursor-pointer border border-cyan-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Ondas al Hacer Clic</span>
-            <p className="text-xs text-slate-500">Efecto ripple en interacciones</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.ripple}
-            onChange={(e) => onChange({ ...effects, ripple: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg hover:from-amber-100 hover:to-yellow-100 transition-colors cursor-pointer border border-amber-200">
-          <div>
-            <span className="text-sm font-medium text-slate-700">Efecto Holográfico</span>
-            <p className="text-xs text-slate-500">Reflejo iridiscente moderno</p>
-          </div>
-          <input
-            type="checkbox"
-            checked={effects.holographic}
-            onChange={(e) => onChange({ ...effects, holographic: e.target.checked })}
-            className="w-5 h-5 text-blue-600 rounded"
+            className="w-5 h-5 text-indigo-600 rounded ml-3"
           />
         </label>
       </div>
@@ -2444,13 +2428,85 @@ function LayoutTab({ layout, background, onLayoutChange, onBackgroundChange }) {
         <h4 className="text-sm font-semibold text-blue-900">🎨 Tipo de Fondo</h4>
         <select
           value={background.mode}
-          onChange={(e) => onBackgroundChange({ ...background, mode: e.target.value })}
+          onChange={(e) => {
+            const newMode = e.target.value;
+            const updatedBackground = { ...background, mode: newMode };
+            
+            // Si selecciona degradado y no hay datos, inicializar con colores actuales
+            if (newMode === 'gradient' && !background.gradient) {
+              updatedBackground.gradient = {
+                type: 'linear',
+                direction: 'to bottom',
+                colors: [appearance?.colors?.primary || '#3b82f6', appearance?.colors?.secondary || '#8b5cf6'],
+                stops: [0, 100]
+              };
+            }
+            
+            // Si selecciona patrón y no hay datos, inicializar
+            if (newMode === 'pattern' && !background.pattern) {
+              updatedBackground.pattern = {
+                type: 'dots',
+                color: '#000000',
+                opacity: 0.1,
+                scale: 1
+              };
+            }
+            
+            onBackgroundChange(updatedBackground);
+          }}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="solid">🎨 Color Sólido</option>
           <option value="gradient">🌈 Degradado</option>
           <option value="pattern">🔷 Patrón Decorativo</option>
         </select>
+
+        {/* Degradado */}
+        {background.mode === 'gradient' && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Degradado</label>
+              <select
+                value={background.gradient?.type || 'linear'}
+                onChange={(e) => onBackgroundChange({ 
+                  ...background, 
+                  gradient: { ...background.gradient, type: e.target.value } 
+                })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              >
+                <option value="linear">📐 Lineal</option>
+                <option value="radial">⭕ Radial</option>
+              </select>
+            </div>
+            
+            {background.gradient?.type === 'linear' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Dirección</label>
+                <select
+                  value={background.gradient?.direction || 'to bottom'}
+                  onChange={(e) => onBackgroundChange({ 
+                    ...background, 
+                    gradient: { ...background.gradient, direction: e.target.value } 
+                  })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >
+                  <option value="to bottom">⬇️ Arriba → Abajo</option>
+                  <option value="to top">⬆️ Abajo → Arriba</option>
+                  <option value="to right">➡️ Izquierda → Derecha</option>
+                  <option value="to left">⬅️ Derecha → Izquierda</option>
+                  <option value="135deg">↘️ Diagonal (↘)</option>
+                  <option value="45deg">↗️ Diagonal (↗)</option>
+                </select>
+              </div>
+            )}
+            
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-700">
+                💡 Los colores del degradado se toman de "Color Primario" y "Color Secundario" en la pestaña Colores
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Patrón */}
         {background.mode === 'pattern' && (
