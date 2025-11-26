@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
 import UserChatModal from "../components/UserChatModal";
+import UserReviews from "../components/UserReviews";
 import { getPublicUser } from "../api/user";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/axios";
@@ -514,6 +515,14 @@ export default function CustomerPublicPage() {
               </div>
             </div>
           )}
+
+          {/* Sección de Reseñas */}
+          <div className="mt-8">
+            <UserReviews 
+              userId={id} 
+              username={user?.username || user?.name || 'Usuario'}
+            />
+          </div>
         </main>
 
         {/* Modal de chat usuario-usuario */}

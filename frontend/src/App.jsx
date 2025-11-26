@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import StoreProfilePage from "./pages/StoreProfilePage";
 import StorePublicPage from "./pages/StorePublic";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import CustomerProfilePage from "./pages/CustomerProfilePage";
 import CustomerPublicPage from "./pages/CustomerPublicPage";
 import ExploreStoresPage from "./pages/ExploreStoresPage";
@@ -85,6 +86,7 @@ export default function App() {
           }
         />
         <Route path="/tienda/:id" element={<StorePublicPage />} />
+        <Route path="/tienda/:storeId/producto/:productId" element={<ProductDetailPage />} />
 
         {/* Chat público de reserva */}
         <Route path="/reserva/:bookingId/chat" element={<BookingChatPage />} />

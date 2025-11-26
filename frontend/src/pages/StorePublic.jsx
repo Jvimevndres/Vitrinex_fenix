@@ -5,7 +5,7 @@ import {
   getStoreById,
   getStoreAvailability,
   createAppointment,
-  listStoreProducts,
+  listStoreProductsPublic,
   createStoreOrder,
 } from "../api/store";
 import {
@@ -21,6 +21,7 @@ import ModernProductsStore from "../components/ModernProductsStore"; // 🛒 Tie
 import PromotionalBanner from "../components/PromotionalBanner"; // 📢 Banners promocionales
 import ParticlesBackground from "../components/ParticlesBackground"; // 🎨 Partículas animadas
 import CustomerChatModal from "../components/CustomerChatModal"; // 💬 Chat con la tienda
+import ProductReviews from "../components/ProductReviews"; // ⭐ Reseñas y comentarios
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -911,7 +912,7 @@ export default function StorePublicPage() {
     try {
       setProductsLoading(true);
       setProductsError("");
-      const { data } = await listStoreProducts(id);
+      const { data } = await listStoreProductsPublic(id);
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
@@ -2353,6 +2354,22 @@ export default function StorePublicPage() {
           })() && (
             <ModernProductsStore store={store} appearance={appearance} />
           )}
+
+          {/* RESEÑAS Y COMENTARIOS */}
+          <section className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-4xl">⭐</span>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Reseñas y Comentarios
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Comparte tu experiencia con {store.name}
+                </p>
+              </div>
+            </div>
+            <ProductReviews storeId={store._id} productId={null} />
+          </section>
 
           <div className="flex justify-end">
             <button

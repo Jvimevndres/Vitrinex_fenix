@@ -1,9 +1,11 @@
 // src/components/ModernProductsStore.jsx
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { listStoreProductsPublic, createStoreOrder } from "../api/store";
 import CustomerChatModal from "./CustomerChatModal";
 
 export default function ModernProductsStore({ store, appearance }) {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -50,6 +52,13 @@ export default function ModernProductsStore({ store, appearance }) {
     return cats.sort();
   }, [products]);
 
+  // Función auxiliar para calcular precio final
+  const getFinalPrice = (product) => {
+    return product.discount > 0 
+      ? product.price * (1 - product.discount / 100) 
+      : product.price;
+  };
+
   // Filtrar y ordenar productos
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
@@ -78,12 +87,6 @@ export default function ModernProductsStore({ store, appearance }) {
 
     return filtered;
   }, [products, selectedCategory, searchQuery, sortBy]);
-
-  const getFinalPrice = (product) => {
-    return product.discount > 0 
-      ? product.price * (1 - product.discount / 100) 
-      : product.price;
-  };
 
   const addToCart = (product, quantity = 1) => {
     const existingItem = cart.find(item => item._id === product._id);
@@ -299,6 +302,7 @@ export default function ModernProductsStore({ store, appearance }) {
                 onAddToCart={addToCart}
                 onQuickView={setSelectedProduct}
                 primaryColor={primaryColor}
+                storeId={store._id}
               />
             ))}
           </div>
@@ -361,18 +365,23 @@ export default function ModernProductsStore({ store, appearance }) {
   );
 }
 
-function ProductCard({ product, onAddToCart, onQuickView, primaryColor }) {
+function ProductCard({ product, onAddToCart, onQuickView, primaryColor, storeId }) {
+  const navigate = useNavigate();
   const finalPrice = product.discount > 0 
     ? product.price * (1 - product.discount / 100) 
     : product.price;
   const hasStock = product.stock > 0;
+
+  const handleProductClick = () => {
+    navigate(`/tienda/${storeId}/producto/${product._id}`);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:border-gray-300 transition-all duration-300 group flex flex-col h-full">
       {/* Imagen */}
       <div 
         className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer flex-shrink-0"
-        onClick={() => onQuickView(product)}
+        onClick={handleProductClick}
       >
         {product.images?.[0] ? (
           <img
@@ -410,7 +419,13 @@ function ProductCard({ product, onAddToCart, onQuickView, primaryColor }) {
 
         {/* Quick view overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-          <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 py-2 bg-white text-gray-900 rounded-lg font-medium shadow-lg">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickView(product);
+            }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 py-2 bg-white text-gray-900 rounded-lg font-medium shadow-lg"
+          >
             Vista Rápida
           </button>
         </div>
@@ -424,7 +439,11 @@ function ProductCard({ product, onAddToCart, onQuickView, primaryColor }) {
           </span>
         )}
         
-        <h3 className="font-semibold text-gray-900 text-base mb-3" style={{ minHeight: '3rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 
+          onClick={handleProductClick}
+          className="font-semibold text-gray-900 text-base mb-3 cursor-pointer hover:text-blue-600 transition-colors" 
+          style={{ minHeight: '3rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+        >
           {product.name}
         </h3>
 

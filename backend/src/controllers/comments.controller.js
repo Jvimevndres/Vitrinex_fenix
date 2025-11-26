@@ -116,3 +116,44 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Error eliminando comentario', error: error.message });
   }
 };
+
+// Obtener comentarios públicos de una tienda
+export const getStoreComments = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+
+    const comments = await Comment.find({ 
+      store: storeId,
+      type: 'store'
+    })
+      .populate('user', 'username avatarUrl')
+      .sort({ createdAt: -1 });
+
+    res.json(comments);
+  } catch (error) {
+    console.error('Error obteniendo comentarios de tienda:', error);
+    res.status(500).json({ message: 'Error obteniendo comentarios', error: error.message });
+  }
+};
+
+// Obtener comentarios públicos relacionados a un usuario
+export const getUserComments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const comments = await Comment.find({ 
+      $or: [
+        { user: userId },
+        { message: { $regex: userId, $options: 'i' } }
+      ]
+    })
+      .populate('user', 'username avatarUrl')
+      .sort({ createdAt: -1 });
+
+    res.json(comments);
+  } catch (error) {
+    console.error('Error obteniendo comentarios de usuario:', error);
+    res.status(500).json({ message: 'Error obteniendo comentarios', error: error.message });
+  }
+};
+

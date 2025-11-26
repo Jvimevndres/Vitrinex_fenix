@@ -7,9 +7,15 @@ import {
   getMyComments,
   updateCommentStatus,
   deleteComment,
+  getStoreComments,
+  getUserComments,
 } from '../controllers/comments.controller.js';
 
 const router = Router();
+
+// Rutas públicas
+router.get('/store/:storeId', getStoreComments);
+router.get('/user/:userId', getUserComments);
 
 // Rutas para usuarios autenticados
 router.post('/', authRequired, createComment);
