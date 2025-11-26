@@ -1493,17 +1493,17 @@ export default function StorePublicPage() {
         </div>
 
         {/* Layout con Sidebars */}
-        <div className="max-w-7xl mx-auto px-6 py-10">
-          <div className="flex gap-6">
+        <div className="w-full px-4 py-10">
+          <div className="flex gap-6 max-w-[2000px] mx-auto">
             {/* Sidebar Izquierda */}
-            <aside className="hidden lg:block w-64 flex-shrink-0">
+            <aside className="hidden xl:block w-72 flex-shrink-0">
               <div className="sticky top-4">
                 <PromotionalBanner position="sidebarLeft" store={store} />
               </div>
             </aside>
 
             {/* Contenido Principal */}
-            <main className="flex-1 min-w-0 space-y-6">
+            <main className="flex-1 min-w-0 space-y-6 max-w-[1400px] mx-auto">
           {/* HERO */}
           {appearance?.sections?.hero !== false && (
           <section
@@ -2368,7 +2368,7 @@ export default function StorePublicPage() {
         </main>
 
             {/* Sidebar Derecha */}
-            <aside className="hidden lg:block w-64 flex-shrink-0">
+            <aside className="hidden xl:block w-72 flex-shrink-0">
               <div className="sticky top-4">
                 <PromotionalBanner position="sidebarRight" store={store} />
               </div>

@@ -284,14 +284,14 @@ export default function ModernProductsStore({ store, appearance }) {
       </div>
 
       {/* Grid de productos */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-10">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-gray-400 text-5xl mb-4">🔍</div>
             <p className="text-gray-600">No se encontraron productos</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {filteredProducts.map(product => (
               <ProductCard
                 key={product._id}
@@ -368,10 +368,10 @@ function ProductCard({ product, onAddToCart, onQuickView, primaryColor }) {
   const hasStock = product.stock > 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-2xl hover:border-gray-300 transition-all duration-300 group flex flex-col h-full">
       {/* Imagen */}
       <div 
-        className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer"
+        className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer flex-shrink-0"
         onClick={() => onQuickView(product)}
       >
         {product.images?.[0] ? (
@@ -417,51 +417,61 @@ function ProductCard({ product, onAddToCart, onQuickView, primaryColor }) {
       </div>
 
       {/* Info */}
-      <div className="p-4 space-y-3">
+      <div className="p-5 flex flex-col flex-1">
         {product.category && (
-          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
             {product.category}
           </span>
         )}
         
-        <h3 className="font-semibold text-gray-900 line-clamp-2 min-h-[3rem]">
+        <h3 className="font-semibold text-gray-900 text-base mb-3" style={{ minHeight: '3rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {product.name}
         </h3>
 
-        {product.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {product.description}
-          </p>
-        )}
-
-        {/* Precio */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-gray-900">
-            ${finalPrice.toLocaleString()}
-          </span>
-          {product.discount > 0 && (
-            <span className="text-sm text-gray-400 line-through">
-              ${product.price.toLocaleString()}
-            </span>
-          )}
-        </div>
+        <p className="text-sm text-gray-600 leading-relaxed mb-4" style={{ minHeight: '4rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {product.description || 'Sin descripción disponible'}
+        </p>
 
         {/* Tags */}
         {product.tags && product.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5 mb-4" style={{ minHeight: '2rem' }}>
             {product.tags.slice(0, 3).map(tag => (
-              <span key={tag} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+              <span key={tag} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md h-fit">
                 {tag}
               </span>
             ))}
           </div>
         )}
 
-        {/* Botón de agregar */}
+        {/* Spacer para empujar el precio y botón al fondo */}
+        <div className="flex-1"></div>
+
+        {/* Precio - Mejorado */}
+        <div className="py-3 border-t border-b border-gray-100 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <span className="text-2xl font-bold text-gray-900">
+                ${Math.round(finalPrice).toLocaleString('es-CL')}
+              </span>
+              {product.discount > 0 && (
+                <span className="text-sm text-gray-400 line-through">
+                  ${Math.round(product.price).toLocaleString('es-CL')}
+                </span>
+              )}
+            </div>
+            {product.stock !== undefined && (
+              <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                Stock: {product.stock}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Botón de agregar - Mejorado */}
         <button
           onClick={() => onAddToCart(product)}
           disabled={!hasStock}
-          className="w-full py-3 text-white rounded-lg font-medium transition-all disabled:bg-gray-300 disabled:cursor-not-allowed hover:shadow-lg"
+          className="w-full py-3.5 text-white rounded-lg font-semibold transition-all disabled:bg-gray-300 disabled:cursor-not-allowed hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
           style={{ backgroundColor: hasStock ? primaryColor : undefined }}
         >
           {hasStock ? "🛒 Agregar al Carrito" : "Sin Stock"}
@@ -522,7 +532,7 @@ function CartSidebar({ cart, show, onClose, onUpdateQuantity, onRemove, onChecko
             <div className="flex items-center justify-between text-lg">
               <span className="font-semibold text-gray-700">Total:</span>
               <span className="text-2xl font-bold text-gray-900">
-                ${total.toLocaleString()}
+                ${Math.round(total).toLocaleString('es-CL')}
               </span>
             </div>
             <button
@@ -558,7 +568,7 @@ function CartItem({ item, onUpdateQuantity, onRemove }) {
 
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-        <p className="text-sm text-gray-500">${finalPrice.toLocaleString()} c/u</p>
+        <p className="text-sm text-gray-500">${Math.round(finalPrice).toLocaleString('es-CL')} c/u</p>
         
         <div className="flex items-center gap-3 mt-2">
           <div className="flex items-center border border-gray-300 rounded-lg">
@@ -589,7 +599,7 @@ function CartItem({ item, onUpdateQuantity, onRemove }) {
 
       <div className="text-right">
         <p className="font-bold text-gray-900">
-          ${(finalPrice * item.quantity).toLocaleString()}
+          ${Math.round(finalPrice * item.quantity).toLocaleString('es-CL')}
         </p>
       </div>
     </div>
@@ -643,13 +653,13 @@ function CheckoutModal({ cart, total, form, setForm, onSubmit, onClose, submitti
                   {item.quantity}x {item.name}
                 </span>
                 <span className="font-medium text-gray-900">
-                  ${((item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price) * item.quantity).toLocaleString()}
+                  ${Math.round((item.discount > 0 ? item.price * (1 - item.discount / 100) : item.price) * item.quantity).toLocaleString('es-CL')}
                 </span>
               </div>
             ))}
             <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between font-bold text-lg">
               <span>Total:</span>
-              <span>${total.toLocaleString()}</span>
+              <span>${Math.round(total).toLocaleString('es-CL')}</span>
             </div>
           </div>
 
@@ -812,12 +822,12 @@ function ProductQuickView({ product, onClose, onAddToCart, primaryColor }) {
 
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-gray-900">
-                  ${finalPrice.toLocaleString()}
+                  ${Math.round(finalPrice).toLocaleString('es-CL')}
                 </span>
                 {product.discount > 0 && (
                   <>
                     <span className="text-xl text-gray-400 line-through">
-                      ${product.price.toLocaleString()}
+                      ${Math.round(product.price).toLocaleString('es-CL')}
                     </span>
                     <span className="px-2 py-1 bg-red-500 text-white text-sm font-bold rounded">
                       -{product.discount}%
