@@ -1,5 +1,6 @@
 // frontend/src/components/UserChatModal.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { getUserMessages, sendUserMessage } from "../api/messages";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,10 +14,12 @@ export default function UserChatModal({
   onClose 
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (!user || !targetUserId) return;
@@ -26,6 +29,11 @@ export default function UserChatModal({
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [targetUserId, user]);
+
+  useEffect(() => {
+    // Scroll automático al final cuando cambien los mensajes
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const loadMessages = async () => {
     try {
@@ -89,7 +97,7 @@ export default function UserChatModal({
         </div>
 
         {/* Mensajes */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-slate-100">
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
@@ -102,53 +110,124 @@ export default function UserChatModal({
               <p className="text-xs text-slate-400 mt-1">Escribe un mensaje para iniciar la conversación</p>
             </div>
           ) : (
-            messages.map(msg => {
-              const isMine = msg.fromUser._id === user._id;
-              return (
-                <div key={msg._id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] rounded-xl px-4 py-2 shadow-sm ${
-                    isMine
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                      : 'bg-white text-slate-900 border border-slate-200'
-                  }`}>
+            <>
+              {messages.map(msg => {
+                const isMine = msg.fromUser._id === user._id;
+                const otherUser = isMine ? { username: targetUsername } : msg.fromUser;
+                
+                return (
+                  <div key={msg._id} className={`flex gap-3 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    {/* Avatar izquierda (otro usuario) */}
                     {!isMine && (
-                      <p className="text-xs font-semibold mb-1 opacity-70">
-                        {msg.fromUser.username || msg.fromUser.email}
-                      </p>
+                      <button 
+                        onClick={() => navigate(`/usuario/${msg.fromUser._id}`)}
+                        className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                        title="Ver perfil del usuario"
+                      >
+                        {msg.fromUser.avatarUrl ? (
+                          <img 
+                            src={msg.fromUser.avatarUrl} 
+                            alt={msg.fromUser.username} 
+                            className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-blue-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+                            {(msg.fromUser.username || msg.fromUser.email || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </button>
                     )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${isMine ? 'text-purple-100' : 'text-slate-500'}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+
+                    {/* Burbuja de mensaje */}
+                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-lg ${
+                      isMine
+                        ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-tr-sm' 
+                        : 'bg-white text-slate-900 border border-slate-200 rounded-tl-sm'
+                    }`}>
+                      {!isMine && (
+                        <p className="text-xs font-bold mb-1 text-blue-600">
+                          {msg.fromUser.username || msg.fromUser.email}
+                        </p>
+                      )}
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className={`text-xs ${isMine ? 'text-purple-100' : 'text-slate-400'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Avatar derecha (yo) */}
+                    {isMine && (
+                      <button 
+                        onClick={() => navigate(`/usuario/${user._id}`)}
+                        className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                        title="Ver mi perfil"
+                      >
+                        {user?.avatarUrl ? (
+                          <img 
+                            src={user.avatarUrl} 
+                            alt={user.username} 
+                            className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-purple-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md">
+                            {(user?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </button>
+                    )}
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
           )}
         </div>
 
         {/* Input */}
         <div className="p-4 border-t border-slate-200 bg-white rounded-b-2xl">
-          <div className="flex gap-2">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Escribe tu mensaje..."
-              rows={2}
-              disabled={sending}
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-100"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!newMessage.trim() || sending}
-              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed disabled:scale-100 self-end"
-            >
-              {sending ? "..." : "📤"}
-            </button>
+          <div className="flex gap-3 items-end">
+            {/* Avatar del usuario */}
+            <div className="flex-shrink-0 mb-1">
+              {user?.avatarUrl ? (
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.username} 
+                  className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-slate-200"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md">
+                  {(user?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 flex gap-2">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Escribe tu mensaje..."
+                rows={2}
+                disabled={sending}
+                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-slate-100 transition-all"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!newMessage.trim() || sending}
+                className="px-5 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-medium hover:from-purple-600 hover:to-pink-700 transition-all disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed self-end shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center min-w-[60px]"
+              >
+                {sending ? (
+                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                ) : (
+                  <span className="text-xl">📤</span>
+                )}
+              </button>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Presiona Enter para enviar, Shift + Enter para nueva línea
+          <p className="text-xs text-slate-500 mt-2 ml-14">
+            💡 Presiona Enter para enviar, Shift + Enter para nueva línea
           </p>
         </div>
       </div>

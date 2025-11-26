@@ -1,11 +1,13 @@
 // frontend/src/components/UnifiedChatManager.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { listStoreOrders } from "../api/store";
 import { listStoreAppointments } from "../api/store";
 import { getOrderMessages, sendOrderMessage } from "../api/messages";
 import { getBookingMessages, sendMessage } from "../api/messages";
 
 export default function UnifiedChatManager({ storeId, storeMode }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(storeMode === "products" ? "orders" : "bookings");
   const [orders, setOrders] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -126,26 +128,38 @@ export default function UnifiedChatManager({ storeId, storeMode }) {
                     selectedConversation?.id === conv.id ? "bg-blue-50 border-l-4 border-blue-600" : ""
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-semibold text-slate-900">{conv.customerName}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      conv.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                      conv.status === "confirmed" ? "bg-green-100 text-green-800" :
-                      conv.status === "fulfilled" || conv.status === "completed" ? "bg-blue-100 text-blue-800" :
-                      "bg-red-100 text-red-800"
-                    }`}>
-                      {conv.status === "pending" ? "Pendiente" :
-                       conv.status === "confirmed" ? "Confirmado" :
-                       conv.status === "fulfilled" || conv.status === "completed" ? "Completado" :
-                       "Cancelado"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mb-1">{conv.details}</p>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span>📅 {new Date(conv.date).toLocaleDateString('es-CL')}</span>
-                    {conv.customerPhone && (
-                      <span>📱 {conv.customerPhone}</span>
-                    )}
+                  <div className="flex gap-3">
+                    {/* Avatar del cliente */}
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md text-lg">
+                        {conv.customerName.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    
+                    {/* Información */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="font-semibold text-slate-900 truncate">{conv.customerName}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                          conv.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                          conv.status === "confirmed" ? "bg-green-100 text-green-800" :
+                          conv.status === "fulfilled" || conv.status === "completed" ? "bg-blue-100 text-blue-800" :
+                          "bg-red-100 text-red-800"
+                        }`}>
+                          {conv.status === "pending" ? "Pendiente" :
+                           conv.status === "confirmed" ? "Confirmado" :
+                           conv.status === "fulfilled" || conv.status === "completed" ? "Completado" :
+                           "Cancelado"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 mb-1 truncate">{conv.details}</p>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>📅 {new Date(conv.date).toLocaleDateString('es-CL')}</span>
+                        {conv.customerPhone && (
+                          <span>📱 {conv.customerPhone}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -156,7 +170,7 @@ export default function UnifiedChatManager({ storeId, storeMode }) {
         {/* Área de chat */}
         <div className="flex-1 flex flex-col">
           {selectedConversation ? (
-            <ChatArea conversation={selectedConversation} />
+            <ChatArea conversation={selectedConversation} navigate={navigate} />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-slate-50">
               <div className="text-center">
@@ -174,11 +188,12 @@ export default function UnifiedChatManager({ storeId, storeMode }) {
 }
 
 // Componente de área de chat
-function ChatArea({ conversation }) {
+function ChatArea({ conversation, navigate }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadMessages();
@@ -186,6 +201,11 @@ function ChatArea({ conversation }) {
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [conversation.id]);
+
+  useEffect(() => {
+    // Scroll automático al final cuando cambien los mensajes
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const loadMessages = async () => {
     try {
@@ -243,11 +263,17 @@ function ChatArea({ conversation }) {
   return (
     <>
       {/* Header del chat */}
-      <div className="p-4 border-b border-slate-200 bg-white">
+      <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-slate-900">{conversation.customerName}</h3>
-            <p className="text-sm text-slate-600">{conversation.details}</p>
+          <div className="flex items-center gap-3">
+            {/* Avatar del cliente */}
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md text-lg">
+              {conversation.customerName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">{conversation.customerName}</h3>
+              <p className="text-sm text-slate-600">{conversation.details}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {conversation.customerEmail && (
@@ -273,10 +299,10 @@ function ChatArea({ conversation }) {
       </div>
 
       {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-slate-100">
         {/* Info */}
         <div className="text-center">
-          <div className="inline-block bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-600">
+          <div className="inline-block bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-600 shadow-sm">
             {conversation.type === "order" ? "Pedido" : "Reserva"} realizado el{" "}
             {new Date(conversation.date).toLocaleString('es-CL', {
               day: '2-digit',
@@ -303,44 +329,84 @@ function ChatArea({ conversation }) {
         )}
 
         {!loading && messages.map(msg => (
-          <div key={msg._id} className={`flex ${msg.senderType === 'owner' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[75%] rounded-xl px-4 py-2 shadow-sm ${
+          <div key={msg._id} className={`flex gap-3 ${msg.senderType === 'owner' ? 'justify-end' : 'justify-start'}`}>
+            {/* Avatar izquierda (Cliente) */}
+            {msg.senderType === 'customer' && (
+              <button 
+                className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                title="Ver perfil del cliente"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md">
+                  {(msg.senderName || conversation.customerName).charAt(0).toUpperCase()}
+                </div>
+              </button>
+            )}
+
+            {/* Burbuja de mensaje */}
+            <div className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-lg ${
               msg.senderType === 'owner' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-slate-900 border border-slate-200'
+                ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-sm' 
+                : 'bg-white text-slate-900 border border-slate-200 rounded-tl-sm'
             }`}>
               {msg.senderType === 'customer' && msg.senderName && (
-                <p className="text-xs font-semibold mb-1 opacity-70">{msg.senderName}</p>
+                <p className="text-xs font-bold mb-1 text-purple-600">{msg.senderName}</p>
               )}
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              <p className={`text-xs mt-1 ${msg.senderType === 'owner' ? 'text-blue-100' : 'text-slate-500'}`}>
-                {new Date(msg.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                {msg.isRead && msg.senderType === 'owner' && ' · ✓✓'}
-              </p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className={`text-xs ${msg.senderType === 'owner' ? 'text-blue-100' : 'text-slate-400'}`}>
+                  {new Date(msg.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+                {msg.isRead && msg.senderType === 'owner' && (
+                  <span className="text-xs text-blue-100">✓✓</span>
+                )}
+              </div>
             </div>
+
+            {/* Avatar derecha (Tienda) */}
+            {msg.senderType === 'owner' && (
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+                  🏪
+                </div>
+              </div>
+            )}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
       <div className="p-4 border-t border-slate-200 bg-white">
-        <div className="flex gap-2">
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Escribe un mensaje..."
-            rows={2}
-            disabled={sending}
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!newMessage.trim() || sending}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed self-end"
-          >
-            {sending ? "..." : "📤"}
-          </button>
+        <div className="flex gap-3 items-end">
+          {/* Avatar de la tienda */}
+          <div className="flex-shrink-0 mb-1">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+              🏪
+            </div>
+          </div>
+          
+          <div className="flex-1 flex gap-2">
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Escribe un mensaje..."
+              rows={2}
+              disabled={sending}
+              className="flex-1 px-4 py-3 border border-slate-300 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 transition-all"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!newMessage.trim() || sending}
+              className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed self-end shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center min-w-[60px]"
+            >
+              {sending ? (
+                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+              ) : (
+                <span className="text-xl">📤</span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </>

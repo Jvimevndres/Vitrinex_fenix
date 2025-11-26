@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   getBookingMessages, 
   sendMessage, 
@@ -21,6 +22,7 @@ import {
  * @param {Function} props.onClose - Callback para cerrar el chat
  */
 export default function ChatBox({ bookingId, orderId, userType = 'customer', userEmail, bookingInfo, onClose }) {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export default function ChatBox({ bookingId, orderId, userType = 'customer', use
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-slate-100">
           {loading ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -195,25 +197,70 @@ export default function ChatBox({ bookingId, orderId, userType = 'customer', use
                 return (
                   <div
                     key={msg._id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    className={`flex gap-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                   >
+                    {/* Avatar izquierda */}
+                    {!isOwnMessage && (
+                      <button 
+                        className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                        title={userType === 'owner' ? 'Ver perfil del cliente' : 'Ver perfil de la tienda'}
+                      >
+                        {msg.sender?.avatarUrl ? (
+                          <img 
+                            src={msg.sender.avatarUrl} 
+                            alt={msg.sender.username || 'Usuario'} 
+                            className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-blue-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+                            {userType === 'owner' ? (
+                              (msg.senderName || bookingInfo?.customerName || 'C').charAt(0).toUpperCase()
+                            ) : (
+                              '🏪'
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Burbuja de mensaje */}
                     <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                      className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-lg ${
                         isOwnMessage
-                          ? 'bg-blue-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-800 shadow-sm rounded-bl-none'
+                          ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-sm'
+                          : 'bg-white text-gray-800 border border-slate-200 rounded-tl-sm'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
                       <div
-                        className={`text-xs mt-1 ${
+                        className={`text-xs mt-2 flex items-center gap-2 ${
                           isOwnMessage ? 'text-blue-100' : 'text-gray-500'
                         }`}
                       >
-                        {formatTime(msg.createdAt)}
-                        {isOwnMessage && msg.isRead && ' • Leído'}
+                        <span>{formatTime(msg.createdAt)}</span>
+                        {isOwnMessage && msg.isRead && <span>✓✓</span>}
                       </div>
                     </div>
+
+                    {/* Avatar derecha */}
+                    {isOwnMessage && (
+                      <button 
+                        className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                        title={userType === 'owner' ? 'Ver perfil de la tienda' : 'Ver mi perfil'}
+                      >
+                        {msg.sender?.avatarUrl ? (
+                          <img 
+                            src={msg.sender.avatarUrl} 
+                            alt={msg.sender.username || 'Usuario'} 
+                            className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-purple-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md">
+                            {userType === 'owner' ? '🏪' : (msg.senderName || bookingInfo?.customerName || 'C').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -231,30 +278,40 @@ export default function ChatBox({ bookingId, orderId, userType = 'customer', use
 
         {/* Input Area */}
         <form onSubmit={handleSend} className="p-4 border-t bg-white rounded-b-lg">
-          <div className="flex gap-2">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Escribe tu mensaje..."
-              className="flex-1 resize-none border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows="2"
-              disabled={sending}
-              maxLength={1000}
-            />
-            <button
-              type="submit"
-              disabled={sending || !newMessage.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {sending ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                'Enviar'
-              )}
-            </button>
+          <div className="flex gap-3 items-end">
+            {/* Avatar del usuario */}
+            <div className="flex-shrink-0 mb-1">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold shadow-md">
+                {userType === 'owner' ? '🏪' : (bookingInfo?.customerName || 'C').charAt(0).toUpperCase()}
+              </div>
+            </div>
+            
+            <div className="flex-1 flex gap-2">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Escribe tu mensaje..."
+                className="flex-1 resize-none border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                rows="2"
+                disabled={sending}
+                maxLength={1000}
+              />
+              <button
+                type="submit"
+                disabled={sending || !newMessage.trim()}
+                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed transition-all font-medium shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center min-w-[60px] self-end"
+              >
+                {sending ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                ) : (
+                  <span className="text-xl">📤</span>
+                )}
+              </button>
+            </div>
           </div>
-          <div className="text-xs text-gray-500 mt-1 text-right">
-            {newMessage.length}/1000
+          <div className="text-xs text-gray-500 mt-2 ml-14 flex justify-between">
+            <span>💡 Enter para enviar, Shift + Enter para nueva línea</span>
+            <span>{newMessage.length}/1000</span>
           </div>
         </form>
       </div>

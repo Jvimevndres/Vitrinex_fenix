@@ -25,7 +25,7 @@ export const getBookingMessages = async (req, res) => {
 
     // Obtener mensajes
     const messages = await Message.find({ booking: bookingId })
-      .populate("sender", "username email")
+      .populate("sender", "username email avatarUrl")
       .sort({ createdAt: 1 });
 
     // Marcar mensajes del cliente como leídos por el owner
@@ -99,7 +99,7 @@ export const sendMessage = async (req, res) => {
     await booking.save();
 
     // Poblar sender
-    await message.populate("sender", "username email");
+    await message.populate("sender", "username email avatarUrl");
 
     return res.status(201).json(message);
   } catch (error) {
@@ -134,8 +134,8 @@ export const getUserMessages = async (req, res) => {
         { fromUser: userId, toUser: currentUserId }
       ]
     })
-      .populate("fromUser", "username email avatar")
-      .populate("toUser", "username email avatar")
+      .populate("fromUser", "username email avatarUrl")
+      .populate("toUser", "username email avatarUrl")
       .sort({ createdAt: 1 });
 
     // Marcar como leídos los mensajes que recibió el usuario actual
@@ -205,8 +205,8 @@ export const sendUserMessage = async (req, res) => {
     await message.save();
 
     // Poblar datos para la respuesta
-    await message.populate("fromUser", "username email avatar");
-    await message.populate("toUser", "username email avatar");
+    await message.populate("fromUser", "username email avatarUrl");
+    await message.populate("toUser", "username email avatarUrl");
 
     return res.status(201).json(message);
   } catch (error) {
@@ -231,8 +231,8 @@ export const getUserConversations = async (req, res) => {
         { toUser: currentUserId }
       ]
     })
-      .populate("fromUser", "username email avatar")
-      .populate("toUser", "username email avatar")
+      .populate("fromUser", "username email avatarUrl")
+      .populate("toUser", "username email avatarUrl")
       .sort({ createdAt: -1 });
 
     // Agrupar por conversación (usuario con quien se chatea)
@@ -305,7 +305,7 @@ export const getBookingMessagesPublic = async (req, res) => {
 
     // Obtener mensajes
     const messages = await Message.find({ booking: bookingId })
-      .populate("sender", "username")
+      .populate("sender", "username avatarUrl")
       .sort({ createdAt: 1 });
 
     // Marcar mensajes del owner como leídos por el cliente
@@ -607,7 +607,7 @@ export const getOrderMessagesPublic = async (req, res) => {
 
     // Obtener mensajes
     const messages = await Message.find({ order: orderId })
-      .populate("sender", "username")
+      .populate("sender", "username avatarUrl")
       .sort({ createdAt: 1 });
 
     // Marcar mensajes del owner como leídos por el cliente
