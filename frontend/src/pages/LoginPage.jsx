@@ -57,6 +57,18 @@ export default function LoginPage() {
            transition: 'background 420ms ease'
          }}>
       
+      {/* Header */}
+      <header className="relative z-20 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <span className="text-white font-bold text-xl">V</span>
+            </div>
+            <span className="text-2xl font-bold text-white">Vitrinex</span>
+          </Link>
+        </div>
+      </header>
+      
       <div className="flex-1 flex items-center justify-center px-4 py-12">
       
       {/* Animated stars background */}
@@ -140,10 +152,38 @@ export default function LoginPage() {
             }}
             aria-hidden="true"
           >
-            <h2 className="text-4xl font-extrabold leading-tight">Login & Register</h2>
+            <h2 className="text-4xl font-extrabold leading-tight">
+              Bienvenido de vuelta
+            </h2>
             <p className="mt-3 text-violet-100 max-w-md">
-              Accede a tu cuenta para gestionar tus tiendas en Vitrinex. Diseño moderno, claro y enfocado en conversión.
+              Accede a tu cuenta para gestionar tus tiendas, productos y servicios en Vitrinex. Todo en un solo lugar.
             </p>
+            <div className="flex items-center gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm">Seguro</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                </div>
+                <span className="text-sm">Confiable</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm">Rápido</span>
+              </div>
+            </div>
           </div>
 
           <div className="w-full rounded-2xl p-6 shadow-lg border" style={{
@@ -151,11 +191,28 @@ export default function LoginPage() {
             backdropFilter: 'blur(10px)',
             borderColor: 'rgba(255, 255, 255, 0.2)'
           }}>
-            <h3 className="text-lg font-semibold text-white">Beneficios</h3>
-            <ul className="mt-3 text-sm text-slate-200 space-y-2">
-              <li>• Control total de tus tiendas</li>
-              <li>• Subidas y estadísticas en tiempo real</li>
-              <li>• Integraciones y soporte</li>
+            <h3 className="text-lg font-semibold text-white mb-3">✨ Beneficios de Vitrinex</h3>
+            <ul className="text-sm text-slate-200 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Control total de tus tiendas y productos</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Estadísticas en tiempo real</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Sistema de reservas integrado</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Chatbot con IA para análisis de negocio</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Soporte técnico dedicado</span>
+              </li>
             </ul>
           </div>
         </section>
@@ -163,16 +220,20 @@ export default function LoginPage() {
         {/* Login card */}
         <section className="flex justify-center">
           <div className="w-full max-w-md">
-            <div className="rounded-3xl shadow-xl overflow-hidden" style={{
+            <div className="rounded-3xl shadow-2xl overflow-hidden" style={{
               background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(255, 255, 255, 0.2)'
             }}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold text-white">Iniciar sesión</h1>
-                <p className="text-sm text-slate-200 mt-1">
-                  Accede a tu cuenta para administrar tus negocios en Vitrinex.
+              {/* Card Header */}
+              <div className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 px-8 py-6 border-b border-white/10">
+                <h1 className="text-3xl font-bold text-white">Iniciar sesión</h1>
+                <p className="text-sm text-slate-200 mt-2">
+                  Ingresa tus credenciales para acceder a tu cuenta
                 </p>
+              </div>
+              
+              <div className="p-8">
 
                 {error && (
                   <div className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">

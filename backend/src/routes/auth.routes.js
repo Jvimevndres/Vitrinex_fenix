@@ -10,6 +10,7 @@ import {
   getPublicProfile,
   updateUserPlan
 } from "../controllers/auth.controller.js";
+import { forgotPassword, resetPassword } from "../controllers/passwordReset.controller.js";
 import { authRequired } from "../middlewares/authRequired.js";
 
 const router = Router();
@@ -32,6 +33,10 @@ const authLimiter = rateLimit({
 router.post("/register", authLimiter, register);
 router.post("/login", authLimiter, login);
 router.post("/logout", logout);
+
+// Recuperación de contraseña
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // Perfil privado (usuario logueado)
 router.get("/profile", authRequired, getProfile);

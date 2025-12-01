@@ -62,6 +62,18 @@ export default function RegisterPage() {
            transition: 'background 420ms ease'
          }}>
       
+      {/* Header */}
+      <header className="relative z-20 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <span className="text-white font-bold text-xl">V</span>
+            </div>
+            <span className="text-2xl font-bold text-white">Vitrinex</span>
+          </Link>
+        </div>
+      </header>
+      
       <div className="flex-1 flex items-center justify-center px-4 py-12">
       
       {/* Animated stars background */}
@@ -146,12 +158,38 @@ export default function RegisterPage() {
             aria-hidden="true"
           >
             <h2 className="text-4xl font-extrabold leading-tight">
-              Bienvenido a Vitrinex
+              Únete a Vitrinex
             </h2>
             <p className="mt-3 text-violet-100 max-w-md">
-              Crea tu cuenta para empezar a administrar tus negocios, subir
-              productos y ver estadísticas en tiempo real.
+              Crea tu cuenta y comienza a gestionar tus tiendas de forma profesional. Todo lo que necesitas en una sola plataforma.
             </p>
+            <div className="flex items-center gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm">Fácil de usar</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm">Gratis</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-sm">Potente</span>
+              </div>
+            </div>
           </div>
 
           <div className="w-full rounded-2xl p-6 shadow-lg border" style={{
@@ -159,11 +197,28 @@ export default function RegisterPage() {
             backdropFilter: 'blur(10px)',
             borderColor: 'rgba(255, 255, 255, 0.2)'
           }}>
-            <h3 className="text-lg font-semibold text-white">Beneficios</h3>
-            <ul className="mt-3 text-sm text-slate-200 space-y-2">
-              <li>• Publica y administra tus tiendas</li>
-              <li>• Accede a métricas y estadísticas</li>
-              <li>• Integraciones y soporte dedicado</li>
+            <h3 className="text-lg font-semibold text-white mb-3">🚀 Lo que obtienes</h3>
+            <ul className="text-sm text-slate-200 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Panel de administración completo</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Gestión de productos y servicios</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Sistema de reservas automático</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Análisis con IA personalizado</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-violet-400 mt-0.5">✓</span>
+                <span>Chat en tiempo real con clientes</span>
+              </li>
             </ul>
           </div>
         </section>
@@ -171,18 +226,22 @@ export default function RegisterPage() {
         {/* Register card */}
         <section className="flex justify-center">
           <div className="w-full max-w-md">
-            <div className="rounded-3xl shadow-xl overflow-hidden" style={{
+            <div className="rounded-3xl shadow-2xl overflow-hidden" style={{
               background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(255, 255, 255, 0.2)'
             }}>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold text-white">
+              {/* Card Header */}
+              <div className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 px-8 py-6 border-b border-white/10">
+                <h1 className="text-3xl font-bold text-white">
                   Crear cuenta
                 </h1>
-                <p className="text-sm text-slate-200 mt-1">
-                  Regístrate para empezar a usar Vitrinex.
+                <p className="text-sm text-slate-200 mt-2">
+                  Completa el formulario para registrarte en Vitrinex
                 </p>
+              </div>
+              
+              <div className="p-8">
 
                 {error && (
                   <div className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
