@@ -8,8 +8,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { sendChatbotMessage, sendPremiumChatbotMessage, checkChatbotHealth } from '../api/chatbot';
+import { getStoreAlerts } from '../api/alerts';
 import { useAuth } from '../context/AuthContext';
-import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown } from 'react-icons/fa';
+import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown, FaDownload, FaChartLine } from 'react-icons/fa';
+import { ChatbotChart, extractChartableData } from './ChatbotCharts';
+import { generatePDFReport, prepareExportData } from '../utils/pdfExporter';
 
 export default function ChatbotWidget() {
   const { user, isAuthenticated } = useAuth();
@@ -26,6 +29,9 @@ export default function ChatbotWidget() {
   const [error, setError] = useState(null);
   const [isDemoMode, setIsDemoMode] = useState(true); // Asumir DEMO por defecto
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [contextData, setContextData] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -34,6 +40,9 @@ export default function ChatbotWidget() {
   // Verificar estado del chatbot al montar el componente
   useEffect(() => {
     checkChatbotStatus();
+    if (user?.stores && user.stores[0]) {
+      loadAlerts(user.stores[0]._id);
+    }
   }, []);
 
   // Auto-scroll al final cuando hay nuevos mensajes
@@ -98,6 +107,30 @@ export default function ChatbotWidget() {
     }
   };
 
+  // Cargar alertas de la tienda
+  const loadAlerts = async (storeId) => {
+    try {
+      const response = await getStoreAlerts(storeId);
+      setAlerts(response.alerts || []);
+    } catch (err) {
+      console.error('❌ Error cargando alertas:', err);
+    }
+  };
+
+  // Exportar conversación a PDF
+  const exportToPDF = () => {
+    const lastAssistantMessage = messages.filter(m => m.role === 'assistant').pop();
+    if (!lastAssistantMessage) {
+      alert('No hay suficiente contenido para exportar');
+      return;
+    }
+
+    const exportData = prepareExportData(lastAssistantMessage.content, contextData);
+    const storeName = user?.stores?.[0]?.name || 'Mi Tienda';
+    
+    generatePDFReport(lastAssistantMessage.content, exportData, storeName);
+  };
+
   // Manejar envío de mensaje
   const handleSendMessage = async (e, directQuery = null) => {
     e.preventDefault();
@@ -140,7 +173,13 @@ export default function ChatbotWidget() {
         role: 'assistant',
         content: response.data.reply,
         timestamp: new Date(response.data.timestamp),
+        chartData: extractChartableData(response.data.reply), // Detectar si hay datos graficables
       };
+      
+      // Guardar contexto si viene en la respuesta (para PDF)
+      if (response.data.context) {
+        setContextData(response.data.context);
+      }
       
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
@@ -217,14 +256,68 @@ export default function ChatbotWidget() {
                 <p className="text-xs text-white/80">Siempre disponible para ayudarte</p>
               </div>
             </div>
-            <button
-              onClick={toggleChat}
-              className="hover:bg-white/20 rounded-full p-2 transition-colors"
-              aria-label="Cerrar chatbot"
-            >
-              <FaTimes className="text-xl" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Botón de exportar PDF */}
+              {messages.length > 1 && (
+                <button
+                  onClick={exportToPDF}
+                  className="hover:bg-white/20 rounded-full p-2 transition-colors"
+                  title="Exportar a PDF"
+                >
+                  <FaDownload className="text-lg" />
+                </button>
+              )}
+              {/* Botón de alertas */}
+              {alerts.length > 0 && (
+                <button
+                  onClick={() => setShowAlerts(!showAlerts)}
+                  className="hover:bg-white/20 rounded-full p-2 transition-colors relative"
+                  title="Ver alertas"
+                >
+                  <FaBell className="text-lg" />
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {alerts.length}
+                  </span>
+                </button>
+              )}
+              <button
+                onClick={toggleChat}
+                className="hover:bg-white/20 rounded-full p-2 transition-colors"
+                aria-label="Cerrar chatbot"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
           </div>
+
+          {/* Panel de alertas */}
+          {showAlerts && alerts.length > 0 && (
+            <div className="bg-white border-b border-slate-200 p-4 max-h-48 overflow-y-auto">
+              <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <FaBell className="text-orange-500" />
+                Alertas de tu negocio
+              </h4>
+              <div className="space-y-2">
+                {alerts.slice(0, 5).map((alert, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-2 rounded-lg border text-xs ${
+                      alert.type === 'critical'
+                        ? 'bg-red-50 border-red-300 text-red-800'
+                        : alert.type === 'warning'
+                        ? 'bg-orange-50 border-orange-300 text-orange-800'
+                        : alert.type === 'opportunity'
+                        ? 'bg-green-50 border-green-300 text-green-800'
+                        : 'bg-blue-50 border-blue-300 text-blue-800'
+                    }`}
+                  >
+                    <p className="font-semibold">{alert.title}</p>
+                    <p className="mt-1">{alert.message}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Menú de acciones rápidas */}
           {showQuickActions && (
@@ -284,6 +377,18 @@ export default function ChatbotWidget() {
                   <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                     {msg.content}
                   </p>
+                  
+                  {/* Mostrar gráfico si hay datos visualizables */}
+                  {msg.chartData && msg.role === 'assistant' && (
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FaChartLine className="text-indigo-600" />
+                        <span className="text-xs font-semibold text-slate-600">Visualización de datos</span>
+                      </div>
+                      <ChatbotChart chartData={msg.chartData} />
+                    </div>
+                  )}
+                  
                   <p
                     className={`text-xs mt-2 ${
                       msg.role === 'user' ? 'text-white/70' : 'text-slate-400'
