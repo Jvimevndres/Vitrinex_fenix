@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
 import { getStoreById, updateMyStore } from "../api/store";
+import { FaCog, FaPalette, FaBullhorn, FaShoppingBag, FaClipboardList, FaBox, FaComments, FaChartBar, FaCalendarAlt, FaWrench } from 'react-icons/fa';
 
 import BookingAvailabilityManager from "../components/BookingAvailabilityManager";
 import WeeklyScheduleEditor from "../components/WeeklyScheduleEditor";
@@ -439,7 +440,7 @@ export default function StoreProfilePage() {
                     : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                ⚙️ Configuración
+                <FaCog className="mr-1" /> Configuración
               </button>
 
               <button
@@ -461,7 +462,7 @@ export default function StoreProfilePage() {
                 onClick={() => setShowVisualBuilder(true)}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200 flex items-center gap-2"
               >
-                <span>🎨</span>
+                <FaPalette />
                 <span>Personalizar Apariencia</span>
               </button>
 
@@ -470,7 +471,7 @@ export default function StoreProfilePage() {
                 onClick={() => setShowAdsManager(true)}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center gap-2"
               >
-                <span>📢</span>
+                <FaBullhorn />
                 <span>Gestionar Anuncios</span>
               </button>
             </div>
@@ -483,8 +484,8 @@ export default function StoreProfilePage() {
             <nav className="hidden md:flex flex-col gap-2 bg-white/90 backdrop-blur border rounded-2xl shadow-sm p-4">
               {isProductsToolsView && (
                 <>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                    🛍️ Gestión de productos
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <FaShoppingBag /> Gestión de productos
                   </p>
 
                   <button
@@ -495,7 +496,7 @@ export default function StoreProfilePage() {
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    📋 Catálogo
+                    <FaClipboardList /> Catálogo
                   </button>
 
                   <button
@@ -506,7 +507,7 @@ export default function StoreProfilePage() {
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    📦 Pedidos
+                    <FaBox /> Pedidos
                   </button>
 
                   <button
@@ -535,8 +536,8 @@ export default function StoreProfilePage() {
 
               {isBookingsToolsView && (
                 <>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                    📅 Gestión de agendamiento
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <FaCalendarAlt /> Gestión de agendamiento
                   </p>
 
                   <button
@@ -547,7 +548,7 @@ export default function StoreProfilePage() {
                         : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    🔧 Servicios
+                    <FaWrench /> Servicios
                   </button>
 
                   <button

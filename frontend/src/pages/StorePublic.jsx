@@ -24,6 +24,12 @@ import CustomerChatModal from "../components/CustomerChatModal"; // 💬 Chat co
 import ProductReviews from "../components/ProductReviews"; // ⭐ Reseñas y comentarios
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { 
+  FaMapMarkerAlt, FaLightbulb, FaBullseye, FaBolt, FaStar, FaFire, 
+  FaGem, FaTrophy, FaMagic, FaPalette, FaRocket, FaDumbbell, 
+  FaCheckCircle, FaClock, FaShieldAlt, FaHeart, FaGift, FaThumbsUp,
+  FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward
+} from 'react-icons/fa';
 
 // ---------- Diccionarios ----------
 const DAY_LABELS = {
@@ -1561,7 +1567,7 @@ export default function StorePublicPage() {
 
               {store.direccion && (
                 <p className="text-sm text-slate-700 flex items-center gap-1">
-                  <span>📍</span>
+                  <FaMapMarkerAlt className="mr-1" />
                   <span>{store.direccion}</span>
                 </p>
               )}
@@ -1719,13 +1725,15 @@ export default function StorePublicPage() {
           {/* Cuadros Personalizados */}
           {store.customBoxes && store.customBoxes.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {store.customBoxes.map((box) => (
+              {store.customBoxes.map((box) => {
+                const IconComponent = getIconComponent(box.icon);
+                return (
                 <div
                   key={box.id}
                   className={`p-6 rounded-xl space-y-3 ${getCardStyle(appearance, colors).className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
                   style={getCardStyle(appearance, colors).style}
                 >
-                  <div className="text-4xl">{box.icon}</div>
+                  <IconComponent className="text-4xl" style={{ color: colors.primary }} />
                   <h4 
                     className="font-bold"
                     style={{
@@ -1746,7 +1754,7 @@ export default function StorePublicPage() {
                     {box.content}
                   </p>
                 </div>
-              ))}
+              );})}
             </div>
           )}
 
@@ -1767,7 +1775,7 @@ export default function StorePublicPage() {
                   color: colors.text
                 }}
               >
-                <span>⏰</span>
+                <FaClock className="mr-1" />
                 Horarios de Atención
               </h3>
               <p 
@@ -1802,7 +1810,7 @@ export default function StorePublicPage() {
                     color: colors.text
                   }}
                 >
-                  📅 Agenda tu Cita
+                  <FaCalendarAlt className="mr-2" /> Agenda tu Cita
                 </h3>
                 <p 
                   className="mt-2"
@@ -1886,7 +1894,7 @@ export default function StorePublicPage() {
                           }}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
                         >
-                          💬 Chatear con la tienda
+                          <FaComments className="mr-2" /> Chatear con la tienda
                         </button>
                       </div>
                     )}
@@ -1911,7 +1919,7 @@ export default function StorePublicPage() {
                     <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <h5 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                          <span>🔍</span>
+                          <FaSearch />
                           <span>Filtrar servicios</span>
                         </h5>
                         {(selectedTags.length > 0 || selectedCategory || searchText) && (
@@ -2148,7 +2156,7 @@ export default function StorePublicPage() {
                     </div>
                   ) : slotsForSelectedDay.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-4xl mb-4">📅</div>
+                      <FaCalendarAlt className="text-4xl mb-4" />
                       <p className="text-slate-600 font-medium mb-2">No hay horarios disponibles</p>
                       <div className="max-w-md mx-auto space-y-2 text-sm text-slate-500">
                         <p>Esto puede ocurrir porque:</p>

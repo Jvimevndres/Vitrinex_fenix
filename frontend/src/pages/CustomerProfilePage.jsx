@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import { getProfile, updateProfile } from "../api/user";
 import { listMyStores } from "../api/store";
 import axios from "../api/axios";
+import { FaCalendarAlt, FaStore, FaBox, FaHeart, FaComments, FaClock, FaLightbulb, FaArrowUp, FaMagic } from 'react-icons/fa';
 
 // Estilos CSS en línea para animaciones
 const styles = `
@@ -307,7 +308,7 @@ export default function CustomerProfilePage() {
                 )}
                 <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    📅 Desde {stats.accountCreated}
+                    <FaCalendarAlt className="mr-1" /> Desde {stats.accountCreated}
                   </span>
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
                     ⏱️ {stats.activeTime} activo
@@ -408,7 +409,7 @@ export default function CustomerProfilePage() {
               {stores.length > 0 && (
                 <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                   <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <span>🏪</span> Mis Tiendas
+                    <FaStore className="mr-1" /> Mis Tiendas
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {stores.map((store) => (
@@ -522,7 +523,7 @@ export default function CustomerProfilePage() {
                   {/* Tiempo activo */}
                   <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl p-6">
                     <div className="text-center space-y-3">
-                      <div className="text-5xl">⏰</div>
+                      <FaClock className="text-5xl" />
                       <p className="text-4xl font-bold text-white">{stats.activeTime}</p>
                       <p className="text-sm text-slate-300">Tiempo Activo</p>
                       <p className="text-xs text-slate-400">En la plataforma</p>
@@ -533,7 +534,7 @@ export default function CustomerProfilePage() {
                 {/* Mensaje informativo */}
                 <div className="mt-6 bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
                   <p className="text-sm text-slate-300 text-center">
-                    💡 <strong>Tip:</strong> Mantén una buena calificación completando tus transacciones y brindando un excelente servicio
+                    <FaLightbulb className="mr-1" /> <strong>Tip:</strong> Mantén una buena calificación completando tus transacciones y brindando un excelente servicio
                   </p>
                 </div>
               </div>
@@ -688,7 +689,11 @@ export default function CustomerProfilePage() {
                           onClick={() => window.location.href = '/pricing'}
                           className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
                         >
-                          {userData?.plan === 'premium' ? '✨ Ver Planes' : '⬆️ Mejorar Plan'}
+                          {userData?.plan === 'premium' ? (
+                            <><FaMagic className="mr-1" /> Ver Planes</>
+                          ) : (
+                            <><FaArrowUp className="mr-1" /> Mejorar Plan</>
+                          )}
                         </button>
                       </div>
 

@@ -1,6 +1,57 @@
 // src/components/StorePreviewRealistic.jsx
 import React, { useEffect, useState } from 'react';
 import ParticlesBackground from './ParticlesBackground';
+import { 
+  FaMapMarkerAlt, FaLightbulb, FaBullseye, FaBolt, FaStar, FaFire, 
+  FaGem, FaTrophy, FaMagic, FaPalette, FaRocket, FaDumbbell, 
+  FaCheckCircle, FaClock, FaShieldAlt, FaHeart, FaGift, FaThumbsUp,
+  FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward
+} from 'react-icons/fa';
+
+// Mapa de iconos
+const ICON_MAP = {
+  'pin': FaMapMarkerAlt,
+  'lightbulb': FaLightbulb,
+  'target': FaBullseye,
+  'bolt': FaBolt,
+  'star': FaStar,
+  'fire': FaFire,
+  'gem': FaGem,
+  'trophy': FaTrophy,
+  'magic': FaMagic,
+  'palette': FaPalette,
+  'rocket': FaRocket,
+  'dumbbell': FaDumbbell,
+  'check': FaCheckCircle,
+  'clock': FaClock,
+  'shield': FaShieldAlt,
+  'heart': FaHeart,
+  'gift': FaGift,
+  'thumbsup': FaThumbsUp,
+  'users': FaUsers,
+  'cog': FaCog,
+  'leaf': FaLeaf,
+  'medal': FaMedal,
+  'handshake': FaHandshake,
+  'award': FaAward,
+  // Compatibilidad con emojis
+  '📌': FaMapMarkerAlt,
+  '💡': FaLightbulb,
+  '🎯': FaBullseye,
+  '⚡': FaBolt,
+  '🌟': FaStar,
+  '🔥': FaFire,
+  '💎': FaGem,
+  '🏆': FaTrophy,
+  '✨': FaMagic,
+  '🎨': FaPalette,
+  '🚀': FaRocket,
+  '💪': FaDumbbell,
+};
+
+const getIconComponent = (iconKey) => {
+  return ICON_MAP[iconKey] || FaMapMarkerAlt;
+};
 
 /**
  * 🎨 StorePreviewRealistic
@@ -406,13 +457,15 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
         {/* Cuadros Personalizados */}
         {storeData?.customBoxes && storeData.customBoxes.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {storeData.customBoxes.map((box, idx) => (
+            {storeData.customBoxes.map((box, idx) => {
+              const IconComponent = getIconComponent(box.icon);
+              return (
               <div
                 key={box.id || idx}
                 className={`p-6 rounded-xl space-y-3 ${getCardStyle().className} ${appearance?.effects?.floatingHover ? 'floating-hover' : ''}`}
                 style={getCardStyle().style}
               >
-                <div className="text-4xl">{box.icon}</div>
+                <IconComponent className="text-4xl" style={{ color: colors.primary }} />
                 <h4
                   className="font-bold"
                   style={{
@@ -433,7 +486,7 @@ const StorePreviewRealistic = ({ appearance, storeData }) => {
                   {box.content}
                 </p>
               </div>
-            ))}
+            )})}
           </div>
         )}
 

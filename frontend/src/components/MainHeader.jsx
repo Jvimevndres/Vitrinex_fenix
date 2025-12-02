@@ -6,6 +6,7 @@ import { listMyStores, listStoreOrders, getStoreNotifications } from "../api/sto
 import { getBookingsWithMessages } from "../api/messages";
 import UserChatModal from "./UserChatModal"; // 🆕 Modal de chat usuario-usuario
 import axios from "../api/axios";
+import { FaBell, FaComments, FaStore, FaUser, FaUsers, FaFire, FaSnowflake } from 'react-icons/fa';
 
 /**
  * Props:
@@ -518,7 +519,7 @@ export default function MainHeader({
                     : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
-                🔥 Cálido
+                <FaFire className="mr-1" /> Cálido
               </button>
               <button
                 type="button"
@@ -529,7 +530,7 @@ export default function MainHeader({
                     : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
-                ❄️ Frío
+                <FaSnowflake className="mr-1" /> Frío
               </button>
             </div>
           )}
@@ -593,7 +594,9 @@ export default function MainHeader({
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-bold text-sm">🔔 Notificaciones</h3>
+                        <h3 className="text-white font-bold text-sm flex items-center gap-1">
+                          <FaBell /> Notificaciones
+                        </h3>
                         {unreadNotifications > 0 && (
                           <span className="text-xs bg-pink-500/80 px-2 py-0.5 rounded-full font-semibold text-white">
                             {unreadNotifications}
@@ -610,7 +613,7 @@ export default function MainHeader({
                         </div>
                       ) : notifications.length === 0 ? (
                         <div className="px-4 py-8 text-center">
-                          <div className="text-white/30 text-3xl mb-2">🔔</div>
+                          <FaBell className="text-white/30 text-3xl mb-2" />
                           <p className="text-white/50 text-sm">No tienes notificaciones</p>
                         </div>
                       ) : (
@@ -725,7 +728,9 @@ export default function MainHeader({
                     {/* Header */}
                     <div className="px-5 py-4 border-b border-slate-700/60 bg-gradient-to-r from-blue-600/10 to-cyan-600/10">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-bold text-base">💬 Mensajes</h3>
+                        <h3 className="text-white font-bold text-base flex items-center gap-1">
+                          <FaComments /> Mensajes
+                        </h3>
                         {unreadMessages > 0 && (
                           <span className="text-xs bg-blue-500 px-2.5 py-1 rounded-full font-semibold text-white shadow-lg">
                             {unreadMessages}
@@ -735,11 +740,11 @@ export default function MainHeader({
                       {/* Indicador de tipos de mensajes si es dual */}
                       {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
                         <div className="flex gap-2 mt-3 text-xs">
-                          <span className="bg-purple-500/30 text-purple-200 px-2.5 py-1 rounded-full font-medium">
-                            🏪 Negocio
+                          <span className="bg-purple-500/30 text-purple-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                            <FaStore /> Negocio
                           </span>
-                          <span className="bg-blue-500/30 text-blue-200 px-2.5 py-1 rounded-full font-medium">
-                            👤 Reservas
+                          <span className="bg-blue-500/30 text-blue-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                            <FaUser /> Reservas
                           </span>
                         </div>
                       )}
@@ -753,7 +758,7 @@ export default function MainHeader({
                         </div>
                       ) : conversations.length === 0 ? (
                         <div className="px-4 py-12 text-center">
-                          <div className="text-slate-600 text-4xl mb-3">💬</div>
+                          <FaComments className="text-slate-600 text-4xl mb-3" />
                           <p className="text-slate-400 text-sm font-medium">
                             {userStores.length > 0 
                               ? 'No tienes conversaciones activas' 
@@ -819,14 +824,14 @@ export default function MainHeader({
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                       {/* Badge de tipo (solo si hay ambos tipos) */}
                                       {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold flex items-center ${
                                           conv.type === 'owner' 
                                             ? 'bg-purple-500/40 text-purple-200' 
                                             : conv.type === 'user-chat'
                                               ? 'bg-green-500/40 text-green-200'
                                               : 'bg-blue-500/40 text-blue-200'
                                         }`}>
-                                          {conv.type === 'owner' ? '🏪' : conv.type === 'user-chat' ? '👥' : '👤'}
+                                          {conv.type === 'owner' ? <FaStore /> : conv.type === 'user-chat' ? <FaUsers /> : <FaUser />}
                                         </span>
                                       )}
                                       {conv.unreadCount > 0 && (
@@ -877,18 +882,18 @@ export default function MainHeader({
                                 setOpenMessages(false);
                                 navigate(`/negocio/${userStores[0]._id}`);
                               }}
-                              className="flex-1 text-center text-xs text-purple-300 hover:text-purple-200 font-medium py-2 hover:bg-purple-500/20 rounded-lg transition-all"
+                              className="flex-1 text-center text-xs text-purple-300 hover:text-purple-200 font-medium py-2 hover:bg-purple-500/20 rounded-lg transition-all flex items-center justify-center gap-1"
                             >
-                              🏪 Negocio
+                              <FaStore /> Negocio
                             </button>
                             <button 
                               onClick={() => {
                                 setOpenMessages(false);
                                 navigate('/perfil?tab=reservas');
                               }}
-                              className="flex-1 text-center text-xs text-blue-300 hover:text-blue-200 font-medium py-2 hover:bg-blue-500/20 rounded-lg transition-all"
+                              className="flex-1 text-center text-xs text-blue-300 hover:text-blue-200 font-medium py-2 hover:bg-blue-500/20 rounded-lg transition-all flex items-center justify-center gap-1"
                             >
-                              👤 Reservas
+                              <FaUser /> Reservas
                             </button>
                           </div>
                         ) : (

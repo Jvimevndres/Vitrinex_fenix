@@ -8,6 +8,7 @@ import UserReviews from "../components/UserReviews";
 import { getPublicUser } from "../api/user";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/axios";
+import { FaSearch, FaCalendarAlt, FaComments, FaClipboardList, FaBox, FaHeart, FaClock, FaStore } from 'react-icons/fa';
 
 // Estilos CSS en línea para animaciones
 const styles = `
@@ -205,7 +206,7 @@ export default function CustomerPublicPage() {
           
           <div className="relative z-10 max-w-2xl mx-auto px-6 py-20">
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-red-500/30 rounded-2xl p-8 text-center space-y-4 animate-slideIn">
-              <div className="text-6xl">🔍</div>
+              <FaSearch className="text-6xl" />
               <h2 className="text-2xl font-bold text-white">Usuario no encontrado</h2>
               <p className="text-slate-300">{error || "No se pudo cargar la información del perfil."}</p>
               <button
@@ -290,7 +291,7 @@ export default function CustomerPublicPage() {
                 )}
                 <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    📅 Desde {stats.accountCreated}
+                    <FaCalendarAlt className="mr-1" /> Desde {stats.accountCreated}
                   </span>
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
                     ⏱️ {stats.activeTime} activo
@@ -315,7 +316,7 @@ export default function CustomerPublicPage() {
                   }}
                   className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
                 >
-                  💬 Contactar
+                  <FaComments className="mr-1" /> Contactar
                 </button>
                 <button
                   onClick={() => navigate(-1)}
@@ -368,7 +369,7 @@ export default function CustomerPublicPage() {
               {(user.rut || user.location || user.city) && (
                 <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <span>📋</span> Información Adicional
+                    <FaClipboardList className="mr-1" /> Información Adicional
                   </h3>
                   <div className="space-y-3">
                     {user.rut && (
@@ -469,7 +470,7 @@ export default function CustomerPublicPage() {
                   {/* Tiempo activo */}
                   <div className="bg-gradient-to-br from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl p-6">
                     <div className="text-center space-y-3">
-                      <div className="text-5xl">⏰</div>
+                      <FaClock className="text-5xl" />
                       <p className="text-4xl font-bold text-white">{stats.activeTime}</p>
                       <p className="text-sm text-slate-300">Tiempo Activo</p>
                       <p className="text-xs text-slate-400">En la plataforma</p>
@@ -485,7 +486,7 @@ export default function CustomerPublicPage() {
             <div className="mt-8 animate-slideIn">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>🏪</span> Negocios de {user.username || "este usuario"}
+                  <FaStore className="mr-1" /> Negocios de {user.username || "este usuario"}
                 </h3>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {stores.map((store) => (

@@ -4,6 +4,10 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
 import { listPublicStores } from "../api/store";
+import { 
+  FaSearch, FaMapMarkerAlt, FaStore, FaCog, FaStar, 
+  FaShoppingCart, FaCalendarAlt, FaMagic
+} from 'react-icons/fa';
 
 const INITIAL_CENTER = [-33.4489, -70.6693]; // Santiago
 const INITIAL_ZOOM = 12;
@@ -60,59 +64,59 @@ export default function ExploreStoresPage() {
 
   // TIPOS DE NEGOCIOS EXPANDIDOS
   const tiposNegociosDisponibles = [
-    "🍔 Restaurante",
-    "☕ Cafetería",
-    "🛍️ Retail / Tienda",
-    "💇 Peluquería / Barbería",
-    "💅 Salón de Belleza",
-    "🏋️ Gimnasio / Fitness",
-    "🧘 Yoga / Bienestar",
-    "🏥 Salud / Clínica",
-    "🦷 Dental",
-    "🐾 Veterinaria / Mascotas",
-    "🔧 Taller / Mecánica",
-    "🏠 Hogar / Decoración",
-    "👗 Moda / Vestuario",
-    "👟 Deportes",
-    "📚 Librería / Papelería",
-    "🎨 Arte / Artesanía",
-    "💻 Tecnología / Electrónica",
-    "📱 Celulares / Accesorios",
-    "🎮 Videojuegos",
-    "🎵 Música / Instrumentos",
-    "🌿 Plantas / Jardín",
-    "🍰 Pastelería / Repostería",
-    "🍕 Comida Rápida",
-    "🍜 Comida Asiática",
-    "🌮 Comida Mexicana",
-    "🥗 Comida Saludable",
-    "🍷 Bar / Pub",
-    "🎉 Eventos / Fiestas",
-    "📸 Fotografía",
-    "🚗 Automotriz",
-    "🏪 Minimarket / Almacén",
-    "🎓 Educación / Cursos",
-    "💼 Servicios Profesionales",
-    "🔨 Construcción / Ferretería",
-    "🧹 Limpieza / Aseo",
-    "🌸 Flores / Regalos",
-    "💎 Joyería",
-    "⌚ Relojería",
-    "👓 Óptica",
-    "🏨 Hotel / Alojamiento",
-    "✈️ Turismo / Viajes",
-    "🚚 Transporte / Logística",
-    "📦 Envíos / Courier",
-    "🖨️ Imprenta / Diseño",
-    "🔒 Seguridad",
-    "🌐 Marketing / Publicidad",
+    "Restaurante",
+    "Cafetería",
+    "Retail / Tienda",
+    "Peluquería / Barbería",
+    "Salón de Belleza",
+    "Gimnasio / Fitness",
+    "Yoga / Bienestar",
+    "Salud / Clínica",
+    "Dental",
+    "Veterinaria / Mascotas",
+    "Taller / Mecánica",
+    "Hogar / Decoración",
+    "Moda / Vestuario",
+    "Deportes",
+    "Librería / Papelería",
+    "Arte / Artesanía",
+    "Tecnología / Electrónica",
+    "Celulares / Accesorios",
+    "Videojuegos",
+    "Música / Instrumentos",
+    "Plantas / Jardín",
+    "Pastelería / Repostería",
+    "Comida Rápida",
+    "Comida Asiática",
+    "Comida Mexicana",
+    "Comida Saludable",
+    "Bar / Pub",
+    "Eventos / Fiestas",
+    "Fotografía",
+    "Automotriz",
+    "Minimarket / Almacén",
+    "Educación / Cursos",
+    "Servicios Profesionales",
+    "Construcción / Ferretería",
+    "Limpieza / Aseo",
+    "Flores / Regalos",
+    "Joyería",
+    "Relojería",
+    "Óptica",
+    "Hotel / Alojamiento",
+    "Turismo / Viajes",
+    "Transporte / Logística",
+    "Envíos / Courier",
+    "Imprenta / Diseño",
+    "Seguridad",
+    "Marketing / Publicidad",
     "Otro",
   ];
 
   // MODOS DE OPERACIÓN EXPANDIDOS
   const modosOperacion = [
-    { value: "products", label: "🛍️ Venta de Productos", icon: "🛒" },
-    { value: "bookings", label: "Agendamiento de Citas", icon: "📆" },
+    { value: "products", label: "Venta de Productos", Icon: FaShoppingCart },
+    { value: "bookings", label: "Agendamiento de Citas", Icon: FaCalendarAlt },
   ];
 
   const [mapCenter, setMapCenter] = useState(INITIAL_CENTER);
@@ -428,7 +432,7 @@ export default function ExploreStoresPage() {
             {/* Filtros - GALAXY STYLE MEJORADO */}
             <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-2xl self-start sticky top-[72px]" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition }}>
               <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                <span className="text-lg">🔍</span>
+                <FaSearch className="text-lg" />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-200 to-pink-200">
                   Filtros de Búsqueda
                 </span>
@@ -438,7 +442,7 @@ export default function ExploreStoresPage() {
                 {/* Búsqueda rápida */}
                 <div>
                   <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
-                    <span>🔎</span>
+                    <FaSearch className="text-sm" />
                     Búsqueda Rápida
                   </label>
                   <input
@@ -455,7 +459,7 @@ export default function ExploreStoresPage() {
                 {/* Comuna */}
                 <div>
                   <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
-                    <span>📍</span>
+                    <FaMapMarkerAlt className="text-sm" />
                     Comuna
                   </label>
                   <select
@@ -465,7 +469,7 @@ export default function ExploreStoresPage() {
                     className="w-full border rounded-lg px-3 py-2 text-xs bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   >
-                    <option value="" className="bg-slate-900">🌎 Todas las comunas</option>
+                    <option value="" className="bg-slate-900">Todas las comunas</option>
                     {comunasDisponibles.map((c) => (
                       <option key={c} value={c} className="bg-slate-900">{c}</option>
                     ))}
@@ -475,7 +479,7 @@ export default function ExploreStoresPage() {
                 {/* Tipo de negocio */}
                 <div>
                   <label className="flex text-xs font-semibold text-white/80 mb-1.5 items-center gap-1">
-                    <span>🏪</span>
+                    <FaStore className="text-sm" />
                     Tipo de Negocio
                   </label>
                   <select
@@ -485,7 +489,7 @@ export default function ExploreStoresPage() {
                     className="w-full border rounded-lg px-3 py-2 text-xs bg-white/10 backdrop-blur-sm text-white focus:bg-white/20 focus:outline-none focus:ring-2 transition-all max-h-48"
                     style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                   >
-                    <option value="" className="bg-slate-900">🎯 Todos los tipos</option>
+                    <option value="" className="bg-slate-900">Todos los tipos</option>
                     {tiposNegociosDisponibles.map((t) => (
                       <option key={t} value={t} className="bg-slate-900">{t}</option>
                     ))}
@@ -495,7 +499,7 @@ export default function ExploreStoresPage() {
                 {/* Modo de operación */}
                 <div>
                   <label className="flex text-xs font-semibold text-white/80 mb-2 items-center gap-1">
-                    <span>⚙️</span>
+                    <FaCog className="text-sm" />
                     Tipo de Operación
                   </label>
                   <div className="space-y-2">
@@ -510,7 +514,7 @@ export default function ExploreStoresPage() {
                       style={{ borderColor: filters.mode === "" ? accent.color : hexToRgba(accent.color, 0.2) }}
                     >
                       <span className="flex items-center gap-2">
-                        <span>🌟</span>
+                        <FaStar />
                         <span>Todos los servicios</span>
                       </span>
                     </button>
@@ -527,8 +531,8 @@ export default function ExploreStoresPage() {
                         style={{ borderColor: filters.mode === modo.value ? accent.color : hexToRgba(accent.color, 0.2) }}
                       >
                         <span className="flex items-center gap-2">
-                          <span>{modo.icon}</span>
-                          <span>{modo.label.replace(/^[🛍️📅]\s/, '')}</span>
+                          <modo.Icon />
+                          <span>{modo.label}</span>
                         </span>
                       </button>
                     ))}
@@ -542,7 +546,7 @@ export default function ExploreStoresPage() {
                   className="w-full mt-2 text-white text-sm font-bold px-4 py-3 rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                   style={{ background: accent.gradient, boxShadow: accent.glow, transition: 'all 200ms ease' }}
                 >
-                  <span className="text-lg">✨</span>
+                  <FaMagic className="text-lg" />
                   <span>Aplicar Filtros</span>
                 </button>
 

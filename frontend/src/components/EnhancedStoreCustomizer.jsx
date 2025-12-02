@@ -10,6 +10,12 @@ import {
 } from '../api/appearance';
 import { getStoreById, updateMyStore } from '../api/store';
 import StorePreviewRealistic from './StorePreviewRealistic'; // 🆕 Preview realista
+import { 
+  FaMapMarkerAlt, FaLightbulb, FaBullseye, FaBolt, FaStar, FaFire, 
+  FaGem, FaTrophy, FaMagic, FaPalette, FaRocket, FaDumbbell, 
+  FaCheckCircle, FaClock, FaShieldAlt, FaHeart, FaGift, FaThumbsUp,
+  FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward, FaClipboardList, FaChartBar, FaBoxOpen
+} from 'react-icons/fa';
 
 /**
  * 🎨 CONSTRUCTOR VISUAL MEJORADO Y SIMPLIFICADO
@@ -2752,7 +2758,7 @@ function ContentTab({ storeData, appearance, onChange }) {
 function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
   const [customBoxes, setCustomBoxes] = useState(storeData?.customBoxes || []);
   const [showAddBox, setShowAddBox] = useState(false);
-  const [newBox, setNewBox] = useState({ title: '', content: '', icon: '📌' });
+  const [newBox, setNewBox] = useState({ title: '', content: '', icon: 'pin' });
 
   // Sincronizar customBoxes cuando storeData cambie
   useEffect(() => {
@@ -2761,7 +2767,33 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
     }
   }, [storeData?.customBoxes]);
 
-  const iconOptions = ['📌', '💡', '🎯', '⚡', '🌟', '🔥', '💎', '🏆', '✨', '🎨', '🚀', '💪'];
+  // Opciones de iconos con React Icons
+  const iconOptions = [
+    { key: 'pin', Icon: FaMapMarkerAlt, label: 'Marcador' },
+    { key: 'lightbulb', Icon: FaLightbulb, label: 'Idea' },
+    { key: 'target', Icon: FaBullseye, label: 'Objetivo' },
+    { key: 'bolt', Icon: FaBolt, label: 'Rápido' },
+    { key: 'star', Icon: FaStar, label: 'Estrella' },
+    { key: 'fire', Icon: FaFire, label: 'Popular' },
+    { key: 'gem', Icon: FaGem, label: 'Premium' },
+    { key: 'trophy', Icon: FaTrophy, label: 'Ganador' },
+    { key: 'magic', Icon: FaMagic, label: 'Especial' },
+    { key: 'palette', Icon: FaPalette, label: 'Creativo' },
+    { key: 'rocket', Icon: FaRocket, label: 'Innovación' },
+    { key: 'dumbbell', Icon: FaDumbbell, label: 'Fuerza' },
+    { key: 'check', Icon: FaCheckCircle, label: 'Verificado' },
+    { key: 'clock', Icon: FaClock, label: 'Tiempo' },
+    { key: 'shield', Icon: FaShieldAlt, label: 'Seguro' },
+    { key: 'heart', Icon: FaHeart, label: 'Favorito' },
+    { key: 'gift', Icon: FaGift, label: 'Regalo' },
+    { key: 'thumbsup', Icon: FaThumbsUp, label: 'Excelente' },
+    { key: 'users', Icon: FaUsers, label: 'Equipo' },
+    { key: 'cog', Icon: FaCog, label: 'Servicio' },
+    { key: 'leaf', Icon: FaLeaf, label: 'Natural' },
+    { key: 'medal', Icon: FaMedal, label: 'Calidad' },
+    { key: 'handshake', Icon: FaHandshake, label: 'Confianza' },
+    { key: 'award', Icon: FaAward, label: 'Premio' },
+  ];
 
   const handleAddBox = () => {
     if (!newBox.title || !newBox.content) {
@@ -2771,7 +2803,7 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
     const updatedBoxes = [...customBoxes, { ...newBox, id: Date.now() }];
     setCustomBoxes(updatedBoxes);
     onStoreUpdate('customBoxes', updatedBoxes);
-    setNewBox({ title: '', content: '', icon: '📌' });
+    setNewBox({ title: '', content: '', icon: 'pin' });
     setShowAddBox(false);
   };
 
@@ -2864,7 +2896,7 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
     <div className="p-4 space-y-6">
       <div>
         <h3 className="font-semibold text-slate-900 text-lg flex items-center gap-2">
-          <span className="text-2xl">📋</span>
+          <FaClipboardList className="text-2xl" />
           Secciones Visibles
         </h3>
         <p className="text-sm text-slate-600 mt-1">
@@ -2923,7 +2955,7 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
       {/* Resumen de secciones activas */}
       <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
         <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-          <span>📊</span>
+          <FaChartBar />
           Resumen
         </h4>
         <p className="text-sm text-blue-800">
@@ -2944,7 +2976,7 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2">
-              <span>📦</span>
+              <FaBoxOpen />
               Cuadros Personalizados
             </h4>
             <p className="text-xs text-indigo-700">
@@ -2966,19 +2998,28 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
             <h5 className="font-semibold text-indigo-900 text-sm">Nuevo Cuadro Informativo</h5>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Ícono o Emoji
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Selecciona un Ícono
               </label>
-              <input
-                type="text"
-                value={newBox.icon}
-                onChange={(e) => setNewBox({ ...newBox, icon: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-2xl text-center"
-                placeholder="Escribe un emoji: 💡 🎯 ⭐ 🚀"
-                maxLength={10}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Puedes usar cualquier emoji o texto. Ej: 💡 🎯 ⭐ 🚀 ✨ 🔥 💪
+              <div className="grid grid-cols-6 gap-2">
+                {iconOptions.map(({ key, Icon, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setNewBox({ ...newBox, icon: key })}
+                    className={`p-3 rounded-lg border-2 transition-all hover:scale-110 ${
+                      newBox.icon === key 
+                        ? 'border-indigo-600 bg-indigo-50 shadow-md' 
+                        : 'border-slate-200 hover:border-indigo-300'
+                    }`}
+                    title={label}
+                  >
+                    <Icon className="w-6 h-6 mx-auto" style={{ color: newBox.icon === key ? '#4f46e5' : '#64748b' }} />
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Selecciona el ícono que mejor represente tu información
               </p>
             </div>
 
@@ -3032,9 +3073,12 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
         {customBoxes.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium text-indigo-900">Cuadros creados ({customBoxes.length}):</p>
-            {customBoxes.map((box) => (
+            {customBoxes.map((box) => {
+              const iconOption = iconOptions.find(opt => opt.key === box.icon);
+              const IconComponent = iconOption ? iconOption.Icon : FaMapMarkerAlt;
+              return (
               <div key={box.id} className="p-3 bg-white rounded-lg border border-indigo-200 flex items-start gap-3">
-                <span className="text-2xl">{box.icon}</span>
+                <IconComponent className="text-2xl text-indigo-600" />
                 <div className="flex-1">
                   <h6 className="font-semibold text-slate-800 text-sm">{box.title}</h6>
                   <p className="text-xs text-slate-600 mt-1 line-clamp-2">{box.content}</p>
@@ -3046,7 +3090,7 @@ function SectionsTab({ sections, onChange, storeData, onStoreUpdate }) {
                   🗑️
                 </button>
               </div>
-            ))}
+            )})}
           </div>
         )}
 
