@@ -171,7 +171,11 @@ export default function ExploreStoresPage() {
       if (filters.tipoNegocio) params.tipoNegocio = filters.tipoNegocio;
       if (filters.mode) params.mode = filters.mode;
 
+      const startTime = performance.now();
       const { data } = await listPublicStores(params);
+      const endTime = performance.now();
+      
+      console.log(`⚡ Tiendas cargadas desde API en ${(endTime - startTime).toFixed(0)}ms`);
       
       // Manejar respuesta con o sin paginación (retrocompatibilidad)
       let allStores = [];
@@ -194,8 +198,9 @@ export default function ExploreStoresPage() {
       }
 
       setStores(allStores);
+      console.log(`✅ ${allStores.length} tiendas mostradas`);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error cargando tiendas:", err);
       setError("No se pudieron cargar los negocios.");
     } finally {
       setLoading(false);
@@ -203,7 +208,12 @@ export default function ExploreStoresPage() {
   };
 
   useEffect(() => {
-    loadStores();
+    // Debounce para búsqueda: esperar 400ms después de que el usuario deja de escribir
+    const searchTimer = setTimeout(() => {
+      loadStores();
+    }, filters.search ? 400 : 0); // Solo debounce si hay búsqueda
+
+    return () => clearTimeout(searchTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.comuna, filters.tipoNegocio, filters.mode, filters.search]);
 
@@ -710,12 +720,17 @@ export default function ExploreStoresPage() {
                     <div className="flex items-start gap-3">
                       <div className="w-12 h-12 bg-white/10 rounded-lg flex-shrink-0 flex items-center justify-center text-xs text-white/70 overflow-hidden border border-white/20">
                         {(() => {
-                          const candidate = store.logoUrl || store.logo || store.ownerAvatar || null;
+                          const candidate = store.logoUrl || null;
                           const src = resolveMediaUrl(candidate);
                           if (src) {
                             return (
-                              // eslint-disable-next-line jsx-a11y/img-redundant-alt
-                              <img src={src} alt="logo" className="w-full h-full object-cover rounded-lg" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img 
+                                src={src} 
+                                alt="logo" 
+                                className="w-full h-full object-cover rounded-lg" 
+                                loading="lazy"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                              />
                             );
                           }
                           return <span className="px-1 font-bold">{(store.name || "-").slice(0,2).toUpperCase()}</span>;
@@ -727,21 +742,6 @@ export default function ExploreStoresPage() {
                           <div>
                             <h3 className="font-semibold text-white text-sm">{store.name}</h3>
                             <p className="text-[12px] text-white/60">{store.tipoNegocio || "Sin categoría"} {store.comuna ? `· ${store.comuna}` : ""}</p>
-                            {store.owner && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); navigate(`/usuario/${store.owner._id || store.owner}`); }}
-                                className="flex items-center gap-1.5 mt-1 text-[11px] text-white/70 hover:text-white transition-colors"
-                              >
-                                {store.owner.avatarUrl ? (
-                                  <img src={store.owner.avatarUrl} alt={store.owner.username} className="w-4 h-4 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[8px]">
-                                    {(store.owner.username || "U")[0]?.toUpperCase()}
-                                  </div>
-                                )}
-                                <span>Por: {store.owner.username || "Usuario"}</span>
-                              </button>
-                            )}
                           </div>
                           <div className="text-xs text-white/50">{store.distance ? `${store.distance} km` : null}</div>
                         </div>

@@ -15,6 +15,11 @@ import {
   normalizeSpecialDays,
 } from "../helpers/availability.helper.js";
 
+// 💎 CACHÉ EN MEMORIA para listPublicStores
+let storesCache = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 30000; // 30 segundos
+
 /* =================== Helpers =================== */
 
 const DAY_ORDER = [
@@ -86,55 +91,82 @@ const mapProductResponse = (product) => ({
 /* =============== PUBLIC STORES (MAP) =============== */
 
 export const listPublicStores = async (req, res) => {
+  const startTime = Date.now();
   try {
     const { comuna, tipoNegocio, mode, page = 1, limit = 50 } = req.query;
-    const query = { isActive: true };
-    if (comuna) query.comuna = comuna;
-    if (tipoNegocio) query.tipoNegocio = tipoNegocio;
-    if (mode) query.mode = mode;
+    
+    // 💎 Verificar caché (solo para query sin filtros)
+    const hasFilters = comuna || tipoNegocio || mode;
+    const now = Date.now();
+    const cacheValid = storesCache && (now - cacheTimestamp) < CACHE_TTL;
+    
+    if (!hasFilters && cacheValid) {
+      console.log(`⚡ listPublicStores: ${Date.now() - startTime}ms (CACHÉ) - ${storesCache.stores.length} stores`);
+      return res.json(storesCache);
+    }
+    
+    // Construir pipeline de agregación
+    const matchStage = { isActive: true };
+    if (comuna) matchStage.comuna = comuna;
+    if (tipoNegocio) matchStage.tipoNegocio = tipoNegocio;
+    if (mode) matchStage.mode = mode;
 
-    // Paginación
     const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Máximo 100
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
-    const [stores, total] = await Promise.all([
-      Store.find(query)
-        .populate("owner", "username avatarUrl")
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Store.countDocuments(query)
+    // 🚀 USAR AGREGACIÓN (mucho más rápido que find)
+    const queryStart = Date.now();
+    const [result] = await Store.aggregate([
+      { $match: matchStage },
+      {
+        $facet: {
+          stores: [
+            { $skip: skip },
+            { $limit: limitNum },
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                logoUrl: 1,
+                comuna: 1,
+                tipoNegocio: 1,
+                mode: 1,
+                lat: 1,
+                lng: 1,
+                direccion: 1
+              }
+            }
+          ],
+          total: [{ $count: "count" }]
+        }
+      }
     ]);
+    const queryTime = Date.now() - queryStart;
 
-    res.json({
-      stores: stores.map((s) => ({
-        _id: s._id,
-        name: s.name,
-        description: s.description,
-        logoUrl: s.logoUrl,
-        comuna: s.comuna,
-        tipoNegocio: s.tipoNegocio,
-        mode: s.mode,
-        lat: s.lat,
-        lng: s.lng,
-        direccion: s.direccion,
-        isActive: s.isActive,
-        owner: s.owner ? {
-          _id: s.owner._id,
-          username: s.owner.username,
-          avatarUrl: s.owner.avatarUrl
-        } : null,
-        ownerName: s.owner?.username || null,
-        ownerAvatar: s.owner?.avatarUrl || null,
-      })),
+    const stores = result.stores || [];
+    const total = result.total[0]?.count || 0;
+    const totalTime = Date.now() - startTime;
+    
+    console.log(`⚡ listPublicStores: ${totalTime}ms (query: ${queryTime}ms) - ${stores.length} stores`);
+
+    const response = {
+      stores,
       pagination: {
         page: pageNum,
         limit: limitNum,
         total,
         pages: Math.ceil(total / limitNum)
       }
-    });
+    };
+    
+    // 💎 Guardar en caché si no hay filtros
+    if (!hasFilters) {
+      storesCache = response;
+      cacheTimestamp = now;
+    }
+
+    res.json(response);
   } catch (err) {
     console.error("Error listando tiendas públicas:", err);
     res.status(500).json({ message: "Error al listar las tiendas" });
