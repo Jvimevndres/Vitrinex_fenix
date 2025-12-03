@@ -28,7 +28,8 @@ import {
   FaMapMarkerAlt, FaLightbulb, FaBullseye, FaBolt, FaStar, FaFire, 
   FaGem, FaTrophy, FaMagic, FaPalette, FaRocket, FaDumbbell, 
   FaCheckCircle, FaClock, FaShieldAlt, FaHeart, FaGift, FaThumbsUp,
-  FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward
+  FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward, FaCalendarAlt,
+  FaSearch, FaComments
 } from 'react-icons/fa';
 
 // ---------- Diccionarios ----------
@@ -442,6 +443,36 @@ function getCardStyle(appearance, colors) {
     style: cardStyle,
     className: dynamicClasses.join(' ')
   };
+}
+
+// Función para obtener el componente de icono basado en la clave
+function getIconComponent(iconKey) {
+  const iconMap = {
+    star: FaStar,
+    fire: FaFire,
+    gem: FaGem,
+    trophy: FaTrophy,
+    magic: FaMagic,
+    palette: FaPalette,
+    rocket: FaRocket,
+    dumbbell: FaDumbbell,
+    checkCircle: FaCheckCircle,
+    clock: FaClock,
+    shield: FaShieldAlt,
+    heart: FaHeart,
+    gift: FaGift,
+    thumbsUp: FaThumbsUp,
+    users: FaUsers,
+    cog: FaCog,
+    leaf: FaLeaf,
+    medal: FaMedal,
+    handshake: FaHandshake,
+    award: FaAward,
+    lightbulb: FaLightbulb,
+    bullseye: FaBullseye,
+    bolt: FaBolt,
+  };
+  return iconMap[iconKey] || FaStar; // Default a FaStar si no se encuentra
 }
 
 export default function StorePublicPage() {

@@ -743,9 +743,31 @@ export default function ExploreStoresPage() {
 
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="flex-1">
                             <h3 className="font-semibold text-white text-sm">{store.name}</h3>
                             <p className="text-[12px] text-white/60">{store.tipoNegocio || "Sin categoría"} {store.comuna ? `· ${store.comuna}` : ""}</p>
+                            {store.ownerName && (
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <div className="w-4 h-4 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+                                  {store.ownerAvatar ? (
+                                    <img 
+                                      src={store.ownerAvatar} 
+                                      alt={store.ownerName}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">${store.ownerName.charAt(0).toUpperCase()}</div>`;
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                      {store.ownerName.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-white/50">{store.ownerName}</p>
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs text-white/50">{store.distance ? `${store.distance} km` : null}</div>
                         </div>

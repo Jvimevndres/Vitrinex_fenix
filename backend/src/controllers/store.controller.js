@@ -125,6 +125,14 @@ export const listPublicStores = async (req, res) => {
             { $skip: skip },
             { $limit: limitNum },
             {
+              $lookup: {
+                from: 'users',
+                localField: 'owner',
+                foreignField: '_id',
+                as: 'ownerInfo'
+              }
+            },
+            {
               $project: {
                 _id: 1,
                 name: 1,
@@ -134,7 +142,11 @@ export const listPublicStores = async (req, res) => {
                 mode: 1,
                 lat: 1,
                 lng: 1,
-                direccion: 1
+                direccion: 1,
+                owner: 1,
+                ownerName: { $arrayElemAt: ['$ownerInfo.username', 0] },
+                ownerEmail: { $arrayElemAt: ['$ownerInfo.email', 0] },
+                ownerAvatar: { $arrayElemAt: ['$ownerInfo.avatarUrl', 0] }
               }
             }
           ],

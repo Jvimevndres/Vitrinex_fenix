@@ -3,11 +3,12 @@ import Comment from '../models/comment.model.js';
 // Crear nuevo comentario/feedback
 export const createComment = async (req, res) => {
   try {
-    const { type, subject, message, rating, store } = req.body;
+    const { type, subject, message, rating, store, targetUser } = req.body;
 
     const comment = new Comment({
       user: req.userId,
       store,
+      targetUser,
       type,
       subject,
       message,
@@ -136,16 +137,15 @@ export const getStoreComments = async (req, res) => {
   }
 };
 
-// Obtener comentarios públicos relacionados a un usuario
+// Obtener comentarios públicos relacionados a un usuario (reseñas que ha recibido)
 export const getUserComments = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const comments = await Comment.find({ 
-      $or: [
-        { user: userId },
-        { message: { $regex: userId, $options: 'i' } }
-      ]
+      targetUser: userId,
+      type: 'user',
+      rating: { $exists: true, $ne: null }
     })
       .populate('user', 'username avatarUrl')
       .sort({ createdAt: -1 });

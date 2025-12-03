@@ -284,13 +284,39 @@ export const getPublicProfile = async (req, res) => {
       isActive: true,
     });
 
+    // Calcular rating real basado en reseñas directas del usuario
+    const Comment = (await import("../models/comment.model.js")).default;
+    
+    const comments = await Comment.find({
+      targetUser: user._id,
+      type: 'user',
+      rating: { $exists: true, $ne: null },
+      status: { $ne: 'pending' }
+    });
+
+    let calculatedRating = 0;
+    if (comments.length > 0) {
+      const totalRating = comments.reduce((sum, comment) => sum + (comment.rating || 0), 0);
+      calculatedRating = totalRating / comments.length;
+    }
+
     // Actualizar estadísticas si han cambiado
     if (!user.stats) {
       user.stats = { projects: 0, businesses: 0, responseRate: 0 };
     }
     
+    let needsSave = false;
     if (user.stats.businesses !== businessCount) {
       user.stats.businesses = businessCount;
+      needsSave = true;
+    }
+    
+    if (user.rating !== calculatedRating) {
+      user.rating = calculatedRating;
+      needsSave = true;
+    }
+    
+    if (needsSave) {
       await user.save();
     }
 

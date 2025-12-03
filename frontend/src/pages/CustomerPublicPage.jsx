@@ -109,24 +109,49 @@ export default function CustomerPublicPage() {
         rating: userData?.rating || 0,
       }));
 
-      // Cargar tiendas del usuario
+      // Cargar tiendas del usuario desde el endpoint público
       try {
-        const storesRes = await axios.get(`/users/${id}/stores`);
-        const userStores = storesRes.data || [];
+        const storesRes = await axios.get('/stores/public');
+        const responseData = storesRes.data || {};
+        const allStores = responseData.stores || [];
+        const userStores = allStores.filter(store => 
+          store.owner?._id === id || store.owner === id || store.user === id
+        );
         setStores(userStores);
 
         // Contar productos publicados
         let totalProducts = 0;
+        
         for (const store of userStores) {
           try {
-            const productsRes = await axios.get(`/stores/${store._id}/products`);
+            const productsRes = await axios.get(`/stores/${store._id}/public-products`);
             totalProducts += (productsRes.data || []).length;
           } catch (err) {
             console.error(`Error loading products for store ${store._id}:`, err);
           }
         }
         
-        setStats(prev => ({ ...prev, productsPublished: totalProducts }));
+        // Cargar reseñas directas del usuario y calcular rating real
+        try {
+          const reviewsRes = await axios.get(`/comments/user/${id}`);
+          const reviews = reviewsRes.data || [];
+          
+          let calculatedRating = 0;
+          if (reviews.length > 0) {
+            const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+            calculatedRating = totalRating / reviews.length;
+          }
+          
+          setStats(prev => ({ 
+            ...prev, 
+            productsPublished: totalProducts, 
+            reviews: reviews.length,
+            rating: calculatedRating
+          }));
+        } catch (err) {
+          console.error('Error loading user reviews:', err);
+          setStats(prev => ({ ...prev, productsPublished: totalProducts, reviews: 0 }));
+        }
       } catch (err) {
         console.error('Error loading user stores:', err);
       }
@@ -257,7 +282,7 @@ export default function CustomerPublicPage() {
                   className="relative w-32 h-32 rounded-full object-cover border-4 border-purple-400 shadow-2xl"
                 />
                 <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900">
-                  ⭐ {stats.rating.toFixed(1)}
+                  ⭐ {stats.rating > 0 ? stats.rating.toFixed(1) : '0.0'}
                 </div>
               </div>
 
@@ -300,7 +325,7 @@ export default function CustomerPublicPage() {
               </div>
 
               {/* Botones de acción */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3 min-w-[200px]">
                 <button
                   onClick={() => {
                     if (!isAuthenticated) {
@@ -314,13 +339,14 @@ export default function CustomerPublicPage() {
                     }
                     setOpenContact(true);
                   }}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105 text-base"
                 >
-                  <FaComments className="mr-1" /> Contactar
+                  <FaComments className="text-lg" />
+                  Contactar
                 </button>
                 <button
                   onClick={() => navigate(-1)}
-                  className="px-6 py-2.5 bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 rounded-xl font-medium border border-slate-600/50 transition-all"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 rounded-xl font-medium border border-slate-600/50 transition-all text-base"
                 >
                   ← Volver atrás
                 </button>
@@ -405,21 +431,22 @@ export default function CustomerPublicPage() {
                     </div>
                   </div>
 
-                  {/* Guardados */}
-                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl p-5">
+                  {/* Negocios activos */}
+                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">❤️</div>
-                      <p className="text-3xl font-bold text-white">{stats.savedItems}</p>
-                      <p className="text-sm text-slate-300">Guardados</p>
-                      <p className="text-xs text-slate-500">(Próximamente)</p>
+                      <div className="text-4xl">
+                        <FaStore className="inline-block text-green-400" />
+                      </div>
+                      <p className="text-3xl font-bold text-white">{stores.length}</p>
+                      <p className="text-sm text-slate-300">Negocios Activos</p>
                     </div>
                   </div>
 
                   {/* Consultas */}
-                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-xl p-5">
+                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
                       <div className="text-4xl">💬</div>
-                      <p className="text-3xl font-bold text-white">{stats.queriesMade}</p>
+                      <p className="text-3xl font-bold text-white">{user?.stats?.projects || 0}</p>
                       <p className="text-sm text-slate-300">Consultas Hechas</p>
                     </div>
                   </div>
@@ -458,12 +485,11 @@ export default function CustomerPublicPage() {
                   </div>
 
                   {/* Opiniones */}
-                  <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-2 border-blue-500/30 rounded-xl p-6">
-                    <div className="text-center space-y-3">
-                      <div className="text-5xl">💭</div>
-                      <p className="text-4xl font-bold text-white">{stats.reviews}</p>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-xl p-5">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl">💬</div>
+                      <p className="text-3xl font-bold text-white">{stats.reviews}</p>
                       <p className="text-sm text-slate-300">Opiniones Recibidas</p>
-                      <p className="text-xs text-slate-500">(Próximamente)</p>
                     </div>
                   </div>
 

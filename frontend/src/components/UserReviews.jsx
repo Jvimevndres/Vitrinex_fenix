@@ -24,18 +24,11 @@ export default function UserReviews({ userId, username }) {
       // Obtenemos comentarios del usuario usando el endpoint público
       const { data } = await axios.get(`/comments/user/${userId}`);
       
-      // Filtramos comentarios relevantes para este usuario
-      const userComments = data.filter(comment => 
-        comment.type === 'platform' &&
-        (comment.message?.includes(userId) || 
-         comment.subject?.toLowerCase().includes('usuario'))
-      );
-      
-      setComments(userComments);
+      setComments(data);
       
       // Calcular promedio de rating
-      if (userComments.length > 0) {
-        const avg = userComments.reduce((sum, c) => sum + (c.rating || 0), 0) / userComments.length;
+      if (data.length > 0) {
+        const avg = data.reduce((sum, c) => sum + (c.rating || 0), 0) / data.length;
         setAverageRating(Math.round(avg * 10) / 10);
       }
     } catch (error) {
@@ -62,9 +55,10 @@ export default function UserReviews({ userId, username }) {
       setSubmitting(true);
       
       await axios.post('/comments', {
-        type: 'platform',
-        subject: `Usuario ${username}: ${formData.subject}`,
-        message: `[Usuario ID: ${userId}] ${formData.message}`,
+        type: 'user',
+        targetUser: userId,
+        subject: formData.subject,
+        message: formData.message,
         rating: formData.rating
       }, {
         withCredentials: true

@@ -37,11 +37,30 @@ export default function MainHeader({
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [userStores, setUserStores] = useState([]);
-  const [readNotifications, setReadNotifications] = useState(new Set()); // ✅ Tracking de leídas
+  const [readNotifications, setReadNotifications] = useState(() => {
+    // ✅ Cargar notificaciones leídas desde localStorage
+    const stored = localStorage.getItem('readNotifications');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
+  const [readMessages, setReadMessages] = useState(() => {
+    // ✅ Cargar mensajes leídos desde localStorage
+    const stored = localStorage.getItem('readMessages');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
   const [selectedUserChat, setSelectedUserChat] = useState(null); // 🆕 Estado para chat usuario-usuario
   const pollingIntervalRef = useRef(null);
 
   const isStore = variant === "store";
+
+  // ✅ Guardar notificaciones leídas en localStorage
+  useEffect(() => {
+    localStorage.setItem('readNotifications', JSON.stringify([...readNotifications]));
+  }, [readNotifications]);
+
+  // ✅ Guardar mensajes leídos en localStorage
+  useEffect(() => {
+    localStorage.setItem('readMessages', JSON.stringify([...readMessages]));
+  }, [readMessages]);
 
   // Cargar notificaciones y mensajes con polling optimizado
   useEffect(() => {
@@ -129,9 +148,6 @@ export default function MainHeader({
           console.error(`❌ Error loading notifications for store ${store._id}:`, err);
         }
       }
-      
-      // Ordenar por timestamp (más reciente primero)
-      allNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       
       setNotifications(allNotifications);
       setLoadingNotifications(false);
@@ -229,8 +245,15 @@ export default function MainHeader({
         }
       }
       
-      // Ordenar por timestamp
-      const sortedConversations = allConversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      // Ordenar por timestamp y priorizar conversaciones con mensajes no leídos
+      const sortedConversations = allConversations.sort((a, b) => {
+        // Primero ordenar por no leídos
+        if (a.unreadCount !== b.unreadCount) {
+          return b.unreadCount - a.unreadCount;
+        }
+        // Luego por fecha
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
       setConversations(sortedConversations);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -345,6 +368,46 @@ export default function MainHeader({
     }
   };
 
+  // ✅ Reordenar notificaciones cuando cambia el estado de leídas
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const sorted = [...notifications].sort((a, b) => {
+        // Primero ordenar por leído/no leído
+        const aRead = readNotifications.has(a.id);
+        const bRead = readNotifications.has(b.id);
+        if (aRead !== bRead) return aRead ? 1 : -1;
+        // Luego por fecha
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+      
+      // Solo actualizar si el orden cambió
+      const hasChanged = sorted.some((notif, idx) => notif.id !== notifications[idx]?.id);
+      if (hasChanged) {
+        setNotifications(sorted);
+      }
+    }
+  }, [readNotifications]);
+
+  // ✅ Reordenar mensajes cuando cambia el estado de leídos
+  useEffect(() => {
+    if (conversations.length > 0) {
+      const sorted = [...conversations].sort((a, b) => {
+        // Primero ordenar por leído/no leído
+        const aRead = readMessages.has(a.id);
+        const bRead = readMessages.has(b.id);
+        if (aRead !== bRead) return aRead ? 1 : -1;
+        // Luego por fecha
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+      
+      // Solo actualizar si el orden cambió
+      const hasChanged = sorted.some((conv, idx) => conv.id !== conversations[idx]?.id);
+      if (hasChanged) {
+        setConversations(sorted);
+      }
+    }
+  }, [readMessages]);
+
   // ✅ Marcar notificación como leída
   const markNotificationAsRead = (notificationId) => {
     setReadNotifications(prev => new Set([...prev, notificationId]));
@@ -354,6 +417,17 @@ export default function MainHeader({
   const markAllNotificationsAsRead = () => {
     const allIds = notifications.map(n => n.id);
     setReadNotifications(new Set(allIds));
+  };
+
+  // ✅ Marcar mensaje como leído
+  const markMessageAsRead = (messageId) => {
+    setReadMessages(prev => new Set([...prev, messageId]));
+  };
+
+  // ✅ Marcar todos los mensajes como leídos
+  const markAllMessagesAsRead = () => {
+    const allIds = conversations.map(c => c.id);
+    setReadMessages(new Set(allIds));
   };
 
   // Cerrar dropdowns al hacer click fuera
@@ -374,6 +448,7 @@ export default function MainHeader({
 
   const handleConversationClick = (conv) => {
     setOpenMessages(false);
+    setOpenNotifications(false);
     
     // 🆕 Chat usuario-usuario
     if (conv.type === 'user-chat') {
@@ -716,212 +791,126 @@ export default function MainHeader({
                 {/* Dropdown de mensajes */}
                 {openMessages && (
                   <div 
-                    className="fixed inset-0 flex items-start justify-center pt-20 px-4 z-[1001] pointer-events-none"
+                    className="absolute right-0 top-20 w-[340px] bg-gray-900/[0.99] backdrop-blur-md border border-purple-400/40 rounded-xl shadow-2xl z-[1001] overflow-hidden"
+                    style={{ 
+                      boxShadow: '0 20px 60px rgba(139, 92, 246, 0.5)',
+                      fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
+                      maxHeight: '450px'
+                    }}
                   >
-                    <div 
-                      className="w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
-                      style={{ 
-                        boxShadow: '0 20px 60px rgba(15, 23, 42, 0.8), 0 0 0 1px rgba(148, 163, 184, 0.1)',
-                        fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif"
-                      }}
-                    >
                     {/* Header */}
-                    <div className="px-5 py-4 border-b border-slate-700/60 bg-gradient-to-r from-blue-600/10 to-cyan-600/10">
+                    <div className="px-4 py-3 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-bold text-base flex items-center gap-1">
+                        <h3 className="text-white font-bold text-sm flex items-center gap-1">
                           <FaComments /> Mensajes
                         </h3>
                         {unreadMessages > 0 && (
-                          <span className="text-xs bg-blue-500 px-2.5 py-1 rounded-full font-semibold text-white shadow-lg">
+                          <span className="text-xs bg-pink-500/80 px-2 py-0.5 rounded-full font-semibold text-white">
                             {unreadMessages}
                           </span>
                         )}
                       </div>
-                      {/* Indicador de tipos de mensajes si es dual */}
-                      {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
-                        <div className="flex gap-2 mt-3 text-xs">
-                          <span className="bg-purple-500/30 text-purple-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                            <FaStore /> Negocio
-                          </span>
-                          <span className="bg-blue-500/30 text-blue-200 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                            <FaUser /> Reservas
-                          </span>
-                        </div>
-                      )}
                     </div>
                     
                     {/* Content */}
-                    <div className="overflow-y-auto max-h-80 px-2">
+                    <div className="overflow-y-auto" style={{ maxHeight: '320px' }}>
                       {loadingMessages ? (
-                        <div className="px-4 py-12 text-center text-slate-400 text-sm">
+                        <div className="px-4 py-8 text-center text-white/50 text-sm">
                           Cargando...
                         </div>
                       ) : conversations.length === 0 ? (
-                        <div className="px-4 py-12 text-center">
-                          <FaComments className="text-slate-600 text-4xl mb-3" />
-                          <p className="text-slate-400 text-sm font-medium">
-                            {userStores.length > 0 
-                              ? 'No tienes conversaciones activas' 
-                              : 'No tienes mensajes de tus reservas'}
-                          </p>
-                          {userStores.length === 0 && (
-                            <p className="text-slate-500 text-xs mt-2">
-                              Los mensajes de tus reservas aparecerán aquí
-                            </p>
-                          )}
+                        <div className="px-4 py-8 text-center">
+                          <FaComments className="text-white/30 text-3xl mb-2" />
+                          <p className="text-white/50 text-sm">No tienes mensajes</p>
                         </div>
                       ) : (
                         conversations.map((conv) => {
-                          // Determinar quién es el remitente/emisor según el tipo de conversación
+                          const isRead = readMessages.has(conv.id);
                           let senderName, senderAvatar, senderInitial, subtitleText;
                           
                           if (conv.type === 'user-chat') {
-                            // Chat usuario-usuario
                             senderName = conv.userName || 'Usuario';
                             senderAvatar = conv.userAvatar;
                             senderInitial = senderName[0]?.toUpperCase() || 'U';
                             subtitleText = conv.lastMessage || 'Ver conversación';
                           } else if (conv.isOwner) {
-                            // Soy dueño de tienda, el remitente es el cliente
                             senderName = conv.customerName || 'Cliente';
-                            senderAvatar = null; // Podrías agregar customerAvatar si lo tienes
+                            senderAvatar = null;
                             senderInitial = senderName[0]?.toUpperCase() || 'C';
                             subtitleText = conv.itemType === 'order' 
-                              ? `Pedido: ${conv.serviceName || 'Producto'} • $${conv.orderTotal?.toLocaleString()}`
-                              : `Reservó: ${conv.serviceName || 'Servicio'}`;
+                              ? `Pedido • $${conv.orderTotal?.toLocaleString()}`
+                              : `${conv.serviceName || 'Servicio'}`;
                           } else {
-                            // Soy cliente, el remitente es la tienda
                             senderName = conv.storeName || 'Negocio';
                             senderAvatar = conv.storeLogo;
                             senderInitial = senderName[0]?.toUpperCase() || 'N';
                             subtitleText = conv.itemType === 'order' 
-                              ? `🛒 ${conv.serviceName} • $${conv.orderTotal?.toLocaleString()}`
-                              : `📅 ${conv.serviceName || 'Reserva'}`;
+                              ? `Pedido • $${conv.orderTotal?.toLocaleString()}`
+                              : `${conv.serviceName || 'Reserva'}`;
                           }
                           
                           return (
-                            <div
-                              key={conv.id}
-                              onClick={() => handleConversationClick(conv)}
-                              className="mx-2 my-1 px-4 py-3 rounded-xl border border-transparent hover:border-slate-700/60 hover:bg-slate-800/50 transition-all cursor-pointer"
-                            >
-                              <div className="flex gap-3">
-                                {/* Avatar del remitente */}
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg overflow-hidden">
-                                  {senderAvatar ? (
-                                    <img src={senderAvatar} alt={senderName} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <span>{senderInitial}</span>
-                                  )}
-                                </div>
-                                
-                                <div className="flex-1 min-w-0">
-                                  {/* Nombre del remitente */}
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className="text-slate-100 text-sm font-medium truncate flex-1">
-                                      {senderName}
-                                    </p>
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                      {/* Badge de tipo (solo si hay ambos tipos) */}
-                                      {userStores.length > 0 && conversations.some(c => c.type === 'customer') && (
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold flex items-center ${
-                                          conv.type === 'owner' 
-                                            ? 'bg-purple-500/40 text-purple-200' 
-                                            : conv.type === 'user-chat'
-                                              ? 'bg-green-500/40 text-green-200'
-                                              : 'bg-blue-500/40 text-blue-200'
-                                        }`}>
-                                          {conv.type === 'owner' ? <FaStore /> : conv.type === 'user-chat' ? <FaUsers /> : <FaUser />}
-                                        </span>
-                                      )}
-                                      {conv.unreadCount > 0 && (
-                                        <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-md">
-                                          {conv.unreadCount}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Subtítulo con contexto del mensaje */}
-                                  <p className="text-slate-400 text-xs truncate">
-                                    {subtitleText}
-                                  </p>
-                                  
-                                  {/* Fecha/hora adicional para bookings */}
-                                  {!conv.isOwner && conv.itemType === 'booking' && conv.bookingDate && (
-                                    <p className="text-slate-500 text-xs mt-0.5">
-                                      📅 {new Date(conv.bookingDate).toLocaleDateString('es-ES')} • {conv.bookingSlot}
-                                    </p>
-                                  )}
-                                  
-                                  {/* Timestamp */}
-                                  <p className="text-slate-600 text-xs mt-1">
-                                    {new Date(conv.timestamp).toLocaleDateString('es-ES', { 
-                                      day: 'numeric', 
-                                      month: 'short', 
-                                      hour: '2-digit', 
-                                      minute: '2-digit' 
-                                    })}
-                                  </p>
-                                </div>
+                          <div
+                            key={conv.id}
+                            onClick={() => {
+                              markMessageAsRead(conv.id); // ✅ Marcar como leído
+                              handleConversationClick(conv);
+                            }}
+                            className={`px-4 py-3 border-b border-white/5 hover:bg-purple-500/10 transition-colors cursor-pointer ${
+                              isRead ? 'opacity-60' : ''
+                            }`}
+                          >
+                            <div className="flex gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg overflow-hidden">
+                                {senderAvatar ? (
+                                  <img src={senderAvatar} alt={senderName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{senderInitial}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-medium">{senderName}</p>
+                                <p className="text-white/70 text-sm mt-0.5 truncate">{subtitleText}</p>
+                                <p className="text-white/30 text-xs mt-1">
+                                  {new Date(conv.timestamp).toLocaleDateString('es-ES', { 
+                                    day: 'numeric', 
+                                    month: 'short', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </p>
+                                {conv.unreadCount > 0 && (
+                                  <span className="inline-block mt-1 text-xs bg-pink-500 text-white px-2 py-0.5 rounded-full">
+                                    {conv.unreadCount} nuevo{conv.unreadCount > 1 ? 's' : ''}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          );
+                          </div>
+                        );
                         })
                       )}
                     </div>
                     
                     {/* Footer */}
                     {conversations.length > 0 && (
-                      <div className="px-5 py-3 border-t border-slate-700/60 bg-slate-950/50">
-                        {/* Si es dual (cliente Y dueño), mostrar dos botones */}
-                        {userStores.length > 0 && conversations.some(c => c.type === 'customer') ? (
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => {
-                                setOpenMessages(false);
-                                navigate(`/negocio/${userStores[0]._id}`);
-                              }}
-                              className="flex-1 text-center text-xs text-purple-300 hover:text-purple-200 font-medium py-2 hover:bg-purple-500/20 rounded-lg transition-all flex items-center justify-center gap-1"
-                            >
-                              <FaStore /> Negocio
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setOpenMessages(false);
-                                navigate('/perfil?tab=reservas');
-                              }}
-                              className="flex-1 text-center text-xs text-blue-300 hover:text-blue-200 font-medium py-2 hover:bg-blue-500/20 rounded-lg transition-all flex items-center justify-center gap-1"
-                            >
-                              <FaUser /> Reservas
-                            </button>
-                          </div>
-                        ) : (
-                          /* Si es solo uno, mostrar un botón */
-                          <button 
-                            onClick={() => {
-                              setOpenMessages(false);
-                              if (userStores.length > 0) {
-                                // Si es dueño, ir a su primera tienda
-                                navigate(`/negocio/${userStores[0]._id}`);
-                              } else {
-                                // Si es cliente, ir a Mis Reservas
-                                navigate('/perfil?tab=mensajes');
-                              }
-                            }}
-                            className="w-full text-center text-xs text-blue-300 hover:text-blue-200 font-medium py-2 hover:bg-blue-500/20 rounded-lg transition-all"
-                          >
-                            {userStores.length > 0 ? 'Ir a mensajes de negocio' : 'Ver todos los mensajes'}
-                          </button>
-                        )}
+                      <div className="px-4 py-2 border-t border-white/10 bg-gray-900/50">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAllMessagesAsRead();
+                          }}
+                          className="w-full text-center text-xs text-purple-400 hover:text-purple-300 font-medium py-1.5 hover:bg-purple-500/10 rounded transition-colors"
+                        >
+                          Marcar todas como leídas
+                        </button>
                       </div>
                     )}
-                    </div>
                   </div>
                 )}
               </div>
 
-              {/* PERFIL → Página pública */}
+              {/* Perfil de Usuario */}
               <Link
                 to={`/usuario/${user?._id || user?.id}`}
                 className="hidden sm:flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-white/15 backdrop-blur-sm border border-white/30 hover:bg-white/25 hover:border-purple-400/70 transition-all duration-200 group"

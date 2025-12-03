@@ -11,9 +11,13 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Store',
     },
+    targetUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     type: {
       type: String,
-      enum: ['platform', 'store', 'feature-request', 'bug-report'],
+      enum: ['platform', 'store', 'user', 'feature-request', 'bug-report'],
       default: 'platform',
     },
     subject: {
