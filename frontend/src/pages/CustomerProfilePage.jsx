@@ -6,7 +6,32 @@ import Footer from "../components/Footer";
 import { getProfile, updateProfile } from "../api/user";
 import { listMyStores } from "../api/store";
 import axios from "../api/axios";
-import { FaCalendarAlt, FaStore, FaBox, FaHeart, FaComments, FaClock, FaLightbulb, FaArrowUp, FaMagic } from 'react-icons/fa';
+import { 
+  FaCalendarAlt, 
+  FaStore, 
+  FaBox, 
+  FaHeart, 
+  FaComments, 
+  FaClock, 
+  FaLightbulb, 
+  FaArrowUp, 
+  FaMagic,
+  FaUser,
+  FaTags,
+  FaStar,
+  FaEdit,
+  FaHome,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaPhone,
+  FaIdCard,
+  FaMapMarkerAlt,
+  FaEnvelope,
+  FaChevronRight,
+  FaBoxOpen,
+  FaComment,
+  FaStopwatch
+} from 'react-icons/fa';
 
 // Estilos CSS en línea para animaciones
 const styles = `
@@ -51,6 +76,7 @@ export default function CustomerProfilePage() {
   const [stores, setStores] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
+  const [userConversations, setUserConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -155,6 +181,10 @@ export default function CustomerProfilePage() {
       // Cargar mis pedidos
       const ordersRes = await axios.get('/stores/orders/my-orders');
       setMyOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
+
+      // Cargar conversaciones de usuario
+      const conversationsRes = await axios.get('/user-conversations');
+      setUserConversations(Array.isArray(conversationsRes.data) ? conversationsRes.data : []);
 
       // Actualizar estadísticas
       setStats(prev => ({
@@ -273,8 +303,8 @@ export default function CustomerProfilePage() {
                   alt={form.username || "Usuario"}
                   className="relative w-32 h-32 rounded-full object-cover border-4 border-purple-400 shadow-2xl"
                 />
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900">
-                  ⭐ {stats.rating.toFixed(1)}
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900 flex items-center gap-1">
+                  <FaStar /> {stats.rating.toFixed(1)}
                 </div>
               </div>
 
@@ -311,7 +341,7 @@ export default function CustomerProfilePage() {
                     <FaCalendarAlt className="mr-1" /> Desde {stats.accountCreated}
                   </span>
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    ⏱️ {stats.activeTime} activo
+                    <FaStopwatch className="mr-1" /> {stats.activeTime} activo
                   </span>
                 </div>
               </div>
@@ -320,15 +350,15 @@ export default function CustomerProfilePage() {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setActiveTab("editar")}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2"
                 >
-                  ✏️ Editar Perfil
+                  <FaEdit /> Editar Perfil
                 </button>
                 <button
                   onClick={() => navigate("/")}
-                  className="px-6 py-2.5 bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 rounded-xl font-medium border border-slate-600/50 transition-all"
+                  className="px-6 py-2.5 bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 rounded-xl font-medium border border-slate-600/50 transition-all flex items-center justify-center gap-2"
                 >
-                  🏠 Volver al Inicio
+                  <FaHome /> Volver al Inicio
                 </button>
               </div>
             </div>
@@ -336,13 +366,13 @@ export default function CustomerProfilePage() {
 
           {error && (
             <div className="animate-slideIn flex items-center gap-3 text-sm text-red-300 bg-red-900/40 border-2 border-red-500/40 rounded-2xl px-6 py-4 mb-6 backdrop-blur-md shadow-xl">
-              <span className="text-2xl">⚠️</span>
+              <FaExclamationTriangle className="text-2xl" />
               <span>{error}</span>
             </div>
           )}
           {msg && (
             <div className="animate-slideIn flex items-center gap-3 text-sm text-green-300 bg-green-900/40 border-2 border-green-500/40 rounded-2xl px-6 py-4 mb-6 backdrop-blur-md shadow-xl">
-              <span className="text-2xl">✅</span>
+              <FaCheckCircle className="text-2xl" />
               <span>{msg}</span>
             </div>
           )}
@@ -350,21 +380,22 @@ export default function CustomerProfilePage() {
           {/* Tabs */}
           <div className="flex flex-wrap gap-3 mb-8">
             {[
-              { id: "perfil", label: "👤 Perfil Público", icon: "👤" },
-              { id: "actividad", label: "🏷️ Actividad", icon: "🏷️" },
-              { id: "confiabilidad", label: "⭐ Confiabilidad", icon: "⭐" },
-              { id: "editar", label: "✏️ Editar Perfil", icon: "✏️" },
+              { id: "perfil", label: "Perfil Público", icon: FaUser },
+              { id: "actividad", label: "Actividad", icon: FaTags },
+              { id: "mensajes", label: "Mensajes", icon: FaComments },
+              { id: "confiabilidad", label: "Confiabilidad", icon: FaStar },
+              { id: "editar", label: "Editar Perfil", icon: FaEdit },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all ${
+                className={`px-5 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
                   activeTab === tab.id
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105"
                     : "bg-slate-800/60 text-slate-300 hover:bg-slate-700/60 border border-slate-700/50"
                 }`}
               >
-                {tab.label}
+                <tab.icon /> {tab.label}
               </button>
             ))}
           </div>
@@ -375,7 +406,7 @@ export default function CustomerProfilePage() {
               {/* Información básica */}
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span>👤</span> Perfil Público
+                  <FaUser /> Perfil Público
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
@@ -445,13 +476,13 @@ export default function CustomerProfilePage() {
             <div className="space-y-6 animate-slideIn">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>🏷️</span> Actividad en la Plataforma
+                  <FaTags /> Actividad en la Plataforma
                 </h2>
                 <div className="grid gap-6 md:grid-cols-3">
                   {/* Productos publicados */}
                   <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">📦</div>
+                      <FaBoxOpen className="text-4xl mx-auto text-blue-400" />
                       <p className="text-3xl font-bold text-white">{stats.productsPublished}</p>
                       <p className="text-sm text-slate-300">Productos Publicados</p>
                     </div>
@@ -460,7 +491,7 @@ export default function CustomerProfilePage() {
                   {/* Guardados */}
                   <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">❤️</div>
+                      <FaHeart className="text-4xl mx-auto text-pink-400" />
                       <p className="text-3xl font-bold text-white">{stats.savedItems}</p>
                       <p className="text-sm text-slate-300">Guardados</p>
                       <p className="text-xs text-slate-500">(Próximamente)</p>
@@ -470,7 +501,7 @@ export default function CustomerProfilePage() {
                   {/* Consultas */}
                   <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">💬</div>
+                      <FaComment className="text-4xl mx-auto text-green-400" />
                       <p className="text-3xl font-bold text-white">{stats.queriesMade}</p>
                       <p className="text-sm text-slate-300">Consultas Hechas</p>
                     </div>
@@ -480,17 +511,78 @@ export default function CustomerProfilePage() {
             </div>
           )}
 
+          {activeTab === "mensajes" && (
+            <div className="space-y-6 animate-slideIn">
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <FaComments /> Mensajes
+                </h2>
+                
+                {userConversations.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FaComment className="text-6xl mx-auto text-slate-600 mb-4" />
+                    <p className="text-slate-400">No tienes conversaciones activas</p>
+                    <p className="text-sm text-slate-500 mt-2">Tus mensajes con otros usuarios aparecerán aquí</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userConversations.map((conv) => (
+                      <div
+                        key={conv.userId}
+                        onClick={() => {
+                          // Guardar en localStorage para que ChatSidebar abra con este usuario
+                          localStorage.setItem('openChatWithUser', JSON.stringify({
+                            userId: conv.userId,
+                            username: conv.username,
+                            avatar: conv.avatar
+                          }));
+                          // Navegar al inicio donde está el ChatSidebar
+                          navigate('/');
+                        }}
+                        className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-700/60 hover:border-purple-500/50 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <img
+                              src={conv.avatar || 'https://via.placeholder.com/50'}
+                              alt={conv.username}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-purple-400"
+                            />
+                            {conv.unreadCount > 0 && (
+                              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                {conv.unreadCount}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-white font-semibold group-hover:text-purple-300 transition-colors">
+                              {conv.username}
+                            </h3>
+                            <p className="text-slate-400 text-sm truncate">
+                              {conv.lastMessage || 'Sin mensajes aún'}
+                            </p>
+                          </div>
+                          <FaChevronRight className="text-slate-500 group-hover:text-purple-400 transition-colors" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab === "confiabilidad" && (
             <div className="space-y-6 animate-slideIn">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>⭐</span> Confiabilidad
+                  <FaStar /> Confiabilidad
                 </h2>
                 <div className="grid gap-6 md:grid-cols-3">
                   {/* Calificación */}
                   <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 rounded-xl p-6">
                     <div className="text-center space-y-3">
-                      <div className="text-5xl">⭐</div>
+                      <FaStar className="text-5xl mx-auto text-yellow-400" />
                       <p className="text-4xl font-bold text-white">{stats.rating.toFixed(1)}</p>
                       <p className="text-sm text-slate-300">Calificación Promedio</p>
                       <div className="flex justify-center gap-1">
@@ -513,7 +605,7 @@ export default function CustomerProfilePage() {
                   {/* Opiniones */}
                   <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-2 border-blue-500/30 rounded-xl p-6">
                     <div className="text-center space-y-3">
-                      <div className="text-5xl">💭</div>
+                      <FaComment className="text-5xl mx-auto text-blue-400" />
                       <p className="text-4xl font-bold text-white">{stats.reviews}</p>
                       <p className="text-sm text-slate-300">Opiniones Recibidas</p>
                       <p className="text-xs text-slate-500">(Próximamente)</p>
@@ -545,7 +637,7 @@ export default function CustomerProfilePage() {
             <div className="animate-slideIn">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>✏️</span> Editar Información del Perfil
+                  <FaEdit /> Editar Información del Perfil
                 </h2>
 
                 <form onSubmit={onSubmit} className="space-y-6">

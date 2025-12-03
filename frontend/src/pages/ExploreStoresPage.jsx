@@ -747,25 +747,50 @@ export default function ExploreStoresPage() {
                             <h3 className="font-semibold text-white text-sm">{store.name}</h3>
                             <p className="text-[12px] text-white/60">{store.tipoNegocio || "Sin categoría"} {store.comuna ? `· ${store.comuna}` : ""}</p>
                             {store.ownerName && (
-                              <div className="flex items-center gap-1.5 mt-1.5">
-                                <div className="w-4 h-4 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
-                                  {store.ownerAvatar ? (
-                                    <img 
-                                      src={store.ownerAvatar} 
-                                      alt={store.ownerName}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">${store.ownerName.charAt(0).toUpperCase()}</div>`;
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">
-                                      {store.ownerName.charAt(0).toUpperCase()}
-                                    </div>
-                                  )}
+                              <div className="mt-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+                                    {store.ownerAvatar ? (
+                                      <img 
+                                        src={store.ownerAvatar} 
+                                        alt={store.ownerName}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          e.currentTarget.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">${store.ownerName.charAt(0).toUpperCase()}</div>`;
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                        {store.ownerName.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-white/50">{store.ownerName}</p>
                                 </div>
-                                <p className="text-[11px] text-white/50">{store.ownerName}</p>
+                                
+                                {/* Rating con estrellas */}
+                                {store.rating > 0 && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <div className="flex items-center">
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                        <svg
+                                          key={star}
+                                          className={`w-3 h-3 ${
+                                            star <= Math.round(store.rating)
+                                              ? 'text-yellow-400 fill-yellow-400'
+                                              : 'text-gray-600 fill-gray-600'
+                                          }`}
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                      ))}
+                                    </div>
+                                    <span className="text-[10px] text-yellow-400 font-semibold">{store.rating.toFixed(1)}</span>
+                                    <span className="text-[10px] text-white/40">({store.reviewCount || 0})</span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

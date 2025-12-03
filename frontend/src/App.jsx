@@ -29,6 +29,7 @@ import AdminChatbotMonitor from "./pages/AdminChatbotMonitor";
 
 // Chatbot Widget
 import ChatbotWidget from "./components/ChatbotWidget";
+import ChatSidebar from "./components/ChatSidebar";
 
 // Ruta protegida
 function ProtectedRoute({ children }) {
@@ -127,6 +128,9 @@ export default function App() {
 
       {/* Widget de Chatbot - Aparece en todas las páginas */}
       <ChatbotWidget />
+      
+      {/* Panel lateral de Chat - Aparece en todas las páginas */}
+      <ChatSidebar />
     </>
   );
 }

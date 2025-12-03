@@ -1,10 +1,11 @@
 // src/components/MainHeader.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { listMyStores, listStoreOrders, getStoreNotifications } from "../api/store";
 import { getBookingsWithMessages } from "../api/messages";
 import UserChatModal from "./UserChatModal"; // 🆕 Modal de chat usuario-usuario
+import ChatSidebar from "./ChatSidebar"; // 🆕 Panel lateral de chat
 import axios from "../api/axios";
 import { FaBell, FaComments, FaStore, FaUser, FaUsers, FaFire, FaSnowflake } from 'react-icons/fa';
 
@@ -31,47 +32,68 @@ export default function MainHeader({
   const { isAuthenticated, user, logout } = useAuth();
   const [openMenu, setOpenMenu] = useState(false);
   const [openNotifications, setOpenNotifications] = useState(false);
-  const [openMessages, setOpenMessages] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [userStores, setUserStores] = useState([]);
-  const [readNotifications, setReadNotifications] = useState(() => {
-    // ✅ Cargar notificaciones leídas desde localStorage
-    const stored = localStorage.getItem('readNotifications');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  });
-  const [readMessages, setReadMessages] = useState(() => {
-    // ✅ Cargar mensajes leídos desde localStorage
-    const stored = localStorage.getItem('readMessages');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  });
+  const [readNotifications, setReadNotifications] = useState(new Set());
+  const [readMessages, setReadMessages] = useState(new Set());
   const [selectedUserChat, setSelectedUserChat] = useState(null); // 🆕 Estado para chat usuario-usuario
   const pollingIntervalRef = useRef(null);
+  const readNotificationsRef = useRef(readNotifications);
+  const readMessagesRef = useRef(readMessages);
+
+  // ✅ Actualizar refs cuando cambian los estados
+  useEffect(() => {
+    readNotificationsRef.current = readNotifications;
+  }, [readNotifications]);
+
+  useEffect(() => {
+    readMessagesRef.current = readMessages;
+  }, [readMessages]);
 
   const isStore = variant === "store";
 
-  // ✅ Guardar notificaciones leídas en localStorage
+  // ✅ Cargar notificaciones/mensajes leídos cuando el usuario inicia sesión
   useEffect(() => {
-    localStorage.setItem('readNotifications', JSON.stringify([...readNotifications]));
-  }, [readNotifications]);
+    if (user?._id) {
+      // Cargar del localStorage usando el ID del usuario como clave
+      const storedNotifications = localStorage.getItem(`readNotifications_${user._id}`);
+      const storedMessages = localStorage.getItem(`readMessages_${user._id}`);
+      
+      if (storedNotifications) {
+        setReadNotifications(new Set(JSON.parse(storedNotifications)));
+      }
+      if (storedMessages) {
+        setReadMessages(new Set(JSON.parse(storedMessages)));
+      }
+    }
+  }, [user?._id]);
 
-  // ✅ Guardar mensajes leídos en localStorage
+  // ✅ Guardar notificaciones leídas en localStorage (por usuario)
   useEffect(() => {
-    localStorage.setItem('readMessages', JSON.stringify([...readMessages]));
-  }, [readMessages]);
+    if (user?._id && readNotifications.size > 0) {
+      localStorage.setItem(`readNotifications_${user._id}`, JSON.stringify([...readNotifications]));
+    }
+  }, [readNotifications, user?._id]);
+
+  // ✅ Guardar mensajes leídos en localStorage (por usuario)
+  useEffect(() => {
+    if (user?._id && readMessages.size > 0) {
+      localStorage.setItem(`readMessages_${user._id}`, JSON.stringify([...readMessages]));
+    }
+  }, [readMessages, user?._id]);
 
   // Cargar notificaciones y mensajes con polling optimizado
   useEffect(() => {
     if (!isAuthenticated || !user?._id) {
-      // ✅ Limpiar estados cuando no hay usuario autenticado
+      // ✅ Limpiar estados cuando no hay usuario autenticado (pero NO borrar readNotifications/readMessages)
       setUserStores([]);
       setNotifications([]);
       setConversations([]);
       setOpenNotifications(false);
-      setOpenMessages(false);
-      setReadNotifications(new Set());
+      // ❌ NO limpiar readNotifications ni readMessages - se mantienen en localStorage
       
       // Limpiar intervalo si existe
       if (pollingIntervalRef.current) {
@@ -148,6 +170,16 @@ export default function MainHeader({
           console.error(`❌ Error loading notifications for store ${store._id}:`, err);
         }
       }
+      
+      // Ordenar por timestamp (más reciente primero) y priorizar no leídas
+      allNotifications.sort((a, b) => {
+        // Primero ordenar por leído/no leído (usar ref para tener valor actual)
+        const aRead = readNotificationsRef.current.has(a.id);
+        const bRead = readNotificationsRef.current.has(b.id);
+        if (aRead !== bRead) return aRead ? 1 : -1;
+        // Luego por fecha
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
       
       setNotifications(allNotifications);
       setLoadingNotifications(false);
@@ -368,46 +400,6 @@ export default function MainHeader({
     }
   };
 
-  // ✅ Reordenar notificaciones cuando cambia el estado de leídas
-  useEffect(() => {
-    if (notifications.length > 0) {
-      const sorted = [...notifications].sort((a, b) => {
-        // Primero ordenar por leído/no leído
-        const aRead = readNotifications.has(a.id);
-        const bRead = readNotifications.has(b.id);
-        if (aRead !== bRead) return aRead ? 1 : -1;
-        // Luego por fecha
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      });
-      
-      // Solo actualizar si el orden cambió
-      const hasChanged = sorted.some((notif, idx) => notif.id !== notifications[idx]?.id);
-      if (hasChanged) {
-        setNotifications(sorted);
-      }
-    }
-  }, [readNotifications]);
-
-  // ✅ Reordenar mensajes cuando cambia el estado de leídos
-  useEffect(() => {
-    if (conversations.length > 0) {
-      const sorted = [...conversations].sort((a, b) => {
-        // Primero ordenar por leído/no leído
-        const aRead = readMessages.has(a.id);
-        const bRead = readMessages.has(b.id);
-        if (aRead !== bRead) return aRead ? 1 : -1;
-        // Luego por fecha
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      });
-      
-      // Solo actualizar si el orden cambió
-      const hasChanged = sorted.some((conv, idx) => conv.id !== conversations[idx]?.id);
-      if (hasChanged) {
-        setConversations(sorted);
-      }
-    }
-  }, [readMessages]);
-
   // ✅ Marcar notificación como leída
   const markNotificationAsRead = (notificationId) => {
     setReadNotifications(prev => new Set([...prev, notificationId]));
@@ -435,19 +427,17 @@ export default function MainHeader({
     const handleClickOutside = (e) => {
       if (!e.target.closest('.dropdown-container')) {
         setOpenNotifications(false);
-        setOpenMessages(false);
         setOpenMenu(false);
       }
     };
     
-    if (openNotifications || openMessages || openMenu) {
+    if (openNotifications || openMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [openNotifications, openMessages, openMenu]);
+  }, [openNotifications, openMenu]);
 
   const handleConversationClick = (conv) => {
-    setOpenMessages(false);
     setOpenNotifications(false);
     
     // 🆕 Chat usuario-usuario
@@ -481,7 +471,7 @@ export default function MainHeader({
   };
 
   const unreadNotifications = notifications.filter(n => !readNotifications.has(n.id)).length;
-  const unreadMessages = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
+  const unreadMessages = conversations.filter(c => !readMessages.has(c.id)).length;
 
   // NUEVO ESTILO GALAXY MODERNO
   const vitrInexStyle = {
@@ -635,7 +625,6 @@ export default function MainHeader({
                   type="button"
                   onClick={() => {
                     setOpenNotifications(!openNotifications);
-                    setOpenMessages(false);
                     setOpenMenu(false);
                   }}
                   className="relative p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/30 hover:bg-white/25 transition-all duration-200"
@@ -761,155 +750,6 @@ export default function MainHeader({
                 )}
               </div>
 
-              {/* MENSAJES/CHATS DROPDOWN */}
-              <div className="relative dropdown-container">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenMessages(!openMessages);
-                    setOpenNotifications(false);
-                    setOpenMenu(false);
-                  }}
-                  className="relative p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/30 hover:bg-white/25 transition-all duration-200"
-                  title="Mensajes"
-                >
-                  <svg 
-                    className="w-5 h-5 text-white" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                  {unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg animate-pulse px-1">
-                      {unreadMessages}
-                    </span>
-                  )}
-                </button>
-
-                {/* Dropdown de mensajes */}
-                {openMessages && (
-                  <div 
-                    className="absolute right-0 top-20 w-[340px] bg-gray-900/[0.99] backdrop-blur-md border border-purple-400/40 rounded-xl shadow-2xl z-[1001] overflow-hidden"
-                    style={{ 
-                      boxShadow: '0 20px 60px rgba(139, 92, 246, 0.5)',
-                      fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
-                      maxHeight: '450px'
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="px-4 py-3 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-white font-bold text-sm flex items-center gap-1">
-                          <FaComments /> Mensajes
-                        </h3>
-                        {unreadMessages > 0 && (
-                          <span className="text-xs bg-pink-500/80 px-2 py-0.5 rounded-full font-semibold text-white">
-                            {unreadMessages}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="overflow-y-auto" style={{ maxHeight: '320px' }}>
-                      {loadingMessages ? (
-                        <div className="px-4 py-8 text-center text-white/50 text-sm">
-                          Cargando...
-                        </div>
-                      ) : conversations.length === 0 ? (
-                        <div className="px-4 py-8 text-center">
-                          <FaComments className="text-white/30 text-3xl mb-2" />
-                          <p className="text-white/50 text-sm">No tienes mensajes</p>
-                        </div>
-                      ) : (
-                        conversations.map((conv) => {
-                          const isRead = readMessages.has(conv.id);
-                          let senderName, senderAvatar, senderInitial, subtitleText;
-                          
-                          if (conv.type === 'user-chat') {
-                            senderName = conv.userName || 'Usuario';
-                            senderAvatar = conv.userAvatar;
-                            senderInitial = senderName[0]?.toUpperCase() || 'U';
-                            subtitleText = conv.lastMessage || 'Ver conversación';
-                          } else if (conv.isOwner) {
-                            senderName = conv.customerName || 'Cliente';
-                            senderAvatar = null;
-                            senderInitial = senderName[0]?.toUpperCase() || 'C';
-                            subtitleText = conv.itemType === 'order' 
-                              ? `Pedido • $${conv.orderTotal?.toLocaleString()}`
-                              : `${conv.serviceName || 'Servicio'}`;
-                          } else {
-                            senderName = conv.storeName || 'Negocio';
-                            senderAvatar = conv.storeLogo;
-                            senderInitial = senderName[0]?.toUpperCase() || 'N';
-                            subtitleText = conv.itemType === 'order' 
-                              ? `Pedido • $${conv.orderTotal?.toLocaleString()}`
-                              : `${conv.serviceName || 'Reserva'}`;
-                          }
-                          
-                          return (
-                          <div
-                            key={conv.id}
-                            onClick={() => {
-                              markMessageAsRead(conv.id); // ✅ Marcar como leído
-                              handleConversationClick(conv);
-                            }}
-                            className={`px-4 py-3 border-b border-white/5 hover:bg-purple-500/10 transition-colors cursor-pointer ${
-                              isRead ? 'opacity-60' : ''
-                            }`}
-                          >
-                            <div className="flex gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg overflow-hidden">
-                                {senderAvatar ? (
-                                  <img src={senderAvatar} alt={senderName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span>{senderInitial}</span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white text-sm font-medium">{senderName}</p>
-                                <p className="text-white/70 text-sm mt-0.5 truncate">{subtitleText}</p>
-                                <p className="text-white/30 text-xs mt-1">
-                                  {new Date(conv.timestamp).toLocaleDateString('es-ES', { 
-                                    day: 'numeric', 
-                                    month: 'short', 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </p>
-                                {conv.unreadCount > 0 && (
-                                  <span className="inline-block mt-1 text-xs bg-pink-500 text-white px-2 py-0.5 rounded-full">
-                                    {conv.unreadCount} nuevo{conv.unreadCount > 1 ? 's' : ''}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                        })
-                      )}
-                    </div>
-                    
-                    {/* Footer */}
-                    {conversations.length > 0 && (
-                      <div className="px-4 py-2 border-t border-white/10 bg-gray-900/50">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markAllMessagesAsRead();
-                          }}
-                          className="w-full text-center text-xs text-purple-400 hover:text-purple-300 font-medium py-1.5 hover:bg-purple-500/10 rounded transition-colors"
-                        >
-                          Marcar todas como leídas
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* Perfil de Usuario */}
               <Link
                 to={`/usuario/${user?._id || user?.id}`}
@@ -941,7 +781,6 @@ export default function MainHeader({
                   onClick={() => {
                     setOpenMenu(!openMenu);
                     setOpenNotifications(false);
-                    setOpenMessages(false);
                   }}
                   className="p-2 rounded-lg bg-white/15 backdrop-blur-sm border border-white/30 hover:bg-white/25 transition-all duration-200"
                   title="Menú"

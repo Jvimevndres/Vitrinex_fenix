@@ -77,34 +77,13 @@ export function enableSmoothScroll() {
 // ==================== ESTILOS DE COMPONENTES ====================
 
 /**
- * Obtiene clases CSS para estilos de botones
+ * Obtiene clases CSS para estilos de botones (solo clases estáticas)
+ * Los colores se aplican mediante estilos inline en getButtonStyles
  */
-export function getButtonClasses(buttonConfig, colors) {
-  const { style, roundness, size, animation } = buttonConfig;
+export function getButtonClasses(buttonConfig) {
+  const { roundness, size, animation } = buttonConfig;
   
   let classes = 'transition-all ';
-
-  // Estilo
-  switch (style) {
-    case 'filled':
-      classes += `bg-[${colors.primary}] text-white hover:opacity-90 `;
-      break;
-    case 'outline':
-      classes += `border-2 border-[${colors.primary}] text-[${colors.primary}] hover:bg-[${colors.primary}] hover:text-white `;
-      break;
-    case 'ghost':
-      classes += `text-[${colors.primary}] hover:bg-[${colors.primary}]/10 `;
-      break;
-    case 'soft':
-      classes += `bg-[${colors.primary}]/10 text-[${colors.primary}] hover:bg-[${colors.primary}]/20 `;
-      break;
-    case 'gradient':
-      classes += `bg-gradient-to-r from-[${colors.primary}] to-[${colors.secondary}] text-white hover:shadow-lg `;
-      break;
-    case 'glow':
-      classes += `bg-[${colors.primary}] text-white shadow-lg shadow-[${colors.primary}]/50 hover:shadow-xl `;
-      break;
-  }
 
   // Redondez
   const roundnessMap = {
@@ -141,16 +120,24 @@ export function getButtonStyles(buttonConfig, colors) {
   
   const styles = {};
 
+  // Función para agregar opacidad a un color hex
+  const addOpacity = (hex, opacity) => {
+    const opacityHex = Math.round(opacity * 255).toString(16).padStart(2, '0');
+    return hex + opacityHex;
+  };
+
   if (style === 'filled') {
     styles.backgroundColor = colors.primary;
     styles.color = '#ffffff';
   } else if (style === 'outline') {
-    styles.borderColor = colors.primary;
+    styles.border = `2px solid ${colors.primary}`;
     styles.color = colors.primary;
+    styles.backgroundColor = 'transparent';
   } else if (style === 'ghost') {
     styles.color = colors.primary;
+    styles.backgroundColor = 'transparent';
   } else if (style === 'soft') {
-    styles.backgroundColor = `${colors.primary}20`;
+    styles.backgroundColor = addOpacity(colors.primary, 0.12);
     styles.color = colors.primary;
   } else if (style === 'gradient') {
     styles.backgroundImage = `linear-gradient(to right, ${colors.primary}, ${colors.secondary})`;
@@ -158,7 +145,7 @@ export function getButtonStyles(buttonConfig, colors) {
   } else if (style === 'glow') {
     styles.backgroundColor = colors.primary;
     styles.color = '#ffffff';
-    styles.boxShadow = `0 10px 30px ${colors.primary}40`;
+    styles.boxShadow = `0 10px 30px ${addOpacity(colors.primary, 0.4)}`;
   }
 
   return styles;
