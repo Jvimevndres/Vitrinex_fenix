@@ -17,6 +17,12 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: "El correo es requerido" });
     }
 
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Formato de correo inválido" });
+    }
+
     // Buscar usuario
     const user = await User.findOne({ email: email.toLowerCase() });
     
@@ -60,9 +66,18 @@ export const resetPassword = async (req, res) => {
   try {
     const { code, newPassword } = req.body;
 
+    console.log('🔐 Intento de reset-password:', { code: code ? '***' + code.slice(-3) : 'N/A', hasPassword: !!newPassword });
+
     if (!code || !newPassword) {
       return res.status(400).json({ 
         message: "Código y nueva contraseña son requeridos" 
+      });
+    }
+
+    // Validar formato de código
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ 
+        message: "El código debe ser de 6 dígitos" 
       });
     }
 
@@ -76,15 +91,19 @@ export const resetPassword = async (req, res) => {
     let validEmail = null;
     let resetData = null;
 
+    console.log(`🔍 Buscando código en ${resetCodes.size} códigos almacenados...`);
+
     for (const [email, data] of resetCodes.entries()) {
       if (data.code === code && Date.now() < data.expires) {
         validEmail = email;
         resetData = data;
+        console.log(`✅ Código válido encontrado para: ${email}`);
         break;
       }
     }
 
     if (!validEmail) {
+      console.log('❌ Código no encontrado o expirado');
       return res.status(400).json({ 
         message: "Código inválido o expirado" 
       });

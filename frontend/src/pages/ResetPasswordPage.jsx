@@ -29,12 +29,17 @@ export default function ResetPasswordPage() {
     setError("");
 
     // Validaciones
-    if (formData.code.length !== 6) {
-      setError("El código debe tener 6 dígitos");
+    if (!formData.code || formData.code.trim().length === 0) {
+      setError("Por favor ingresa el código de verificación");
       return;
     }
 
-    if (formData.newPassword.length < 6) {
+    if (!/^\d{6}$/.test(formData.code)) {
+      setError("El código debe tener exactamente 6 dígitos numéricos");
+      return;
+    }
+
+    if (!formData.newPassword || formData.newPassword.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
@@ -47,15 +52,19 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      await axios.post(`${API_URL}/auth/reset-password`, {
-        code: formData.code,
+      console.log('🔐 Enviando reset-password...');
+      const response = await axios.post(`${API_URL}/auth/reset-password`, {
+        code: formData.code.trim(),
         newPassword: formData.newPassword
       });
+      
+      console.log('✅ Contraseña actualizada:', response.data);
       
       // Mostrar mensaje de éxito
       alert("¡Contraseña actualizada! Ahora puedes iniciar sesión con tu nueva contraseña.");
       navigate("/login");
     } catch (err) {
+      console.error('❌ Error en reset-password:', err.response?.data || err.message);
       setError(
         err?.response?.data?.message ||
         "Error al restablecer contraseña. Verifica el código."

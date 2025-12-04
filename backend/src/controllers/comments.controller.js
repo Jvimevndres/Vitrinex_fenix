@@ -1,4 +1,5 @@
 import Comment from '../models/comment.model.js';
+import { invalidateStoresCache } from './store.controller.js';
 
 // Crear nuevo comentario/feedback
 export const createComment = async (req, res) => {
@@ -17,6 +18,11 @@ export const createComment = async (req, res) => {
 
     await comment.save();
     await comment.populate('user', 'username email avatarUrl');
+
+    // 🆕 Invalidar caché de tiendas si es una reseña de tienda
+    if (type === 'store' && store) {
+      invalidateStoresCache();
+    }
 
     res.status(201).json({ message: 'Comentario enviado', comment });
   } catch (error) {

@@ -3,6 +3,7 @@ import Product from "../models/product.model.js";
 import Booking from "../models/booking.model.js";
 import Order from "../models/order.model.js";
 import Service from "../models/service.model.js";
+import Comment from "../models/comment.model.js";
 import {
   normalizeAvailability,
   validateTimeBlock,
@@ -19,6 +20,12 @@ import {
 let storesCache = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 30000; // 30 segundos
+
+// 🆕 Función para invalidar caché (útil cuando se crea/actualiza una tienda o reseña)
+export const invalidateStoresCache = () => {
+  storesCache = null;
+  cacheTimestamp = 0;
+};
 
 /* =================== Helpers =================== */
 
@@ -115,7 +122,7 @@ export const listPublicStores = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
-    // 🚀 USAR AGREGACIÓN (mucho más rápido que find)
+    // 🚀 USAR AGREGACIÓN OPTIMIZADA (sin lookup de users)
     const queryStart = Date.now();
     const [result] = await Store.aggregate([
       { $match: matchStage },
@@ -126,10 +133,30 @@ export const listPublicStores = async (req, res) => {
             { $limit: limitNum },
             {
               $lookup: {
-                from: 'users',
-                localField: 'owner',
-                foreignField: '_id',
-                as: 'ownerInfo'
+                from: 'comments',
+                let: { storeId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ['$store', '$$storeId'] },
+                      type: 'store',
+                      rating: { $exists: true, $ne: null }
+                    }
+                  }
+                ],
+                as: 'reviews'
+              }
+            },
+            {
+              $addFields: {
+                reviewCount: { $size: '$reviews' },
+                avgRating: {
+                  $cond: {
+                    if: { $gt: [{ $size: '$reviews' }, 0] },
+                    then: { $avg: '$reviews.rating' },
+                    else: 0
+                  }
+                }
               }
             },
             {
@@ -144,9 +171,8 @@ export const listPublicStores = async (req, res) => {
                 lng: 1,
                 direccion: 1,
                 owner: 1,
-                ownerName: { $arrayElemAt: ['$ownerInfo.username', 0] },
-                ownerEmail: { $arrayElemAt: ['$ownerInfo.email', 0] },
-                ownerAvatar: { $arrayElemAt: ['$ownerInfo.avatarUrl', 0] }
+                rating: { $round: ['$avgRating', 1] },
+                reviewCount: 1
               }
             }
           ],
@@ -449,6 +475,18 @@ export const getStoreById = async (req, res) => {
 
     if (!store) return res.status(404).json({ message: "Tienda no encontrada" });
 
+    // 🌟 Calcular rating basado en reseñas
+    const reviews = await Comment.find({
+      store: id,
+      type: 'store',
+      rating: { $exists: true, $ne: null }
+    });
+    
+    const reviewCount = reviews.length;
+    const avgRating = reviewCount > 0 
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount 
+      : 0;
+
     res.json({
       _id: store._id,
       name: store.name,
@@ -491,6 +529,8 @@ export const getStoreById = async (req, res) => {
       ownerName: store.owner?.username || null,
       ownerAvatar: store.owner?.avatarUrl || null,
       ownerEmail: store.owner?.email || null,
+      rating: Math.round(avgRating * 10) / 10, // Redondear a 1 decimal
+      reviewCount: reviewCount,
       createdAt: store.createdAt,
       updatedAt: store.updatedAt,
     });

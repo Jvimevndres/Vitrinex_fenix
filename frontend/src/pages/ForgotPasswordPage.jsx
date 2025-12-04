@@ -15,12 +15,22 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setError("Por favor ingresa un correo electrónico válido");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      console.log('✅ Código enviado:', response.data);
       setSuccess(true);
     } catch (err) {
+      console.error('❌ Error en forgot-password:', err);
       setError(
         err?.response?.data?.message ||
         "Error al enviar el correo. Verifica que el email sea correcto."

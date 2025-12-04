@@ -261,7 +261,7 @@ export const getUserConversations = async (req, res) => {
           userId: otherUser._id,
           username: otherUser.username,
           email: otherUser.email,
-          avatar: otherUser.avatar,
+          avatar: otherUser.avatarUrl,
           lastMessage: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
           lastMessageAt: msg.createdAt,
           unreadCount: unreadCount
