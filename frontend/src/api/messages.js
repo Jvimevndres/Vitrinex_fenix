@@ -105,7 +105,7 @@ export const sendOrderMessage = async (orderId, content) => {
  * @returns {Promise<Object>} Mensaje creado
  */
 export const sendOrderMessagePublic = async (orderId, data) => {
-  const response = await axios.post(`/public/orders/${orderId}/messages`, messageData);
+  const response = await axios.post(`/public/orders/${orderId}/messages`, data);
   return response.data;
 };
 

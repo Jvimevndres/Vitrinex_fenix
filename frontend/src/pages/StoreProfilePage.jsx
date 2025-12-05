@@ -700,10 +700,6 @@ export default function StoreProfilePage() {
                       <AppointmentsList storeId={id} />
                     )}
 
-                    {bookingsPanel === "messages" && (
-                      <UnifiedChatManager storeId={id} storeMode="bookings" />
-                    )}
-
                     {bookingsPanel === "insights" && (
                       <SmartInsights storeId={id} mode="bookings" />
                     )}
@@ -719,10 +715,6 @@ export default function StoreProfilePage() {
 
                     {productsPanel === "orders" && (
                       <ModernOrdersManager storeId={id} />
-                    )}
-
-                    {productsPanel === "messages" && (
-                      <UnifiedChatManager storeId={id} storeMode="products" />
                     )}
 
                     {productsPanel === "insights" && (
@@ -765,17 +757,6 @@ export default function StoreProfilePage() {
                     }`}
                   >
                     <FaBox /> Pedidos
-                  </button>
-
-                  <button
-                    onClick={() => setProductsPanel("messages")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      productsPanel === "messages"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <FaComments /> Mensajes
                   </button>
 
                   <button
@@ -828,17 +809,6 @@ export default function StoreProfilePage() {
                     }`}
                   >
                     <FaClipboardList /> Reservas
-                  </button>
-
-                  <button
-                    onClick={() => setBookingsPanel("messages")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "messages"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <FaComments /> Mensajes
                   </button>
 
                   <button

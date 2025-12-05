@@ -24,6 +24,8 @@ export default function ChatSidebar() {
   const [newMessage, setNewMessage] = useState(''); // Input del mensaje
   const [loadingChat, setLoadingChat] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [activeTab, setActiveTab] = useState('business'); // 'business' o 'users'
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState('all'); // 'all' o storeId específico
 
   // ✅ Funciones auxiliares con useCallback para memo  ización correcta
   const loadCustomerMessages = useCallback(async () => {
@@ -143,6 +145,7 @@ export default function ChatSidebar() {
                 bookingId: booking._id,
                 storeId: store._id,
                 storeName: store.name,
+                storeLogo: store.logo,
                 customerName: booking.customerName || booking.customerEmail,
                 lastMessage: booking.unreadMessagesOwner > 0
                   ? `${booking.unreadMessagesOwner} mensaje${booking.unreadMessagesOwner > 1 ? 's' : ''} nuevo${booking.unreadMessagesOwner > 1 ? 's' : ''}`
@@ -168,6 +171,7 @@ export default function ChatSidebar() {
                       orderId: order._id,
                       storeId: store._id,
                       storeName: store.name,
+                      storeLogo: store.logo,
                       customerName: order.customerName || order.customerEmail,
                       lastMessage: 'Ver conversación',
                       unreadCount: order.unreadMessagesOwner || 0,
@@ -212,10 +216,38 @@ export default function ChatSidebar() {
   }, [loadCustomerMessages, loadUserConversations]);
 
   // ✅ Función para cargar mensajes de un chat específico
-  const loadChatMessages = useCallback(async (userId, skipScroll = false) => {
+  const loadChatMessages = useCallback(async (conv, skipScroll = false) => {
     try {
       setLoadingChat(true);
-      const { data } = await axios.get(`/public/users/${userId}/messages`);
+      let data;
+
+      if (conv.type === 'user-chat') {
+        // Chat entre usuarios
+        const response = await axios.get(`/public/users/${conv.userId}/messages`);
+        data = response.data;
+      } else if (conv.type === 'owner') {
+        // Chat como dueño de tienda
+        if (conv.itemType === 'booking') {
+          const response = await axios.get(`/bookings/${conv.bookingId}/messages`);
+          data = response.data;
+        } else if (conv.itemType === 'order') {
+          const response = await axios.get(`/orders/${conv.orderId}/messages`);
+          data = response.data;
+        }
+      } else if (conv.type === 'customer') {
+        // Chat como cliente
+        if (conv.itemType === 'booking') {
+          const response = await axios.get(`/public/bookings/${conv.bookingId}/messages`, {
+            params: { email: user.email }
+          });
+          data = response.data;
+        } else if (conv.itemType === 'order') {
+          const response = await axios.get(`/public/orders/${conv.orderId}/messages`, {
+            params: { email: user.email }
+          });
+          data = response.data;
+        }
+      }
       
       // Solo actualizar si hay cambios
       setChatMessages(prev => {
@@ -237,7 +269,7 @@ export default function ChatSidebar() {
     } finally {
       setLoadingChat(false);
     }
-  }, []);
+  }, [user?.email]);
 
   // ✅ Función para enviar mensaje
   const sendMessage = async () => {
@@ -245,12 +277,40 @@ export default function ChatSidebar() {
 
     try {
       setSendingMessage(true);
-      const { data } = await axios.post(`/public/users/${activeChatModal.userId}/messages`, {
-        content: newMessage.trim()
-      });
-
-      setChatMessages(prev => [...prev, data]);
+      
+      if (activeChatModal.type === 'user-chat') {
+        // Chat entre usuarios
+        await axios.post(`/public/users/${activeChatModal.userId}/messages`, {
+          content: newMessage.trim()
+        });
+      } else if (activeChatModal.type === 'owner') {
+        // Chat como dueño de tienda
+        if (activeChatModal.itemType === 'booking') {
+          await axios.post(`/bookings/${activeChatModal.bookingId}/messages`, {
+            content: newMessage.trim()
+          });
+        } else if (activeChatModal.itemType === 'order') {
+          await axios.post(`/orders/${activeChatModal.orderId}/messages`, {
+            content: newMessage.trim()
+          });
+        }
+      } else if (activeChatModal.type === 'customer') {
+        // Chat como cliente
+        if (activeChatModal.itemType === 'booking') {
+          await axios.post(`/public/bookings/${activeChatModal.bookingId}/messages`, {
+            email: user.email,
+            content: newMessage.trim()
+          });
+        } else if (activeChatModal.itemType === 'order') {
+          await axios.post(`/public/orders/${activeChatModal.orderId}/messages`, {
+            content: newMessage.trim(),
+            customerEmail: user.email
+          });
+        }
+      }
+      
       setNewMessage('');
+      await loadChatMessages(activeChatModal, false);
       
       // Scroll al final
       setTimeout(() => {
@@ -332,7 +392,7 @@ export default function ChatSidebar() {
 
   // ✅ Polling de mensajes del chat activo
   useEffect(() => {
-    if (!activeChatModal?.userId) {
+    if (!activeChatModal) {
       if (chatPollingRef.current) {
         clearInterval(chatPollingRef.current);
         chatPollingRef.current = null;
@@ -340,10 +400,10 @@ export default function ChatSidebar() {
       return;
     }
 
-    loadChatMessages(activeChatModal.userId, false);
+    loadChatMessages(activeChatModal, false);
 
     chatPollingRef.current = setInterval(() => {
-      loadChatMessages(activeChatModal.userId, true); // skipScroll en polling
+      loadChatMessages(activeChatModal, true); // skipScroll en polling
     }, 5000); // Actualizar cada 5 segundos
 
     return () => {
@@ -352,7 +412,7 @@ export default function ChatSidebar() {
         chatPollingRef.current = null;
       }
     };
-  }, [activeChatModal?.userId, loadChatMessages]);
+  }, [activeChatModal, loadChatMessages]);
 
   // ✅ Detectar apertura de chat desde otra página (ej: perfil)
   useEffect(() => {
@@ -401,29 +461,11 @@ export default function ChatSidebar() {
   };
 
   const handleConversationClick = (conv) => {
-    if (conv.type === 'user-chat') {
-      // Abrir modal de chat tipo burbuja
-      setActiveChatModal(conv);
-      setIsOpen(false);
-      setChatMessages([]);
-      setNewMessage('');
-      return;
-    }
-
-    if (conv.isOwner) {
-      if (conv.itemType === 'order') {
-        navigate(`/negocio/${conv.storeId}?tab=ventas&panel=orders`);
-      } else {
-        navigate(`/negocio/${conv.storeId}`);
-      }
-    } else {
-      if (conv.itemType === 'order' && conv.storeId) {
-        navigate(`/tiendas/${conv.storeId}`);
-      } else {
-        navigate('/perfil?tab=reservas');
-      }
-    }
+    // Abrir modal de chat para cualquier tipo de conversación
+    setActiveChatModal(conv);
     setIsOpen(false);
+    setChatMessages([]);
+    setNewMessage('');
   };
 
   const handleConversationClickInternal = (conv) => {
@@ -462,22 +504,75 @@ export default function ChatSidebar() {
           />
 
           <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-[400px] bg-white shadow-2xl z-[998] flex flex-col animate-slideInLeft">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FaComments className="text-2xl" />
-                <div>
-                  <h3 className="font-bold text-xl">Mensajes</h3>
-                  <p className="text-sm text-indigo-100">
-                    {unreadMessages > 0 ? `${unreadMessages} sin leer` : 'Todo al día'}
-                  </p>
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <FaComments className="text-2xl" />
+                  <div>
+                    <h3 className="font-bold text-xl">Mensajes</h3>
+                    <p className="text-sm text-indigo-100">
+                      {unreadMessages > 0 ? `${unreadMessages} sin leer` : 'Todo al día'}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                  <FaTimes className="text-xl" />
+                </button>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
-              >
-                <FaTimes className="text-xl" />
-              </button>
+
+              {/* Pestañas */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setActiveTab('business')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'business'
+                      ? 'bg-white text-indigo-600 shadow-lg'
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  <FaStore />
+                  Negocios
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'users'
+                      ? 'bg-white text-indigo-600 shadow-lg'
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  <FaUsers />
+                  Usuarios
+                </button>
+              </div>
+
+              {/* Filtro de tienda - solo visible en pestaña Negocios */}
+              {activeTab === 'business' && userStores.length > 0 && (
+                <div className="mt-3">
+                  <select
+                    value={selectedStoreFilter}
+                    onChange={(e) => setSelectedStoreFilter(e.target.value)}
+                    className="w-full py-2 px-3 rounded-lg bg-white/20 text-white border border-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur"
+                  >
+                    <option value="all" className="text-gray-900">
+                      Todas las tiendas ({conversations.filter(c => c.type !== 'user-chat').length})
+                    </option>
+                    {userStores.map((store) => {
+                      const storeConvCount = conversations.filter(
+                        c => c.type !== 'user-chat' && c.storeId === store._id
+                      ).length;
+                      return (
+                        <option key={store._id} value={store._id} className="text-gray-900">
+                          {store.name} ({storeConvCount})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -485,14 +580,47 @@ export default function ChatSidebar() {
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
-              ) : conversations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 px-6">
-                  <FaComments className="text-6xl mb-4 opacity-30" />
-                  <p className="text-center text-sm">No tienes conversaciones activas</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {conversations.map((conv) => {
+              ) : (() => {
+                // Filtrar conversaciones según la pestaña activa y tienda seleccionada
+                const filteredConversations = conversations.filter(conv => {
+                  if (activeTab === 'business') {
+                    // Mostrar conversaciones de negocios (reservas y pedidos)
+                    const isBusinessConv = conv.type !== 'user-chat';
+                    
+                    // Si hay un filtro de tienda aplicado
+                    if (selectedStoreFilter !== 'all') {
+                      return isBusinessConv && conv.storeId === selectedStoreFilter;
+                    }
+                    
+                    return isBusinessConv;
+                  } else {
+                    // Mostrar conversaciones entre usuarios
+                    return conv.type === 'user-chat';
+                  }
+                });
+
+                return filteredConversations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400 px-6">
+                    <FaComments className="text-6xl mb-4 opacity-30" />
+                    <p className="text-center text-sm">
+                      {activeTab === 'business' 
+                        ? selectedStoreFilter !== 'all' 
+                          ? 'No hay conversaciones para esta tienda'
+                          : 'No tienes conversaciones con negocios'
+                        : 'No tienes conversaciones con usuarios'}
+                    </p>
+                    {activeTab === 'business' && selectedStoreFilter !== 'all' && (
+                      <button
+                        onClick={() => setSelectedStoreFilter('all')}
+                        className="mt-3 text-indigo-600 text-sm font-medium hover:text-indigo-700"
+                      >
+                        Ver todas las tiendas
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {filteredConversations.map((conv) => {
                     const isUnread = !readMessages.has(conv.id);
                     
                     return (
@@ -554,7 +682,8 @@ export default function ChatSidebar() {
                     );
                   })}
                 </div>
-              )}
+              );
+              })()}
             </div>
 
             {conversations.length > 0 && unreadMessages > 0 && (
@@ -574,31 +703,53 @@ export default function ChatSidebar() {
       {/* Modal de chat tipo burbuja - similar al chatbot */}
       {activeChatModal && (
         <div className="fixed bottom-6 right-6 z-[1000] w-[400px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col animate-slideInUp">
-          {/* Header del chat - clickeable para ir al perfil */}
+          {/* Header del chat */}
           <div 
-            onClick={() => navigate(`/usuario/${activeChatModal.userId}`)}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 rounded-t-2xl flex items-center justify-between cursor-pointer hover:from-indigo-600 hover:to-purple-700 transition-all"
-            title="Ver perfil"
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 rounded-t-2xl flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              {activeChatModal.avatar ? (
-                <img 
-                  src={activeChatModal.avatar} 
-                  alt={activeChatModal.userName} 
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white/30" 
-                />
+              {activeChatModal.type === 'user-chat' ? (
+                <>
+                  {activeChatModal.avatar ? (
+                    <img 
+                      src={activeChatModal.avatar} 
+                      alt={activeChatModal.userName} 
+                      className="w-10 h-10 rounded-full object-cover border-2 border-white/30" 
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
+                      <FaUser className="text-white text-lg" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-sm">{activeChatModal.userName || 'Usuario'}</h3>
+                    <p className="text-xs text-indigo-100">Chat directo</p>
+                  </div>
+                </>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
-                  <FaUser className="text-white text-lg" />
-                </div>
+                <>
+                  {activeChatModal.storeLogo ? (
+                    <img 
+                      src={activeChatModal.storeLogo} 
+                      alt={activeChatModal.storeName} 
+                      className="w-10 h-10 rounded-full object-cover border-2 border-white/30" 
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/30">
+                      <FaStore className="text-white text-lg" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-sm">
+                      {activeChatModal.isOwner ? activeChatModal.customerName : activeChatModal.storeName}
+                    </h3>
+                    <p className="text-xs text-indigo-100">
+                      {activeChatModal.serviceName || 
+                       (activeChatModal.itemType === 'order' ? `Pedido #${activeChatModal.orderId?.slice(-6)}` : 'Conversación')}
+                    </p>
+                  </div>
+                </>
               )}
-              <div>
-                <h3 className="font-bold text-sm">{activeChatModal.userName || 'Usuario'}</h3>
-                <p className="text-xs text-indigo-100 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  Click para ver perfil
-                </p>
-              </div>
             </div>
             <button
               onClick={(e) => {
@@ -627,7 +778,7 @@ export default function ChatSidebar() {
             ) : (
               <div className="flex flex-col gap-3">
                 {chatMessages.map((msg, index) => {
-                  const isMyMessage = msg.fromUser._id === user._id;
+                  const isMyMessage = msg.fromUser?._id === user._id;
                   
                   return (
                     <div key={msg._id || index} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>

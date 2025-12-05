@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   getBookingMessagesPublic, 
   sendMessagePublic,
-  getOrderMessages,
+  getOrderMessagesPublic,
   sendOrderMessagePublic 
 } from "../api/messages";
 import { useAuth } from "../context/AuthContext";
@@ -52,14 +52,13 @@ export default function CustomerChatModal({
         }
         data = await getBookingMessagesPublic(id, effectiveEmail);
       } else {
-        // Para orders, usar el endpoint público (sin autenticación)
-        // Por ahora usamos el protegido si el cliente está logueado
-        try {
-          const response = await getOrderMessages(id);
-          data = response.data || response;
-        } catch {
-          data = [];
+        // Para orders, usar el endpoint público
+        if (!effectiveEmail) {
+          console.error("⚠️ No hay email disponible para cargar mensajes del pedido");
+          setMessages([]);
+          return;
         }
+        data = await getOrderMessagesPublic(id, effectiveEmail);
       }
       setMessages(Array.isArray(data) ? data : []);
     } catch (err) {

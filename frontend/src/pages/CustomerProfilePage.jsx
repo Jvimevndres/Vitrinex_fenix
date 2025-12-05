@@ -382,7 +382,6 @@ export default function CustomerProfilePage() {
             {[
               { id: "perfil", label: "Perfil Público", icon: FaUser },
               { id: "actividad", label: "Actividad", icon: FaTags },
-              { id: "mensajes", label: "Mensajes", icon: FaComments },
               { id: "confiabilidad", label: "Confiabilidad", icon: FaStar },
               { id: "editar", label: "Editar Perfil", icon: FaEdit },
             ].map((tab) => (
@@ -507,67 +506,6 @@ export default function CustomerProfilePage() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "mensajes" && (
-            <div className="space-y-6 animate-slideIn">
-              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <FaComments /> Mensajes
-                </h2>
-                
-                {userConversations.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FaComment className="text-6xl mx-auto text-slate-600 mb-4" />
-                    <p className="text-slate-400">No tienes conversaciones activas</p>
-                    <p className="text-sm text-slate-500 mt-2">Tus mensajes con otros usuarios aparecerán aquí</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {userConversations.map((conv) => (
-                      <div
-                        key={conv.userId}
-                        onClick={() => {
-                          // Guardar en localStorage para que ChatSidebar abra con este usuario
-                          localStorage.setItem('openChatWithUser', JSON.stringify({
-                            userId: conv.userId,
-                            username: conv.username,
-                            avatar: conv.avatar
-                          }));
-                          // Navegar al inicio donde está el ChatSidebar
-                          navigate('/');
-                        }}
-                        className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-700/60 hover:border-purple-500/50 transition-all cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <img
-                              src={conv.avatar || 'https://via.placeholder.com/50'}
-                              alt={conv.username}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-purple-400"
-                            />
-                            {conv.unreadCount > 0 && (
-                              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                {conv.unreadCount}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-white font-semibold group-hover:text-purple-300 transition-colors">
-                              {conv.username}
-                            </h3>
-                            <p className="text-slate-400 text-sm truncate">
-                              {conv.lastMessage || 'Sin mensajes aún'}
-                            </p>
-                          </div>
-                          <FaChevronRight className="text-slate-500 group-hover:text-purple-400 transition-colors" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}
