@@ -1535,8 +1535,8 @@ export default function StorePublicPage() {
           <div className="flex gap-6 max-w-[2000px] mx-auto">
             {/* Sidebar Izquierda */}
             <aside className="hidden xl:block w-72 flex-shrink-0">
-              <div className="sticky top-4">
-                <PromotionalBanner position="sidebarLeft" store={store} />
+              <div className="space-y-6">
+                <PromotionalBanner position="sidebarLeft" store={store} layout="stack" />
               </div>
             </aside>
 
@@ -2452,8 +2452,8 @@ export default function StorePublicPage() {
 
             {/* Sidebar Derecha */}
             <aside className="hidden xl:block w-72 flex-shrink-0">
-              <div className="sticky top-4">
-                <PromotionalBanner position="sidebarRight" store={store} />
+              <div className="space-y-6">
+                <PromotionalBanner position="sidebarRight" store={store} layout="stack" />
               </div>
             </aside>
           </div>

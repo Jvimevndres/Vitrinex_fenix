@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { getActiveAdsByPosition, trackAdClick } from '../api/sponsors';
 
-export default function PromotionalBanner({ position, store, className = '' }) {
+export default function PromotionalBanner({ position, store, className = '', layout = 'stack' }) {
   const [ads, setAds] = useState([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
   const isPremium = store?.plan === 'pro' || store?.plan === 'premium';
   const customBanner = store?.promotionalSpaces?.[position];
   const hasCustomBanner = isPremium && customBanner?.enabled && customBanner?.imageUrl;
+  
+  // layout puede ser: 'carousel' (rotación automática) o 'stack' (apilados verticalmente)
 
   useEffect(() => {
     // Si no tiene plan premium o no tiene banner personalizado, cargar ads de auspiciadores
@@ -115,8 +117,6 @@ export default function PromotionalBanner({ position, store, className = '' }) {
     return null;
   }
 
-  const currentAd = ads[currentAdIndex];
-
   // Dimensiones según posición para anuncios de Vitrinex
   const getAdDimensions = () => {
     switch(position) {
@@ -124,7 +124,7 @@ export default function PromotionalBanner({ position, store, className = '' }) {
         return 'w-full max-h-32 md:max-h-40'; // Banner horizontal superior
       case 'sidebarLeft':
       case 'sidebarRight':
-        return 'w-full max-h-96 aspect-[3/4]'; // Banners verticales laterales
+        return 'w-full aspect-[3/4] max-h-[400px]'; // Banners verticales laterales
       case 'betweenSections':
         return 'w-full max-h-48'; // Banner horizontal entre secciones
       case 'footer':
@@ -133,6 +133,50 @@ export default function PromotionalBanner({ position, store, className = '' }) {
         return 'w-full max-h-40';
     }
   };
+
+  // Si layout es 'stack', mostrar todos los anuncios apilados
+  if (layout === 'stack' && ads.length > 0) {
+    return (
+      <div className={`promotional-banner-stack space-y-4 ${className}`}>
+        {ads.map((ad, index) => (
+          <div key={ad._id || index} className="promotional-banner-item">
+            {ad.link ? (
+              <a
+                href={ad.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleClick(ad._id)}
+                className="block relative group overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
+              >
+                <img
+                  src={ad.imageUrl}
+                  alt={ad.name}
+                  className={`${getAdDimensions()} object-cover shadow-md group-hover:shadow-xl transition-shadow w-full`}
+                />
+                <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
+                  Publicidad
+                </div>
+              </a>
+            ) : (
+              <div className="relative overflow-hidden rounded-lg">
+                <img
+                  src={ad.imageUrl}
+                  alt={ad.name}
+                  className={`${getAdDimensions()} object-cover shadow-md w-full`}
+                />
+                <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
+                  Publicidad
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Layout 'carousel' (comportamiento por defecto con rotación)
+  const currentAd = ads[currentAdIndex];
 
   return (
     <div className={`promotional-banner ${className}`}>
