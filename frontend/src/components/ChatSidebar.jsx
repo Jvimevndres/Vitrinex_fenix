@@ -299,12 +299,14 @@ export default function ChatSidebar() {
         if (activeChatModal.itemType === 'booking') {
           await axios.post(`/public/bookings/${activeChatModal.bookingId}/messages`, {
             email: user.email,
-            content: newMessage.trim()
+            content: newMessage.trim(),
+            customerName: user.username || user.email
           });
         } else if (activeChatModal.itemType === 'order') {
           await axios.post(`/public/orders/${activeChatModal.orderId}/messages`, {
             content: newMessage.trim(),
-            customerEmail: user.email
+            customerEmail: user.email,
+            customerName: user.username || user.email
           });
         }
       }
@@ -778,7 +780,19 @@ export default function ChatSidebar() {
             ) : (
               <div className="flex flex-col gap-3">
                 {chatMessages.map((msg, index) => {
-                  const isMyMessage = msg.fromUser?._id === user._id;
+                  // Determinar si el mensaje es mío según el tipo de conversación
+                  let isMyMessage = false;
+                  
+                  if (activeChatModal.type === 'user-chat') {
+                    // Chat directo: comparar IDs de usuario
+                    isMyMessage = msg.fromUser?._id === user._id;
+                  } else if (activeChatModal.type === 'owner') {
+                    // Soy dueño: mis mensajes tienen senderType 'owner'
+                    isMyMessage = msg.senderType === 'owner';
+                  } else if (activeChatModal.type === 'customer') {
+                    // Soy cliente: mis mensajes tienen senderType 'customer'
+                    isMyMessage = msg.senderType === 'customer';
+                  }
                   
                   return (
                     <div key={msg._id || index} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
