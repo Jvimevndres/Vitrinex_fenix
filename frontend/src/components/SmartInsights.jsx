@@ -4,6 +4,7 @@ import {
   fetchProductInsights,
   fetchBookingInsights,
 } from "../api/insights";
+import { FaStar } from 'react-icons/fa';
 
 // --- Small presentational components ---
 function SectionTitle({ title, subtitle, badge }) {
@@ -257,7 +258,7 @@ export default function SmartInsights({ storeId, mode }) {
                       </span>
                       <div className="flex flex-col min-w-0">
                         <span className="font-medium truncate">{s.name}</span>
-                        {s.avgRating && <span className="text-xs text-amber-600">⭐ {s.avgRating.toFixed(1)}</span>}
+                        {s.avgRating && <span className="text-xs text-amber-600 flex items-center gap-1"><FaStar /> {s.avgRating.toFixed(1)}</span>}
                       </div>
                     </div>
                     <span className="text-sm font-semibold flex-shrink-0">{s.total} citas</span>

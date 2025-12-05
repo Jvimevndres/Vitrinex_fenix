@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from '../api/axios';
+import { FaComments } from 'react-icons/fa';
 
 export default function UserReviews({ userId, username }) {
   const { user, isAuthenticated } = useAuth();
@@ -118,8 +119,8 @@ export default function UserReviews({ userId, username }) {
       <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-8 shadow-xl">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
-            <h2 className="text-3xl font-bold text-white mb-2">
-              💬 Reseñas y Opiniones
+            <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
+              <FaComments /> Reseñas y Opiniones
             </h2>
             <p className="text-slate-300">
               ¿Conoces a {username}? ¡Comparte tu experiencia!

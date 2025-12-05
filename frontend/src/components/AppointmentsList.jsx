@@ -5,6 +5,7 @@ import {
   updateAppointmentStatus,
   deleteAppointment,
 } from "../api/store";
+import { FaComments } from 'react-icons/fa';
 
 const STATUS_LABELS = {
   pending: "Pendiente",
@@ -394,7 +395,7 @@ export default function AppointmentsList({ storeId }) {
                           {/* Notas inline */}
                           {appt.notes && (
                             <div className="text-xs text-slate-600 mt-1 flex items-start gap-1">
-                              <span className="shrink-0">💬</span>
+                              <FaComments className="shrink-0" />
                               <span><strong>Nota:</strong> {appt.notes}</span>
                             </div>
                           )}

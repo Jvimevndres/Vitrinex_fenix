@@ -8,6 +8,7 @@ import {
   deleteSpecialDay 
 } from "../api/services";
 import { getStoreById } from "../api/store";
+import { FaBan, FaStar } from 'react-icons/fa';
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -366,11 +367,11 @@ export default function UnifiedCalendarManager({ storeId }) {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex gap-6 text-sm flex-wrap">
               <div className="flex items-center gap-2">
-                <span>🚫</span>
+                <FaBan className="text-red-600" />
                 <span className="text-gray-700">Excepción: Cerrado</span>
               </div>
               <div className="flex items-center gap-2">
-                <span>⭐</span>
+                <FaStar className="text-yellow-500" />
                 <span className="text-gray-700">Excepción: Horario especial</span>
               </div>
               <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { listStoreOrders } from "../api/store";
 import { listStoreAppointments } from "../api/store";
 import { getOrderMessages, sendOrderMessage } from "../api/messages";
 import { getBookingMessages, sendMessage } from "../api/messages";
+import { FaComments } from 'react-icons/fa';
 
 export default function UnifiedChatManager({ storeId, storeMode }) {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default function UnifiedChatManager({ storeId, storeMode }) {
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <h2 className="text-xl font-bold text-slate-900 mb-3">💬 Mensajes</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2"><FaComments /> Mensajes</h2>
         
         {/* Tabs */}
         <div className="flex gap-2">
@@ -174,7 +175,7 @@ export default function UnifiedChatManager({ storeId, storeMode }) {
           ) : (
             <div className="flex-1 flex items-center justify-center bg-slate-50">
               <div className="text-center">
-                <div className="text-6xl mb-4">💬</div>
+                <FaComments className="text-6xl mb-4 text-slate-400 mx-auto" />
                 <p className="text-lg font-semibold text-slate-900 mb-2">Selecciona una conversación</p>
                 <p className="text-sm text-slate-600">Elige un pedido o reserva para ver los mensajes</p>
               </div>
@@ -322,7 +323,7 @@ function ChatArea({ conversation, navigate }) {
 
         {!loading && messages.length === 0 && (
           <div className="text-center py-8">
-            <div className="text-4xl mb-2">💬</div>
+            <FaComments className="text-4xl mb-2 text-slate-400 mx-auto" />
             <p className="text-sm text-slate-500">Sin mensajes aún</p>
             <p className="text-xs text-slate-400 mt-1">Inicia la conversación</p>
           </div>

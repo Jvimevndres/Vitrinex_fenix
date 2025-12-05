@@ -29,7 +29,7 @@ import {
   FaGem, FaTrophy, FaMagic, FaPalette, FaRocket, FaDumbbell, 
   FaCheckCircle, FaClock, FaShieldAlt, FaHeart, FaGift, FaThumbsUp,
   FaUsers, FaCog, FaLeaf, FaMedal, FaHandshake, FaAward, FaCalendarAlt,
-  FaSearch, FaComments
+  FaSearch, FaComments, FaExclamationTriangle, FaBell, FaTag
 } from 'react-icons/fa';
 
 // ---------- Diccionarios ----------
@@ -1928,7 +1928,7 @@ export default function StorePublicPage() {
               {/* Mensajes */}
               {bookingError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                  <span className="text-xl">⚠️</span>
+                  <FaExclamationTriangle className="text-xl text-red-600" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-red-800">Error</p>
                     <p className="text-sm text-red-600 mt-1">{bookingError}</p>
@@ -1938,7 +1938,7 @@ export default function StorePublicPage() {
 
               {bookingMsg && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-                  <span className="text-xl">✅</span>
+                  <FaCheckCircle className="text-xl text-green-600" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">¡Éxito!</p>
                     <p className="text-sm text-green-600 mt-1">{bookingMsg}</p>
@@ -2082,7 +2082,7 @@ export default function StorePublicPage() {
                     </div>
                   ) : services.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-4xl mb-4">🛎️</div>
+                      <FaBell className="text-4xl mb-4 text-slate-400 mx-auto" />
                       <p className="text-slate-600 font-medium">No hay servicios disponibles</p>
                       <p className="text-sm text-slate-500 mt-1">
                         El negocio aún no ha publicado sus servicios
@@ -2127,7 +2127,7 @@ export default function StorePublicPage() {
                                   key={index}
                                   className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
                                 >
-                                  <span>🏷️</span>
+                                  <FaTag className="text-[10px]" />
                                   <span>{tag}</span>
                                 </span>
                               ))}
@@ -2136,7 +2136,7 @@ export default function StorePublicPage() {
 
                           <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                             <div className="flex items-center gap-2 text-xs text-slate-600">
-                              <span>⏱️ {service.duration} min</span>
+                              <FaClock className="inline" /> {service.duration} min
                             </div>
                             <div className="text-lg font-bold text-blue-600">
                               ${service.price.toLocaleString("es-CL")}
@@ -2225,7 +2225,7 @@ export default function StorePublicPage() {
                           <li>El día está marcado como cerrado</li>
                         </ul>
                         <div className="rounded-lg p-3 mt-4" style={{ backgroundColor: hexToRgba(colors.primary, 0.1), borderColor: colors.primary, borderWidth: '1px', borderStyle: 'solid' }}>
-                          <p className="font-semibold mb-1" style={{ color: colors.primary }}>💡 Consejo</p>
+                          <p className="font-semibold mb-1 flex items-center gap-1" style={{ color: colors.primary }}><FaLightbulb /> Consejo</p>
                           <p className="text-xs" style={{ color: colors.text }}>
                             Si eres el dueño: ve a "Horarios y Excepciones" y crea bloques de tiempo más largos 
                             (por ejemplo, 09:00-18:00) para que se generen más horarios automáticamente.
@@ -2424,7 +2424,7 @@ export default function StorePublicPage() {
           {/* RESEÑAS Y COMENTARIOS */}
           <section className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 mb-8">
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-4xl">⭐</span>
+              <FaStar className="text-4xl text-yellow-500" />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
                   Reseñas y Comentarios

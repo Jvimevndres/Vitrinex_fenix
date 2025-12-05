@@ -6,7 +6,8 @@ import Footer from "../components/Footer";
 import { listPublicStores } from "../api/store";
 import { 
   FaSearch, FaMapMarkerAlt, FaStore, FaCog, FaStar, 
-  FaShoppingCart, FaCalendarAlt, FaMagic
+  FaShoppingCart, FaCalendarAlt, FaMagic, FaTrash, FaMap,
+  FaCrosshairs, FaLocationArrow, FaBox
 } from 'react-icons/fa';
 
 const INITIAL_CENTER = [-33.4489, -70.6693]; // Santiago
@@ -557,7 +558,7 @@ export default function ExploreStoresPage() {
                     onClick={() => setFilters({ comuna: "", tipoNegocio: "", mode: "", search: "" })}
                     className="w-full text-white/70 text-xs font-medium px-3 py-2 rounded-xl border border-white/20 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
                   >
-                    <span>🗑️</span>
+                    <FaTrash />
                     <span>Limpiar filtros</span>
                   </button>
                 )}
@@ -570,7 +571,7 @@ export default function ExploreStoresPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <span className="text-lg">🗺️</span>
+                      <FaMap className="text-lg" />
                       Mapa de negocios
                     </h2>
                     <p className="text-[11px] text-white/60">Visualiza los negocios registrados en Vitrinex.</p>
@@ -633,7 +634,7 @@ export default function ExploreStoresPage() {
                       boxShadow: accent.glow,
                     }}
                   >
-                    🎯 Recentrar
+                    <FaCrosshairs className="inline mr-1" /> Recentrar
                   </button>
                   
                   <button
@@ -662,19 +663,20 @@ export default function ExploreStoresPage() {
                       boxShadow: accent.glow,
                     }}
                   >
-                    📍 Mi Ubicación
+                    <FaLocationArrow className="inline mr-1" /> Mi Ubicación
                   </button>
                 </div>
 
                 <div className="absolute top-4 right-4 z-20 w-64">
                   <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-2 shadow-2xl" style={{ boxShadow: `${accent.glow}, 0 4px 16px rgba(0, 0, 0, 0.3)` }}>
                     <input
-                      placeholder="🔎 Buscar tienda, categoría o comuna"
+                      placeholder="Buscar tienda, categoría o comuna"
                       value={filters.search || ""}
                       onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
-                      className="w-full text-sm px-3 py-2 rounded-md border bg-white/10 text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:ring-2"
+                      className="w-full text-sm px-3 py-2 rounded-md border bg-white/10 text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:ring-2 pl-9"
                       style={{ borderColor: hexToRgba(accent.color, 0.3), transition: uiTransition }}
                     />
+                    <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-white/50 text-sm" />
                   </div>
                 </div>
               </div>
@@ -684,7 +686,7 @@ export default function ExploreStoresPage() {
             <aside className="bg-black/70 backdrop-blur-lg border border-white/20 rounded-2xl p-3 shadow-2xl flex flex-col" style={{ boxShadow: `${accent.glow}, 0 8px 32px rgba(0, 0, 0, 0.5)`, transition: uiTransition, height: 'calc(520px + 3rem)', maxHeight: 'calc(660px + 3rem)' }}>
               <div className="mb-2.5">
                 <h2 className="text-sm font-semibold text-white flex items-center gap-2" style={{ transition: uiTransition }}>
-                  <span className="text-lg">🏪</span>
+                  <FaStore className="text-lg" />
                   Negocios encontrados
                 </h2>
                 <p className="text-[11px] text-white/60">{loading ? "Cargando negocios…" : `${stores.length} negocio(s) encontrados`}</p>
@@ -801,7 +803,7 @@ export default function ExploreStoresPage() {
 
                         <div className="flex items-center justify-between mt-3">
                           <span 
-                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border" 
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border gap-1" 
                             style={{ 
                               background: hexToRgba(accent.color, 0.2), 
                               color: 'white', 
@@ -809,7 +811,17 @@ export default function ExploreStoresPage() {
                               transition: uiTransition 
                             }}
                           >
-                            {store.mode === "bookings" ? "📅 Agendamiento" : "🛍️ Productos"}
+                            {store.mode === "bookings" ? (
+                              <>
+                                <FaCalendarAlt className="text-[10px]" />
+                                <span>Agendamiento</span>
+                              </>
+                            ) : (
+                              <>
+                                <FaBox className="text-[10px]" />
+                                <span>Productos</span>
+                              </>
+                            )}
                           </span>
                           <button 
                             type="button" 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getChatbotStats } from '../api/chatbot';
+import { FaDollarSign, FaMagic, FaCalendarAlt, FaChartBar, FaChartLine, FaBullseye, FaInfoCircle, FaMoneyBillWave } from 'react-icons/fa';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -122,7 +123,7 @@ export default function AdminChatbotMonitor() {
           <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-orange-200">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-3 bg-orange-100 rounded-lg">
-                <span className="text-2xl">💸</span>
+                <FaMoneyBillWave className="text-2xl text-orange-600" />
               </div>
               <div>
                 <p className="text-sm text-slate-600 font-medium">Gastado</p>
@@ -148,7 +149,7 @@ export default function AdminChatbotMonitor() {
           <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-3 bg-blue-100 rounded-lg">
-                <span className="text-2xl">💰</span>
+                <FaDollarSign className="text-2xl text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-slate-600 font-medium">Saldo Disponible</p>
@@ -176,7 +177,7 @@ export default function AdminChatbotMonitor() {
           {/* Consultas estimadas */}
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl">🔮</span>
+              <FaMagic className="text-3xl" />
               <div>
                 <p className="text-sm font-medium opacity-90">Consultas Restantes</p>
                 <p className="text-4xl font-bold">
@@ -192,7 +193,7 @@ export default function AdminChatbotMonitor() {
           {/* Duración estimada */}
           <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl">📅</span>
+              <FaCalendarAlt className="text-3xl" />
               <div>
                 <p className="text-sm font-medium opacity-90">Duración Estimada</p>
                 <p className="text-4xl font-bold">
@@ -209,7 +210,7 @@ export default function AdminChatbotMonitor() {
           {/* Costo promedio */}
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl">📊</span>
+              <FaChartBar className="text-3xl" />
               <div>
                 <p className="text-sm font-medium opacity-90">Costo por Consulta</p>
                 <p className="text-3xl font-bold">
@@ -254,7 +255,7 @@ export default function AdminChatbotMonitor() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Gráfico de línea - Costo diario */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">💸 Costo Diario</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><FaMoneyBillWave className="text-orange-600" /> Costo Diario</h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={dailyStats}>
                 <defs>
@@ -292,7 +293,7 @@ export default function AdminChatbotMonitor() {
 
           {/* Gráfico de barras - Consultas diarias */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">📈 Consultas Diarias</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><FaChartLine /> Consultas Diarias</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={dailyStats}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -317,7 +318,7 @@ export default function AdminChatbotMonitor() {
 
           {/* Gráfico de pastel - Free vs Premium */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">🎯 Tipo de Consultas</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><FaBullseye /> Tipo de Consultas</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -411,7 +412,7 @@ export default function AdminChatbotMonitor() {
 
         {/* Información adicional */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-blue-900 mb-3">ℹ️ Información del Sistema</h3>
+          <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2"><FaInfoCircle /> Información del Sistema</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
             <div>
               <strong>Modelo:</strong> gpt-4o-mini

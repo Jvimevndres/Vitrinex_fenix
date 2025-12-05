@@ -8,7 +8,7 @@ import UserReviews from "../components/UserReviews";
 import { getPublicUser } from "../api/user";
 import { useAuth } from "../context/AuthContext";
 import axios from "../api/axios";
-import { FaSearch, FaCalendarAlt, FaComments, FaClipboardList, FaBox, FaHeart, FaClock, FaStore } from 'react-icons/fa';
+import { FaSearch, FaCalendarAlt, FaComments, FaClipboardList, FaBox, FaHeart, FaClock, FaStore, FaStar, FaTags, FaUser } from 'react-icons/fa';
 
 // Estilos CSS en línea para animaciones
 const styles = `
@@ -281,8 +281,8 @@ export default function CustomerPublicPage() {
                   alt={user.username || "Usuario"}
                   className="relative w-32 h-32 rounded-full object-cover border-4 border-purple-400 shadow-2xl"
                 />
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900">
-                  ⭐ {stats.rating > 0 ? stats.rating.toFixed(1) : '0.0'}
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-slate-900 flex items-center gap-1">
+                  <FaStar className="text-yellow-300" /> {stats.rating > 0 ? stats.rating.toFixed(1) : '0.0'}
                 </div>
               </div>
 
@@ -361,7 +361,7 @@ export default function CustomerPublicPage() {
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span>👤</span> Perfil Público
+                  <FaUser className="text-purple-400" /> Perfil Público
                 </h2>
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -419,13 +419,13 @@ export default function CustomerPublicPage() {
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>🏷️</span> Actividad en la Plataforma
+                  <FaTags className="text-purple-400" /> Actividad en la Plataforma
                 </h2>
                 <div className="space-y-4">
                   {/* Productos publicados */}
                   <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">📦</div>
+                      <FaBox className="text-4xl text-blue-400 mx-auto" />
                       <p className="text-3xl font-bold text-white">{stats.productsPublished}</p>
                       <p className="text-sm text-slate-300">Productos Publicados</p>
                     </div>
@@ -445,7 +445,7 @@ export default function CustomerPublicPage() {
                   {/* Consultas */}
                   <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">💬</div>
+                      <FaComments className="text-4xl text-purple-400 mx-auto" />
                       <p className="text-3xl font-bold text-white">{user?.stats?.projects || 0}</p>
                       <p className="text-sm text-slate-300">Consultas Hechas</p>
                     </div>
@@ -458,13 +458,13 @@ export default function CustomerPublicPage() {
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-purple-500/20 rounded-2xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <span>⭐</span> Confiabilidad
+                  <FaStar className="text-yellow-400" /> Confiabilidad
                 </h2>
                 <div className="space-y-4">
                   {/* Calificación */}
                   <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-2 border-yellow-500/30 rounded-xl p-6">
                     <div className="text-center space-y-3">
-                      <div className="text-5xl">⭐</div>
+                      <FaStar className="text-5xl text-yellow-400 mx-auto" />
                       <p className="text-4xl font-bold text-white">{stats.rating.toFixed(1)}</p>
                       <p className="text-sm text-slate-300">Calificación Promedio</p>
                       <div className="flex justify-center gap-1">
@@ -487,7 +487,7 @@ export default function CustomerPublicPage() {
                   {/* Opiniones */}
                   <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-xl p-5">
                     <div className="text-center space-y-2">
-                      <div className="text-4xl">💬</div>
+                      <FaComments className="text-4xl text-blue-400 mx-auto" />
                       <p className="text-3xl font-bold text-white">{stats.reviews}</p>
                       <p className="text-sm text-slate-300">Opiniones Recibidas</p>
                     </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { listStoreOrders, updateOrderStatus } from "../api/store";
 import { getOrderMessages, sendOrderMessage } from "../api/messages";
+import { FaComments } from 'react-icons/fa';
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -251,7 +252,7 @@ export default function ModernOrdersManager({ storeId }) {
 
               {order.notes && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs font-semibold text-blue-900 mb-1">💬 Nota del cliente:</p>
+                  <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-1"><FaComments /> Nota del cliente:</p>
                   <p className="text-sm text-blue-800">{order.notes}</p>
                 </div>
               )}

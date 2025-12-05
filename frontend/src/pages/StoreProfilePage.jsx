@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
 import { getStoreById, updateMyStore } from "../api/store";
-import { FaCog, FaPalette, FaBullhorn, FaShoppingBag, FaClipboardList, FaBox, FaComments, FaChartBar, FaCalendarAlt, FaWrench } from 'react-icons/fa';
+import { FaCog, FaPalette, FaBullhorn, FaShoppingBag, FaClipboardList, FaBox, FaComments, FaChartBar, FaCalendarAlt, FaWrench, FaShoppingCart, FaClock } from 'react-icons/fa';
 
 import BookingAvailabilityManager from "../components/BookingAvailabilityManager";
 import WeeklyScheduleEditor from "../components/WeeklyScheduleEditor";
@@ -327,7 +327,7 @@ export default function StoreProfilePage() {
 
   const gridColsClass =
     isProductsToolsView || isBookingsToolsView
-      ? "grid gap-8 md:grid-cols-[260px,200px,1fr] items-start justify-center"
+      ? "grid gap-8 md:grid-cols-[260px,1fr,220px] items-start justify-center"
       : "grid gap-8 md:grid-cols-[260px,1fr] items-start justify-center";
 
   if (loading) {
@@ -434,27 +434,36 @@ export default function StoreProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("configuracion")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                   activeTab === "configuracion"
                     ? "bg-slate-900 text-white"
                     : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                <FaCog className="mr-1" /> Configuración
+                <FaCog />
+                <span>Configuración</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab("ventas")}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
                   activeTab === "ventas"
                     ? "bg-slate-900 text-white"
                     : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                {effectiveMode === "bookings"
-                  ? "Agendamiento"
-                  : "Productos / pedidos"}
+                {effectiveMode === "bookings" ? (
+                  <>
+                    <FaCalendarAlt />
+                    <span>Agendamiento</span>
+                  </>
+                ) : (
+                  <>
+                    <FaShoppingCart />
+                    <span>Productos / pedidos</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -478,128 +487,6 @@ export default function StoreProfilePage() {
           </aside>
 
           {/* ╔════════════════════════════╗
-             ║   BARRA CENTRAL (NAV)     ║
-             ╚════════════════════════════╝ */}
-          {(isProductsToolsView || isBookingsToolsView) && (
-            <nav className="hidden md:flex flex-col gap-2 bg-white/90 backdrop-blur border rounded-2xl shadow-sm p-4">
-              {isProductsToolsView && (
-                <>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <FaShoppingBag /> Gestión de productos
-                  </p>
-
-                  <button
-                    onClick={() => setProductsPanel("catalog")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      productsPanel === "catalog"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <FaClipboardList /> Catálogo
-                  </button>
-
-                  <button
-                    onClick={() => setProductsPanel("orders")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      productsPanel === "orders"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <FaBox /> Pedidos
-                  </button>
-
-                  <button
-                    onClick={() => setProductsPanel("messages")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      productsPanel === "messages"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    💬 Mensajes
-                  </button>
-
-                  <button
-                    onClick={() => setProductsPanel("insights")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      productsPanel === "insights"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    📊 Análisis
-                  </button>
-                </>
-              )}
-
-              {isBookingsToolsView && (
-                <>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <FaCalendarAlt /> Gestión de agendamiento
-                  </p>
-
-                  <button
-                    onClick={() => setBookingsPanel("services")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "services"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <FaWrench /> Servicios
-                  </button>
-
-                  <button
-                    onClick={() => setBookingsPanel("weeklySchedule")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "weeklySchedule"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    ⏰ Horarios
-                  </button>
-
-                  <button
-                    onClick={() => setBookingsPanel("appointments")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "appointments"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    📋 Reservas
-                  </button>
-
-                  <button
-                    onClick={() => setBookingsPanel("messages")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "messages"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    💬 Mensajes
-                  </button>
-
-                  <button
-                    onClick={() => setBookingsPanel("insights")}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                      bookingsPanel === "insights"
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    📊 Análisis
-                  </button>
-                </>
-              )}
-            </nav>
-          )}
-
-          {/* ╔════════════════════════════╗
              ║   CONTENIDO PRINCIPAL      ║
              ╚════════════════════════════╝ */}
           <section className="space-y-4">
@@ -607,7 +494,7 @@ export default function StoreProfilePage() {
             {activeTab === "configuracion" && (
               <div className="bg-white/95 backdrop-blur border rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-                  <span className="text-3xl">⚙️</span>
+                  <FaCog className="text-3xl text-slate-600" />
                   Configuración de la tienda
                 </h2>
 
@@ -626,8 +513,8 @@ export default function StoreProfilePage() {
                 <form onSubmit={onSubmit} className="space-y-6">
                   {/* Información básica */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-slate-700 border-b pb-2">
-                      📋 Información básica
+                    <h3 className="text-lg font-semibold text-slate-700 border-b pb-2 flex items-center gap-2">
+                      <FaClipboardList /> Información básica
                     </h3>
 
                     <div>
@@ -765,8 +652,8 @@ export default function StoreProfilePage() {
                         onChange={onChange}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                       >
-                        <option value="products">🛍️ Venta de productos</option>
-                        <option value="bookings">📅 Agendamiento de horas</option>
+                        <option value="products">Venta de productos</option>
+                        <option value="bookings">Agendamiento de horas</option>
                       </select>
                     </div>
                   </div>
@@ -776,9 +663,9 @@ export default function StoreProfilePage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                      className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
                     >
-                      {saving ? "Guardando..." : "💾 Guardar cambios"}
+                      {saving ? "Guardando..." : <><FaCog className="animate-spin" style={{animationDuration: saving ? '1s' : '0s'}} /> Guardar cambios</>}
                     </button>
                   </div>
                 </form>
@@ -846,6 +733,128 @@ export default function StoreProfilePage() {
               </>
             )}
           </section>
+
+          {/* ╔════════════════════════════╗
+             ║   BARRA DERECHA (NAV)     ║
+             ╚════════════════════════════╝ */}
+          {(isProductsToolsView || isBookingsToolsView) && (
+            <nav className="hidden md:flex flex-col gap-2 bg-white/90 backdrop-blur border rounded-2xl shadow-sm p-4">
+              {isProductsToolsView && (
+                <>
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <FaShoppingBag /> Gestión de productos
+                  </p>
+
+                  <button
+                    onClick={() => setProductsPanel("catalog")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      productsPanel === "catalog"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaClipboardList /> Catálogo
+                  </button>
+
+                  <button
+                    onClick={() => setProductsPanel("orders")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      productsPanel === "orders"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaBox /> Pedidos
+                  </button>
+
+                  <button
+                    onClick={() => setProductsPanel("messages")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      productsPanel === "messages"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaComments /> Mensajes
+                  </button>
+
+                  <button
+                    onClick={() => setProductsPanel("insights")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      productsPanel === "insights"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaChartBar /> Análisis
+                  </button>
+                </>
+              )}
+
+              {isBookingsToolsView && (
+                <>
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <FaCalendarAlt /> Gestión de agendamiento
+                  </p>
+
+                  <button
+                    onClick={() => setBookingsPanel("services")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "services"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaWrench /> Servicios
+                  </button>
+
+                  <button
+                    onClick={() => setBookingsPanel("weeklySchedule")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "weeklySchedule"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaClock /> Horarios
+                  </button>
+
+                  <button
+                    onClick={() => setBookingsPanel("appointments")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "appointments"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaClipboardList /> Reservas
+                  </button>
+
+                  <button
+                    onClick={() => setBookingsPanel("messages")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "messages"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaComments /> Mensajes
+                  </button>
+
+                  <button
+                    onClick={() => setBookingsPanel("insights")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                      bookingsPanel === "insights"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <FaChartBar /> Análisis
+                  </button>
+                </>
+              )}
+            </nav>
+          )}
         </div>
       </main>
 
@@ -862,7 +871,7 @@ export default function StoreProfilePage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8">
             <div className="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-xl font-bold">📢 Gestión de Espacios Publicitarios</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2"><FaBullhorn className="text-blue-600" /> Gestión de Espacios Publicitarios</h2>
               <button
                 onClick={() => setShowAdsManager(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"

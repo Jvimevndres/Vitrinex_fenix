@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from '../api/axios';
+import { FaComments } from 'react-icons/fa';
 
 export default function ProductReviews({ productId, storeId }) {
   const { user, isAuthenticated } = useAuth();
@@ -224,7 +225,7 @@ export default function ProductReviews({ productId, storeId }) {
       {/* Lista de comentarios */}
       <div className="space-y-4">
         <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <span>💬</span>
+          <FaComments />
           <span>Todas las opiniones ({comments.length})</span>
         </h3>
 

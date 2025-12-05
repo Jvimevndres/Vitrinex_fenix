@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserMessages, sendUserMessage } from "../api/messages";
 import { useAuth } from "../context/AuthContext";
+import { FaComments } from 'react-icons/fa';
 
 /**
  * Modal de chat directo entre usuarios
@@ -81,7 +82,7 @@ export default function UserChatModal({
         {/* Header */}
         <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-2xl flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-slate-900">💬 Chat con {targetUsername}</h3>
+            <h3 className="font-bold text-slate-900 flex items-center gap-2"><FaComments /> Chat con {targetUsername}</h3>
             <p className="text-xs text-slate-600 mt-1">
               Conversación privada
             </p>
@@ -105,7 +106,7 @@ export default function UserChatModal({
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-4xl mb-2">💬</div>
+              <FaComments className="text-4xl mb-2 text-slate-400 mx-auto" />
               <p className="text-sm text-slate-500">Sin mensajes aún</p>
               <p className="text-xs text-slate-400 mt-1">Escribe un mensaje para iniciar la conversación</p>
             </div>

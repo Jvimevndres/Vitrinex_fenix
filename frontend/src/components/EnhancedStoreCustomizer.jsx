@@ -887,7 +887,7 @@ function ColorsTab({ colors, onChange }) {
       {/* Paletas Sugeridas */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-slate-900">✨ Paletas Sugeridas</h4>
+          <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-1"><FaStar /> Paletas Sugeridas</h4>
           <span className="text-xs text-slate-500">Haz clic para aplicar</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -1016,7 +1016,7 @@ function ContentTextTab({ storeData, typography, onTypographyChange, onStoreUpda
       {/* Header */}
       <div>
         <h3 className="font-semibold text-slate-900 text-lg flex items-center gap-2">
-          <span className="text-2xl">📝</span>
+          <FaClipboardList className="text-2xl" />
           Contenido y Tipografía
         </h3>
         <p className="text-sm text-slate-600 mt-1">
@@ -1293,7 +1293,7 @@ function ContentTextTab({ storeData, typography, onTypographyChange, onStoreUpda
           {/* Características Destacadas */}
           <div className="space-y-4 p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl border-2 border-teal-200">
             <h4 className="font-semibold text-teal-900 flex items-center gap-2">
-              <span className="text-xl">⭐</span>
+              <FaStar className="text-xl" />
               Características Destacadas
             </h4>
             
@@ -1414,7 +1414,7 @@ function ContentTextTab({ storeData, typography, onTypographyChange, onStoreUpda
 
           {/* Controles de Títulos */}
           <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-semibold text-blue-900">📝 Títulos</h4>
+            <h4 className="text-sm font-semibold text-blue-900 flex items-center gap-1"><FaClipboardList /> Títulos</h4>
             
             <div className="space-y-3">
               <div>
@@ -1639,7 +1639,7 @@ function TypographyTab({ typography, onChange }) {
 
       {/* Controles de Títulos */}
       <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h4 className="text-sm font-semibold text-blue-900">📝 Títulos (H1, H2, H3)</h4>
+        <h4 className="text-sm font-semibold text-blue-900 flex items-center gap-1"><FaClipboardList /> Títulos (H1, H2, H3)</h4>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-700">
@@ -2570,7 +2570,7 @@ function ContentTab({ storeData, appearance, onChange }) {
   return (
     <div className="p-4 space-y-6">
       <div>
-        <h3 className="font-semibold text-slate-900 text-lg">📝 Gestión de Contenido</h3>
+        <h3 className="font-semibold text-slate-900 text-lg flex items-center gap-2"><FaClipboardList /> Gestión de Contenido</h3>
         <p className="text-sm text-slate-600 mt-1">
           Personaliza todos los textos de tu tienda
         </p>

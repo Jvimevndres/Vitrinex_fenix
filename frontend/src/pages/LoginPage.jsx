@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
+import { FaStar } from 'react-icons/fa';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -191,7 +192,7 @@ export default function LoginPage() {
             backdropFilter: 'blur(10px)',
             borderColor: 'rgba(255, 255, 255, 0.2)'
           }}>
-            <h3 className="text-lg font-semibold text-white mb-3">✨ Beneficios de Vitrinex</h3>
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2"><FaStar /> Beneficios de Vitrinex</h3>
             <ul className="text-sm text-slate-200 space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-violet-400 mt-0.5">✓</span>

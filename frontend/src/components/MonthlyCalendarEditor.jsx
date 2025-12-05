@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { getSpecialDays, upsertSpecialDay, deleteSpecialDay } from "../api/services";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { FaBan, FaStar } from 'react-icons/fa';
 
 /**
  * Componente para editar excepciones de calendario (días especiales)
@@ -234,11 +235,11 @@ export default function MonthlyCalendarEditor({ storeId }) {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🚫</span>
+            <FaBan className="text-xl text-red-600" />
             <span className="text-gray-700">Día cerrado</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xl">⭐</span>
+            <FaStar className="text-xl text-yellow-500" />
             <span className="text-gray-700">Horario especial</span>
           </div>
         </div>

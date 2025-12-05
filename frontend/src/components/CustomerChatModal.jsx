@@ -8,6 +8,7 @@ import {
   sendOrderMessagePublic 
 } from "../api/messages";
 import { useAuth } from "../context/AuthContext";
+import { FaComments } from 'react-icons/fa';
 
 export default function CustomerChatModal({ 
   type, // "order" | "booking"
@@ -118,7 +119,7 @@ export default function CustomerChatModal({
         {/* Header */}
         <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-slate-900">💬 Chat con la Tienda</h3>
+            <h3 className="font-bold text-slate-900 flex items-center gap-2"><FaComments /> Chat con la Tienda</h3>
             <p className="text-xs text-slate-600 mt-1">
               {type === "booking" ? "Reserva" : "Pedido"} #{id.slice(-6)}
             </p>
@@ -142,7 +143,7 @@ export default function CustomerChatModal({
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-4xl mb-2">💬</div>
+              <FaComments className="text-4xl mb-2 text-slate-400 mx-auto" />
               <p className="text-sm text-slate-500">Sin mensajes aún</p>
               <p className="text-xs text-slate-400 mt-1">Escribe un mensaje para iniciar la conversación</p>
             </div>

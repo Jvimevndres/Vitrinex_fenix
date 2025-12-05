@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
+import { FaRocket } from 'react-icons/fa';
 
 export default function RegisterPage() {
   const {
@@ -197,7 +198,7 @@ export default function RegisterPage() {
             backdropFilter: 'blur(10px)',
             borderColor: 'rgba(255, 255, 255, 0.2)'
           }}>
-            <h3 className="text-lg font-semibold text-white mb-3">🚀 Lo que obtienes</h3>
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2"><FaRocket /> Lo que obtienes</h3>
             <ul className="text-sm text-slate-200 space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-violet-400 mt-0.5">✓</span>

@@ -45,17 +45,10 @@ export const getAllSponsorAds = async (req, res) => {
 export const getActiveAdsByPosition = async (req, res) => {
   try {
     const { position } = req.params;
-    
-    console.log(`📢 Buscando anuncios para posición: ${position}`);
 
     const ads = await SponsorAd.find({ position, active: true })
       .sort({ priority: -1 })
       .limit(3);
-
-    console.log(`✅ Encontrados ${ads.length} anuncios activos para ${position}`);
-    ads.forEach(ad => {
-      console.log(`   - ${ad.name} (priority: ${ad.priority})`);
-    });
 
     // Incrementar impressions
     if (ads.length > 0) {

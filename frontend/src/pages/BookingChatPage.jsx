@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ChatBox from '../components/ChatBox';
+import { FaComments, FaExclamationTriangle } from 'react-icons/fa';
 
 /**
  * BookingChatPage - Página pública para que clientes accedan al chat de su reserva
@@ -38,7 +39,7 @@ export default function BookingChatPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 border border-slate-200">
           <div className="text-center mb-6">
-            <div className="text-6xl mb-4">💬</div>
+            <FaComments className="text-6xl mb-4 text-blue-500 mx-auto" />
             <h1 className="text-2xl font-bold text-slate-800 mb-2">
               Chat de tu Reserva
             </h1>
@@ -67,7 +68,7 @@ export default function BookingChatPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                <span className="text-red-600">⚠️</span>
+                <FaExclamationTriangle className="text-red-600" />
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}

@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import { sendChatbotMessage, sendPremiumChatbotMessage, checkChatbotHealth } from '../api/chatbot';
 import { getStoreAlerts } from '../api/alerts';
 import { useAuth } from '../context/AuthContext';
-import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown, FaDownload, FaChartLine } from 'react-icons/fa';
+import { FaRobot, FaTimes, FaPaperPlane, FaShoppingCart, FaBoxOpen, FaQuestionCircle, FaUser, FaChartBar, FaTrophy, FaLightbulb, FaBell, FaCrown, FaDownload, FaChartLine, FaComments, FaStar } from 'react-icons/fa';
 import { ChatbotChart, extractChartableData } from './ChatbotCharts';
 import { generatePDFReport, prepareExportData } from '../utils/pdfExporter';
 
@@ -450,7 +450,7 @@ export default function ChatbotWidget() {
                 // Usuario FREE sin saldo
                 return (
                   <div className="mb-3 p-2 bg-slate-100 border border-slate-300 rounded-lg flex items-start gap-2">
-                    <span className="text-slate-600 text-lg">💬</span>
+                    <FaComments className="text-slate-600 text-lg" />
                     <div className="flex-1">
                       <p className="text-xs text-slate-800 font-medium">
                         Plan Free - Modo Demo
@@ -484,7 +484,7 @@ export default function ChatbotWidget() {
               // Usuario FREE con IA
               return (
                 <div className="mb-3 p-2 bg-green-50 border border-green-300 rounded-lg flex items-start gap-2">
-                  <span className="text-green-600 text-lg">✨</span>
+                  <FaStar className="text-green-600 text-lg" />
                   <div className="flex-1">
                     <p className="text-xs text-green-800 font-medium">
                       Plan Free - IA Activada

@@ -965,30 +965,19 @@ export const listStoreProductsForOwner = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  console.log("📋 listStoreProductsForOwner - Iniciando");
-  console.log("🏪 Store ID:", id);
-  console.log("👤 User ID:", userId);
-
   try {
     const { store, error } = await findStoreForOwner(id, userId);
     if (error) {
-      console.log("❌ Error al buscar tienda:", error);
       return res.status(error.status).json({ message: error.message });
     }
 
-    console.log("✅ Tienda encontrada:", store._id);
-    console.log("🏪 Modo de tienda:", store.mode);
-
     if (store.mode !== "products") {
-      console.log("❌ Tienda no es de tipo 'products', es:", store.mode);
       return res.status(400).json({ message: "Esta tienda no vende productos" });
     }
 
     const products = await Product.find({ store: store._id })
       .sort({ createdAt: -1 })
       .lean();
-
-    console.log("✅ Productos encontrados:", products.length);
 
     res.json(products.map(mapProductResponse));
   } catch (err) {

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Footer from "../components/Footer";
+import { FaInfoCircle } from 'react-icons/fa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -175,7 +176,7 @@ export default function ForgotPasswordPage() {
               <>
                 <div className="mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
                   <p className="text-sm text-slate-200">
-                    <strong>ℹ️ Instrucciones:</strong>
+                    <strong className="flex items-center gap-2"><FaInfoCircle /> Instrucciones:</strong>
                     <br />
                     Ingresa tu correo electrónico y te enviaremos un código de verificación de 6 dígitos para restablecer tu contraseña.
                   </p>

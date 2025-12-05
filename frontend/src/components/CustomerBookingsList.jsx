@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from '../api/axios';
 import ChatBox from './ChatBox';
+import { FaClipboardList } from 'react-icons/fa';
 
 /**
  * CustomerBookingsList - Lista de reservas del cliente con acceso a chat
@@ -154,7 +155,7 @@ export default function CustomerBookingsList() {
       {/* Notificación de mensajes nuevos */}
       {bookings.some(b => b.unreadMessagesCustomer > 0) && (
         <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-3 flex items-center gap-3">
-          <span className="text-xl">📝</span>
+          <FaClipboardList className="text-xl text-blue-600" />
           <div className="flex-1">
             <p className="text-sm font-medium text-blue-900">
               {bookings.filter(b => b.unreadMessagesCustomer > 0).length} reserva(s) con mensajes nuevos
