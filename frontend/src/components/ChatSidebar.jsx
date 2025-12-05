@@ -145,7 +145,7 @@ export default function ChatSidebar() {
                 bookingId: booking._id,
                 storeId: store._id,
                 storeName: store.name,
-                storeLogo: store.logo,
+                storeLogo: store.logoUrl,
                 customerName: booking.customerName || booking.customerEmail,
                 lastMessage: booking.unreadMessagesOwner > 0
                   ? `${booking.unreadMessagesOwner} mensaje${booking.unreadMessagesOwner > 1 ? 's' : ''} nuevo${booking.unreadMessagesOwner > 1 ? 's' : ''}`
@@ -171,7 +171,7 @@ export default function ChatSidebar() {
                       orderId: order._id,
                       storeId: store._id,
                       storeName: store.name,
-                      storeLogo: store.logo,
+                      storeLogo: store.logoUrl,
                       customerName: order.customerName || order.customerEmail,
                       lastMessage: 'Ver conversación',
                       unreadCount: order.unreadMessagesOwner || 0,
