@@ -1,8 +1,6 @@
 // src/components/PromotionalSpacesManager.jsx
 import { useState, useEffect } from "react";
 import { getStoreById, updateMyStore } from "../api/store";
-import api from "../api/axios";
-import { getImageUrl } from "../utils/imageUrl";
 
 export default function PromotionalSpacesManager({ storeId, storePlan }) {
   const [spaces, setSpaces] = useState({
@@ -110,28 +108,21 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
 
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
       const uploadKey = index !== null ? `${position}-${index}` : position;
       setUploading(prev => ({ ...prev, [uploadKey]: true }));
       
-      const { data } = await api.post(
-        "/upload/sponsor-ad",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" }
-        }
-      );
-
-      if (data.imageUrl) {
+      // 📦 Convertir imagen a BASE64 (funciona desde cualquier dispositivo)
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Image = reader.result;
+        
         // Para barras laterales con índice
         if (index !== null && (position === 'sidebarLeft' || position === 'sidebarRight')) {
           setSpaces(prev => ({
             ...prev,
             [position]: prev[position].map((ad, i) => 
-              i === index ? { ...ad, imageUrl: data.imageUrl } : ad
+              i === index ? { ...ad, imageUrl: base64Image } : ad
             )
           }));
         } else {
@@ -140,18 +131,26 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
             ...prev,
             [position]: {
               ...prev[position],
-              imageUrl: data.imageUrl
+              imageUrl: base64Image
             }
           }));
         }
-        setMessage("✅ Imagen subida correctamente");
+        
+        setMessage("✅ Imagen cargada correctamente");
         setTimeout(() => setMessage(""), 3000);
-      }
+        setUploading(prev => ({ ...prev, [uploadKey]: false }));
+      };
+      
+      reader.onerror = () => {
+        alert("❌ Error al cargar la imagen");
+        setUploading(prev => ({ ...prev, [uploadKey]: false }));
+      };
+      
+      reader.readAsDataURL(file);
+      
     } catch (error) {
-      console.error("Error subiendo imagen:", error);
-      const errorMsg = error.response?.data?.message || "Error al subir la imagen";
-      alert(`❌ ${errorMsg}`);
-    } finally {
+      console.error("Error cargando imagen:", error);
+      alert(`❌ Error al cargar la imagen`);
       const uploadKey = index !== null ? `${position}-${index}` : position;
       setUploading(prev => ({ ...prev, [uploadKey]: false }));
     }
@@ -344,7 +343,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                       {ad.imageUrl && (
                         <div className="mb-3 relative">
                           <img 
-                            src={getImageUrl(ad.imageUrl)} 
+                            src={ad.imageUrl} 
                             alt={`Anuncio ${index + 1}`}
                             className="w-full max-h-32 object-contain bg-white rounded border"
                           />
@@ -437,7 +436,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                       space.imageUrl ? (
                         <div className="relative">
                           <img 
-                            src={getImageUrl(space.imageUrl)} 
+                            src={space.imageUrl} 
                             alt={positionLabels[position]}
                             className="w-full max-h-32 object-contain bg-gray-50 rounded border"
                           />

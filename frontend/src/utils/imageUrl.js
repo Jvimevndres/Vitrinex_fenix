@@ -2,11 +2,16 @@
 /**
  * Convierte una ruta de imagen a URL completa accesible desde cualquier dispositivo
  * 
- * @param {string} imagePath - Puede ser una ruta relativa (/uploads/...) o URL completa
+ * @param {string} imagePath - Puede ser BASE64, ruta relativa (/uploads/...) o URL completa
  * @returns {string} - URL completa para acceder a la imagen
  */
 export function getImageUrl(imagePath) {
   if (!imagePath) return '';
+  
+  // Si es BASE64 (data:image/...), devolverla sin cambios
+  if (imagePath.startsWith('data:image/')) {
+    return imagePath;
+  }
   
   // Si ya es una URL completa, devolverla sin cambios
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
