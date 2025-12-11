@@ -30,6 +30,7 @@ const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const LOCAL_IP = process.env.LOCAL_IP; // IP local para acceso móvil
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,9 +38,9 @@ const __dirname = path.dirname(__filename);
 // Permitir múltiples orígenes para desarrollo móvil
 const allowedOrigins = [
   FRONTEND_ORIGIN,
-  'http://192.168.1.27:5173',
+  LOCAL_IP ? `http://${LOCAL_IP}:5173` : null,
   'http://localhost:5173'
-];
+].filter(Boolean);
 
 app.use(
   cors({
@@ -121,7 +122,9 @@ app.use((err, req, res, next) => {
 
     app.listen(PORT, '0.0.0.0', () => {
       logger.success(`API escuchando en http://0.0.0.0:${PORT}`);
-      logger.info(`Acceso desde red local: http://192.168.1.27:${PORT}`);
+      if (LOCAL_IP) {
+        logger.info(`Acceso desde red local: http://${LOCAL_IP}:${PORT}`);
+      }
     });
   } catch (err) {
     logger.error("Error al iniciar el servidor:", err.message || err);

@@ -17,28 +17,46 @@ export default defineConfig({
 })
 ```
 
-#### 2. `frontend/.env` (NUEVO)
-Se creó este archivo con la IP local de la computadora de desarrollo:
+#### 2. `frontend/.env` y `backend/.env`
+**Estos archivos NO se suben a Git** (están en .gitignore).
 
-```
-VITE_API_URL=http://192.168.1.27:3000/api
+**En cada dispositivo, crea tu propio `.env` a partir de `.env.example`:**
+
+**Frontend (`frontend/.env`):**
+```bash
+# Copia el archivo de ejemplo
+cp frontend/.env.example frontend/.env
+
+# Edita y actualiza con tu IP local
+VITE_API_URL=http://TU_IP_LOCAL:3000/api
 ```
 
-**⚠️ IMPORTANTE:** Cambia `192.168.1.27` por la IP de tu computadora. Para obtenerla ejecuta:
+**Backend (`backend/.env`):**
+```bash
+# Copia el archivo de ejemplo
+cp backend/.env.example backend/.env
+
+# Agrega tu IP local para acceso móvil
+LOCAL_IP=TU_IP_LOCAL
+```
+
+**⚠️ Obtén tu IP local con:**
 ```powershell
 ipconfig | Select-String -Pattern "IPv4"
 ```
 
 #### 3. `backend/src/index.js`
-Se modificó la configuración de CORS y el servidor:
+Se modificó para leer la IP desde variable de entorno:
 
 **CORS (línea ~36-50):**
 ```javascript
+const LOCAL_IP = process.env.LOCAL_IP; // Lee IP desde .env
+
 const allowedOrigins = [
   FRONTEND_ORIGIN,
-  'http://192.168.1.27:5173',  // ⚠️ Actualizar con tu IP
+  LOCAL_IP ? `http://${LOCAL_IP}:5173` : null,
   'http://localhost:5173'
-];
+].filter(Boolean);
 
 app.use(
   cors({
@@ -58,7 +76,9 @@ app.use(
 ```javascript
 app.listen(PORT, '0.0.0.0', () => {
   logger.success(`API escuchando en http://0.0.0.0:${PORT}`);
-  logger.info(`Acceso desde red local: http://192.168.1.27:${PORT}`);
+  if (LOCAL_IP) {
+    logger.info(`Acceso desde red local: http://${LOCAL_IP}:${PORT}`);
+  }
 });
 ```
 
@@ -72,19 +92,41 @@ New-NetFirewallRule -DisplayName "Vite Dev Server" -Direction Inbound -LocalPort
 New-NetFirewallRule -DisplayName "Node Backend API" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
 ```
 
-### Pasos para Usar
+### Pasos para Usar en Nuevo Dispositivo
 
-1. **Obtener tu IP local:**
+1. **Clonar el repositorio:**
+   ```bash
+   git clone <url-repositorio>
+   cd Vitrinex_fenix
+   ```
+
+2. **Instalar dependencias:**
+   ```bash
+   npm install
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
+
+3. **Obtener tu IP local:**
    ```powershell
    ipconfig | Select-String -Pattern "IPv4"
    ```
 
-2. **Actualizar configuración:**
-   - En `frontend/.env`: Actualiza `VITE_API_URL` con tu IP
-   - En `backend/src/index.js`: Actualiza el array `allowedOrigins` con tu IP
-   - En `backend/src/index.js`: Actualiza el mensaje del logger con tu IP
+4. **Configurar archivos .env:**
+   ```bash
+   # Frontend
+   cp frontend/.env.example frontend/.env
+   # Edita frontend/.env y actualiza VITE_API_URL con tu IP
 
-3. **Iniciar servidores:**
+   # Backend
+   cp backend/.env.example backend/.env
+   # Edita backend/.env y agrega:
+   # - Tu MONGODB_URI
+   # - Tu LOCAL_IP
+   # - Otras credenciales necesarias
+   ```
+
+5. **Iniciar servidores:**
    ```powershell
    # Terminal 1 - Frontend
    cd frontend
