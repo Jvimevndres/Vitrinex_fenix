@@ -21,9 +21,12 @@ export default function PromotionalBanner({ position, store, className = '', lay
   const loadSponsorAds = async () => {
     try {
       const res = await getActiveAdsByPosition(position);
-      setAds(res.data.ads || []);
+      const adsData = res.data.ads || [];
+      console.log(`📢 Anuncios cargados para posición "${position}":`, adsData.length);
+      setAds(adsData);
     } catch (error) {
       console.error('❌ Error cargando anuncios:', error);
+      setAds([]);
     }
   };
 

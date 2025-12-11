@@ -46,9 +46,9 @@ export const getActiveAdsByPosition = async (req, res) => {
   try {
     const { position } = req.params;
 
+    // Obtener TODOS los anuncios activos de esta posición, sin límite
     const ads = await SponsorAd.find({ position, active: true })
-      .sort({ priority: -1 })
-      .limit(3);
+      .sort({ priority: -1, createdAt: -1 }); // Ordenar por prioridad y luego por fecha de creación
 
     // Incrementar impressions
     if (ads.length > 0) {

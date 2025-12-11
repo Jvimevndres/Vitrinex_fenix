@@ -73,54 +73,94 @@ export default function AdminSponsorsManager() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 border border-slate-200">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">Gestión de Anuncios</h2>
+    <div className="space-y-6 min-h-[calc(100vh-12rem)]">
+      <div className="bg-white rounded-xl p-6 border border-slate-200 min-h-full">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Gestión de Anuncios</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              {ads.length} {ads.length === 1 ? 'anuncio' : 'anuncios'} registrado{ads.length === 1 ? '' : 's'}
+            </p>
+          </div>
           <button
             onClick={() => {
               resetForm();
               setShowModal(true);
             }}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             + Nuevo Anuncio
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ads.map((ad) => (
-            <div key={ad._id} className="border border-slate-200 rounded-lg p-4">
-              {ad.imageUrl && (
-                <img src={ad.imageUrl} alt={ad.name} className="w-full h-32 object-cover rounded mb-3" />
+        {ads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-6xl mb-4">📢</div>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">No hay anuncios</h3>
+            <p className="text-slate-600 mb-6">Crea tu primer anuncio publicitario</p>
+            <button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              + Crear Primer Anuncio
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {ads.map((ad) => (
+            <div key={ad._id} className="border border-slate-200 rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+              {ad.imageUrl ? (
+                <img src={ad.imageUrl} alt={ad.name} className="w-full h-40 object-cover rounded-lg mb-3 border border-slate-100" />
+              ) : (
+                <div className="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg mb-3 flex items-center justify-center">
+                  <span className="text-4xl">📢</span>
+                </div>
               )}
-              <h3 className="font-semibold text-slate-900">{ad.name}</h3>
-              <p className="text-xs text-slate-500 mb-2">Posición: {ad.position}</p>
-              <div className="flex items-center justify-between">
-                <span className={`px-2 py-1 rounded text-xs ${ad.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+              <h3 className="font-semibold text-slate-900 truncate mb-1">{ad.name}</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-500">
+                  {ad.position === 'top' && '⬆️ Superior'}
+                  {ad.position === 'sidebarLeft' && '⬅️ Lateral Izq'}
+                  {ad.position === 'sidebarRight' && '➡️ Lateral Der'}
+                  {ad.position === 'betweenSections' && '↕️ Entre Secciones'}
+                  {ad.position === 'footer' && '⬇️ Footer'}
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ad.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                   {ad.active ? 'Activo' : 'Inactivo'}
                 </span>
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(ad)}
-                    className="text-sm text-blue-600 hover:text-blue-700"
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleDelete(ad._id)}
-                    className="text-sm text-red-600 hover:text-red-700"
+                    className="text-sm text-red-600 hover:text-red-700 font-medium"
                   >
                     Eliminar
                   </button>
                 </div>
               </div>
-              <div className="mt-2 text-xs text-slate-500">
-                {ad.impressions} impresiones • {ad.clicks} clicks
+              <div className="mt-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>👁️ {ad.impressions || 0}</span>
+                  <span>🖱️ {ad.clicks || 0}</span>
+                  <span className="font-semibold">
+                    {ad.clicks && ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) + '%' : '0%'} CTR
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal */}
