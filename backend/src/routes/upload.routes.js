@@ -77,7 +77,19 @@ const avatarUpload = multer({ storage: createStorage("avatars"), ...uploadConfig
 const storeLogoUpload = multer({ storage: createStorage("stores"), ...uploadConfig });
 const productImageUpload = multer({ storage: createStorage("products"), ...uploadConfig });
 
-const getBaseUrl = () => process.env.API_PUBLIC_URL || "http://localhost:3000";
+// 🌐 Generar URL base dinámicamente desde el request para acceso multi-dispositivo
+const getBaseUrl = (req) => {
+  // Si existe API_PUBLIC_URL y no es localhost, usarlo (para producción)
+  const publicUrl = process.env.API_PUBLIC_URL;
+  if (publicUrl && !publicUrl.includes('localhost')) {
+    return publicUrl;
+  }
+  
+  // En desarrollo, usar el host del request para soportar múltiples dispositivos
+  const protocol = req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}`;
+};
 
 /**
  * Avatar de usuario
@@ -100,7 +112,7 @@ router.post(
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
-      const baseUrl = getBaseUrl();
+      const baseUrl = getBaseUrl(req);
       const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
 
       user.avatarUrl = avatarUrl;
@@ -198,7 +210,7 @@ router.post(
         });
       }
 
-      const baseUrl = getBaseUrl();
+      const baseUrl = getBaseUrl(req);
       const imageUrl = `${baseUrl}/uploads/products/${req.file.filename}`;
 
       return res.json({
@@ -232,7 +244,7 @@ router.post(
           .json({ message: "No se recibió ningún archivo" });
       }
 
-      const baseUrl = getBaseUrl();
+      const baseUrl = getBaseUrl(req);
       const imageUrl = `${baseUrl}/uploads/backgrounds/${req.file.filename}`;
 
       return res.json({
@@ -266,7 +278,7 @@ router.post(
           .json({ message: "No se recibió ningún archivo" });
       }
 
-      const baseUrl = getBaseUrl();
+      const baseUrl = getBaseUrl(req);
       const imageUrl = `${baseUrl}/uploads/sponsors/${req.file.filename}`;
 
       return res.json({
