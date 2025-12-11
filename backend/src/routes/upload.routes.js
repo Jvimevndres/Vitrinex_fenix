@@ -262,6 +262,7 @@ router.post(
 
 /**
  * 🆕 Imagen de anuncio patrocinado
+ * NOTA: Devuelve ruta relativa para compatibilidad multi-dispositivo
  */
 const sponsorAdUpload = multer({ storage: createStorage("sponsors"), ...uploadConfig });
 
@@ -278,8 +279,8 @@ router.post(
           .json({ message: "No se recibió ningún archivo" });
       }
 
-      const baseUrl = getBaseUrl(req);
-      const imageUrl = `${baseUrl}/uploads/sponsors/${req.file.filename}`;
+      // Devolver ruta relativa (sin dominio) para que cada dispositivo la construya con su VITE_API_URL
+      const imageUrl = `/uploads/sponsors/${req.file.filename}`;
 
       return res.json({
         message: "Imagen de anuncio subida correctamente",

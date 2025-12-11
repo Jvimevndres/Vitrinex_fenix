@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllSponsorAds, createSponsorAd, updateSponsorAd, deleteSponsorAd } from '../api/sponsors';
+import { getImageUrl } from '../utils/imageUrl';
 
 export default function AdminSponsorsManager() {
   const [ads, setAds] = useState([]);
@@ -113,7 +114,7 @@ export default function AdminSponsorsManager() {
             {ads.map((ad) => (
             <div key={ad._id} className="border border-slate-200 rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
               {ad.imageUrl ? (
-                <img src={ad.imageUrl} alt={ad.name} className="w-full h-40 object-cover rounded-lg mb-3 border border-slate-100" />
+                <img src={getImageUrl(ad.imageUrl)} alt={ad.name} className="w-full h-40 object-cover rounded-lg mb-3 border border-slate-100" />
               ) : (
                 <div className="w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg mb-3 flex items-center justify-center">
                   <span className="text-4xl">📢</span>
@@ -188,7 +189,7 @@ export default function AdminSponsorsManager() {
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
                 {form.imageUrl && (
-                  <img src={form.imageUrl} alt="Preview" className="mt-2 w-full h-32 object-cover rounded" />
+                  <img src={getImageUrl(form.imageUrl)} alt="Preview" className="mt-2 w-full h-32 object-cover rounded" />
                 )}
               </div>
               <div>

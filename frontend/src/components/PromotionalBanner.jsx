@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getActiveAdsByPosition, trackAdClick } from '../api/sponsors';
+import { getImageUrl } from '../utils/imageUrl';
 
 export default function PromotionalBanner({ position, store, className = '', layout = 'stack' }) {
   const [ads, setAds] = useState([]);
@@ -143,7 +144,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
               className="block relative group overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
             >
               <img
-                src={banner.imageUrl}
+                src={getImageUrl(banner.imageUrl)}
                 alt={`Banner premium ${index + 1}`}
                 className={`${getDimensions()} object-cover shadow-md group-hover:shadow-xl transition-shadow w-full`}
               />
@@ -154,7 +155,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
           ) : (
             <div className="relative overflow-hidden rounded-lg">
               <img
-                src={banner.imageUrl}
+                src={getImageUrl(banner.imageUrl)}
                 alt={`Banner premium ${index + 1}`}
                 className={`${getDimensions()} object-cover shadow-md w-full`}
               />
@@ -177,7 +178,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
               className="block relative group overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
             >
               <img
-                src={customBanner.imageUrl}
+                src={getImageUrl(customBanner.imageUrl)}
                 alt="Banner promocional personalizado"
                 className={`${getDimensions()} object-cover shadow-md group-hover:shadow-xl transition-shadow w-full`}
               />
@@ -188,7 +189,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
           ) : (
             <div className="relative overflow-hidden rounded-lg">
               <img
-                src={customBanner.imageUrl}
+                src={getImageUrl(customBanner.imageUrl)}
                 alt="Banner promocional personalizado"
                 className={`${getDimensions()} object-cover shadow-md w-full`}
               />
@@ -212,7 +213,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
               className="block relative group overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
             >
               <img
-                src={ad.imageUrl}
+                src={getImageUrl(ad.imageUrl)}
                 alt={ad.name}
                 className={`${getDimensions()} object-cover shadow-md group-hover:shadow-xl transition-shadow w-full`}
               />
@@ -223,7 +224,7 @@ export default function PromotionalBanner({ position, store, className = '', lay
           ) : (
             <div className="relative overflow-hidden rounded-lg">
               <img
-                src={ad.imageUrl}
+                src={getImageUrl(ad.imageUrl)}
                 alt={ad.name}
                 className={`${getDimensions()} object-cover shadow-md w-full`}
               />

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { getStoreById, updateMyStore } from "../api/store";
 import api from "../api/axios";
+import { getImageUrl } from "../utils/imageUrl";
 
 export default function PromotionalSpacesManager({ storeId, storePlan }) {
   const [spaces, setSpaces] = useState({
@@ -343,7 +344,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                       {ad.imageUrl && (
                         <div className="mb-3 relative">
                           <img 
-                            src={ad.imageUrl} 
+                            src={getImageUrl(ad.imageUrl)} 
                             alt={`Anuncio ${index + 1}`}
                             className="w-full max-h-32 object-contain bg-white rounded border"
                           />
@@ -436,7 +437,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                       space.imageUrl ? (
                         <div className="relative">
                           <img 
-                            src={space.imageUrl} 
+                            src={getImageUrl(space.imageUrl)} 
                             alt={positionLabels[position]}
                             className="w-full max-h-32 object-contain bg-gray-50 rounded border"
                           />
