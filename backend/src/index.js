@@ -34,9 +34,22 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Permitir múltiples orígenes para desarrollo móvil
+const allowedOrigins = [
+  FRONTEND_ORIGIN,
+  'http://192.168.1.27:5173',
+  'http://localhost:5173'
+];
+
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
@@ -106,8 +119,9 @@ app.use((err, req, res, next) => {
 
     await ensureStoreIndexes();
 
-    app.listen(PORT, () => {
-      logger.success(`API escuchando en http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      logger.success(`API escuchando en http://0.0.0.0:${PORT}`);
+      logger.info(`Acceso desde red local: http://192.168.1.27:${PORT}`);
     });
   } catch (err) {
     logger.error("Error al iniciar el servidor:", err.message || err);
