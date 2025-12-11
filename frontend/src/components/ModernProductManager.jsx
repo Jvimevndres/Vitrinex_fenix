@@ -206,7 +206,7 @@ export default function ModernProductManager({ storeId }) {
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
         <div className="flex flex-wrap items-center gap-4">
           {/* Search */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-full sm:min-w-[200px]">
             <input
               type="text"
               placeholder="Buscar productos..."

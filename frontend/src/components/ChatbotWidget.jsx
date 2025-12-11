@@ -218,21 +218,21 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-2 right-2 sm:bottom-6 sm:right-6 z-50">
       {/* Botón de burbuja flotante */}
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300 group"
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-110 transition-all duration-300 group"
           aria-label="Abrir chatbot"
         >
-          <FaRobot className="text-2xl group-hover:animate-bounce" />
+          <FaRobot className="text-xl sm:text-2xl group-hover:animate-bounce" />
         </button>
       )}
 
       {/* Ventana de chat */}
       {isOpen && (
-        <div className="bg-white rounded-2xl shadow-2xl w-96 h-[600px] flex flex-col overflow-hidden border border-slate-200 animate-slideUp">
+        <div className="bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-96 h-[85vh] sm:h-[600px] max-h-[85vh] flex flex-col overflow-hidden border border-slate-200 animate-slideUp">
           {/* Header del chat */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">

@@ -505,7 +505,7 @@ export default function ChatSidebar() {
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-[400px] bg-white shadow-2xl z-[998] flex flex-col animate-slideInLeft">
+          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-full sm:w-[400px] max-w-full sm:max-w-[400px] bg-white shadow-2xl z-[998] flex flex-col animate-slideInLeft">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -704,7 +704,7 @@ export default function ChatSidebar() {
 
       {/* Modal de chat tipo burbuja - similar al chatbot */}
       {activeChatModal && (
-        <div className="fixed bottom-6 right-6 z-[1000] w-[400px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col animate-slideInUp">
+        <div className="fixed bottom-2 right-2 left-2 sm:left-auto sm:right-6 sm:bottom-6 z-[1000] w-full sm:w-[400px] h-[95vh] sm:h-[600px] max-h-[95vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-slideInUp">
           {/* Header del chat */}
           <div 
             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 rounded-t-2xl flex items-center justify-between"

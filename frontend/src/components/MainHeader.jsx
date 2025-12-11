@@ -648,7 +648,7 @@ export default function MainHeader({
                 {/* Dropdown de notificaciones */}
                 {openNotifications && (
                   <div 
-                    className="absolute right-0 top-20 w-[340px] bg-gray-900/[0.99] backdrop-blur-md border border-purple-400/40 rounded-xl shadow-2xl z-[1001] overflow-hidden"
+                    className="absolute right-0 top-20 w-[calc(100vw-2rem)] sm:w-[340px] max-w-[340px] bg-gray-900/[0.99] backdrop-blur-md border border-purple-400/40 rounded-xl shadow-2xl z-[1001] overflow-hidden"
                     style={{ 
                       boxShadow: '0 20px 60px rgba(139, 92, 246, 0.5)',
                       fontFamily: "'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif",
