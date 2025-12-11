@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MainHeader from "../components/MainHeader";
 import Footer from "../components/Footer";
 import { getStoreById, updateMyStore } from "../api/store";
+import { useAuth } from "../context/AuthContext";
 import { FaCog, FaPalette, FaBullhorn, FaShoppingBag, FaClipboardList, FaBox, FaComments, FaChartBar, FaCalendarAlt, FaWrench, FaShoppingCart, FaClock } from 'react-icons/fa';
 
 import BookingAvailabilityManager from "../components/BookingAvailabilityManager";
@@ -60,6 +61,7 @@ export default function StoreProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth(); // 🆕 Obtener usuario autenticado
 
   // ========= Estados principales ===========
   const [form, setForm] = useState({
@@ -838,8 +840,8 @@ export default function StoreProfilePage() {
 
       {/* 📢 Gestor de Anuncios - Modal fullscreen */}
       {showAdsManager && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto p-4 pt-20">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8 mt-4">
             <div className="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
               <h2 className="text-xl font-bold flex items-center gap-2"><FaBullhorn className="text-blue-600" /> Gestión de Espacios Publicitarios</h2>
               <button
@@ -854,7 +856,7 @@ export default function StoreProfilePage() {
             <div className="p-6">
               <PromotionalSpacesManager 
                 storeId={id} 
-                storePlan={storeData?.plan || 'free'}
+                storePlan={user?.plan || 'free'}
               />
             </div>
           </div>

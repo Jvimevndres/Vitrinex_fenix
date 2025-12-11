@@ -1,7 +1,6 @@
 // src/components/PromotionalSpacesManager.jsx
 import { useState, useEffect } from "react";
 import { getStoreById, updateMyStore } from "../api/store";
-import { getAllSponsorAds } from "../api/sponsors";
 import axios from "axios";
 
 export default function PromotionalSpacesManager({ storeId, storePlan }) {
@@ -13,17 +12,17 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
     footer: { enabled: false, imageUrl: "", link: "" },
   });
   
-  const [defaultAds, setDefaultAds] = useState([]);
   const [uploading, setUploading] = useState({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isPro = storePlan === 'pro' || storePlan === 'premium';
+  const isPro = storePlan?.toLowerCase() === 'pro' || storePlan?.toLowerCase() === 'premium';
 
   useEffect(() => {
+    console.log('📢 PromotionalSpacesManager - Plan recibido:', storePlan);
+    console.log('📢 PromotionalSpacesManager - isPro:', isPro);
     loadStoreSpaces();
-    loadDefaultAds();
-  }, [storeId]);
+  }, [storeId, storePlan]);
 
   const loadStoreSpaces = async () => {
     try {
@@ -33,15 +32,6 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
       }
     } catch (error) {
       console.error("Error cargando espacios:", error);
-    }
-  };
-
-  const loadDefaultAds = async () => {
-    try {
-      const { data } = await getAllSponsorAds();
-      setDefaultAds(data || []);
-    } catch (error) {
-      console.error("Error cargando anuncios por defecto:", error);
     }
   };
 
@@ -140,10 +130,6 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
     }
   };
 
-  const getDefaultAdForPosition = (position) => {
-    return defaultAds.find(ad => ad.position === position && ad.active);
-  };
-
   const positionLabels = {
     top: "Banner Superior",
     sidebarLeft: "Barra Lateral Izquierda",
@@ -181,7 +167,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
             <p className="text-sm text-gray-600 mt-2">
               {isPro 
                 ? "Personaliza los anuncios que aparecen en tu tienda pública" 
-                : "Los espacios publicitarios muestran anuncios de Vitrinex"}
+                : "Espacios publicitarios disponibles para personalizar"}
             </p>
           </div>
           {!isPro && (
@@ -201,7 +187,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
         {!isPro && (
           <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-sm text-yellow-800">
-              🔒 <strong>Mejora a Pro o Premium</strong> para reemplazar estos anuncios con los tuyos propios y monetizar tu espacio
+              🔒 <strong>Mejora a Pro o Premium</strong> para activar tus propios anuncios y monetizar tu espacio publicitario
             </p>
           </div>
         )}
@@ -217,7 +203,6 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
       <div className="space-y-4">
         {Object.keys(spaces).map((position) => {
           const space = spaces[position];
-          const defaultAd = getDefaultAdForPosition(position);
           const isCustom = space.enabled && isPro;
           
           return (
@@ -239,9 +224,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                       <p className="text-xs text-gray-500">
                         {isCustom 
                           ? "✨ Mostrando tu anuncio personalizado" 
-                          : defaultAd 
-                            ? `Mostrando: ${defaultAd.name}` 
-                            : "Sin anuncio configurado"}
+                          : "📢 Espacio disponible para tu anuncio"}
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
                         📐 Recomendado: {recommendedSizes[position]}
@@ -288,21 +271,9 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                           <p className="text-gray-400">Sin imagen</p>
                         </div>
                       )
-                    ) : defaultAd && defaultAd.imageUrl ? (
-                      // Default Vitrinex ad
-                      <div className="relative opacity-75">
-                        <img 
-                          src={defaultAd.imageUrl} 
-                          alt={defaultAd.name}
-                          className="w-full max-h-32 object-contain bg-gray-50 rounded border"
-                        />
-                        <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                          📢 Anuncio de Vitrinex
-                        </div>
-                      </div>
                     ) : (
                       <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
-                        <p className="text-xs text-gray-400">No hay anuncio configurado para esta posición</p>
+                        <p className="text-xs text-gray-400">Activa "Personalizar" para configurar tu anuncio</p>
                       </div>
                     )}
                   </div>

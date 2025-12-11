@@ -96,8 +96,14 @@ export default function CustomerProfilePage() {
 
   useEffect(() => {
     loadUser();
-    loadActivity();
   }, []);
+
+  // Cargar actividad cuando userData esté disponible
+  useEffect(() => {
+    if (userData?.email) {
+      loadActivity();
+    }
+  }, [userData]);
 
   const loadUser = async () => {
     try {
@@ -155,10 +161,12 @@ export default function CustomerProfilePage() {
       let totalProducts = 0;
       for (const store of storesRes.data || []) {
         try {
+          // Usar la ruta de productos del dueño (requiere auth)
           const productsRes = await axios.get(`/stores/${store._id}/products`);
           totalProducts += (productsRes.data || []).length;
         } catch (err) {
-          console.error(`Error loading products for store ${store._id}:`, err);
+          // Si falla (por permisos o error), simplemente no contar productos de esa tienda
+          console.warn(`No se pudieron cargar productos de la tienda ${store._id}:`, err.response?.status);
         }
       }
       
@@ -174,12 +182,24 @@ export default function CustomerProfilePage() {
 
   const loadActivity = async () => {
     try {
-      // Cargar mis reservas
-      const bookingsRes = await axios.get('/stores/bookings/my-bookings');
+      // Obtener el email del usuario actual desde userData
+      const userEmail = userData?.email;
+      
+      if (!userEmail) {
+        console.warn('No hay email de usuario disponible para cargar actividad');
+        return;
+      }
+
+      // Cargar mis reservas con el email como parámetro
+      const bookingsRes = await axios.get('/stores/bookings/my-bookings', {
+        params: { email: userEmail }
+      });
       setMyBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
 
-      // Cargar mis pedidos
-      const ordersRes = await axios.get('/stores/orders/my-orders');
+      // Cargar mis pedidos con el email como parámetro
+      const ordersRes = await axios.get('/stores/orders/my-orders', {
+        params: { email: userEmail }
+      });
       setMyOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
 
       // Cargar conversaciones de usuario

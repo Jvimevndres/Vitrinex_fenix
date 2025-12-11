@@ -5,9 +5,20 @@ export default function PromotionalBanner({ position, store, className = '', lay
   const [ads, setAds] = useState([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
-  const isPremium = store?.plan === 'pro' || store?.plan === 'premium';
+  const isPremium = store?.plan?.toLowerCase() === 'pro' || store?.plan?.toLowerCase() === 'premium';
   const customBanner = store?.promotionalSpaces?.[position];
   const hasCustomBanner = isPremium && customBanner?.enabled && customBanner?.imageUrl;
+  
+  // Debug logging
+  useEffect(() => {
+    console.log(`📢 PromotionalBanner [${position}]:`, {
+      storePlan: store?.plan,
+      isPremium,
+      customBannerEnabled: customBanner?.enabled,
+      hasImage: !!customBanner?.imageUrl,
+      hasCustomBanner
+    });
+  }, [position, store?.plan, customBanner]);
   
   // layout puede ser: 'carousel' (rotación automática) o 'stack' (apilados verticalmente)
 

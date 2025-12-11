@@ -402,80 +402,79 @@ export default function AppointmentsList({ storeId }) {
                         </div>
                       </div>
 
-                      {/* Badge de estado y acciones */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        {/* Badge de estado */}
-                        <span
-                          className={
-                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap " +
-                            (STATUS_COLORS[appt.status] ||
-                              "bg-slate-100 text-slate-700 border border-slate-200")
-                          }
-                        >
-                          <span>{STATUS_ICONS[appt.status] || "⚪"}</span>
-                          {STATUS_LABELS[appt.status] || appt.status || "Sin estado"}
-                        </span>
+                      {/* Botones de acción */}
+                      <div className="flex items-center gap-2 shrink-0">
+                          {/* Botón Pendiente */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChangeStatus(
+                                appt._id,
+                                "pending"
+                              )
+                            }
+                            disabled={updatingId === appt._id || appt.status === "pending"}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                              appt.status === "pending"
+                                ? "bg-amber-200 text-amber-900 border border-amber-400 cursor-not-allowed opacity-60"
+                                : "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}
+                            title={appt.status === "pending" ? "Ya está en estado Pendiente" : "Cambiar a Pendiente"}
+                          >
+                            {updatingId === appt._id ? "..." : "⏳ Pendiente"}
+                          </button>
 
-                        {/* Botones de acción */}
-                        <div className="flex items-center gap-2">
-                          {appt.status !== "confirmed" && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChangeStatus(
-                                  appt._id,
-                                  "confirmed"
-                                )
-                              }
-                              disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                            >
-                              {updatingId === appt._id ? "..." : "✅ Confirmar"}
-                            </button>
-                          )}
+                          {/* Botón Confirmar */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChangeStatus(
+                                appt._id,
+                                "confirmed"
+                              )
+                            }
+                            disabled={updatingId === appt._id || appt.status === "confirmed"}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                              appt.status === "confirmed"
+                                ? "bg-emerald-200 text-emerald-900 border border-emerald-400 cursor-not-allowed opacity-60"
+                                : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}
+                            title={appt.status === "confirmed" ? "Ya está Confirmada" : "Confirmar reserva"}
+                          >
+                            {updatingId === appt._id ? "..." : "✅ Confirmar"}
+                          </button>
 
-                          {appt.status !== "cancelled" && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChangeStatus(
-                                  appt._id,
-                                  "cancelled"
-                                )
-                              }
-                              disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                            >
-                              {updatingId === appt._id ? "..." : "❌ Cancelar"}
-                            </button>
-                          )}
+                          {/* Botón Cancelar */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChangeStatus(
+                                appt._id,
+                                "cancelled"
+                              )
+                            }
+                            disabled={updatingId === appt._id || appt.status === "cancelled"}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                              appt.status === "cancelled"
+                                ? "bg-rose-200 text-rose-900 border border-rose-400 cursor-not-allowed opacity-60"
+                                : "text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}
+                            title={appt.status === "cancelled" ? "Ya está Cancelada" : "Cancelar reserva"}
+                          >
+                            {updatingId === appt._id ? "..." : "❌ Cancelar"}
+                          </button>
 
-                          {appt.status !== "pending" && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChangeStatus(
-                                  appt._id,
-                                  "pending"
-                                )
-                              }
-                              disabled={updatingId === appt._id}
-                              className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                            >
-                              {updatingId === appt._id ? "..." : "⏳ Pendiente"}
-                            </button>
-                          )}
-
+                          {/* Botón Eliminar */}
                           <button
                             type="button"
                             onClick={() => handleDelete(appt._id)}
                             disabled={updatingId === appt._id}
                             className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title="Eliminar reserva permanentemente"
                           >
                             {updatingId === appt._id ? "..." : "🗑️ Eliminar"}
                           </button>
                         </div>
-                      </div>
                     </div>
                   </div>
                 ))}
