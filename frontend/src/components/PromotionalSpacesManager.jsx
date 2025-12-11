@@ -1,13 +1,13 @@
 // src/components/PromotionalSpacesManager.jsx
 import { useState, useEffect } from "react";
 import { getStoreById, updateMyStore } from "../api/store";
-import axios from "axios";
+import api from "../api/axios";
 
 export default function PromotionalSpacesManager({ storeId, storePlan }) {
   const [spaces, setSpaces] = useState({
     top: { enabled: false, imageUrl: "", link: "" },
-    sidebarLeft: { enabled: false, imageUrl: "", link: "" },
-    sidebarRight: { enabled: false, imageUrl: "", link: "" },
+    sidebarLeft: [], // Array de hasta 7 anuncios
+    sidebarRight: [], // Array de hasta 7 anuncios
     betweenSections: { enabled: false, imageUrl: "", link: "" },
     footer: { enabled: false, imageUrl: "", link: "" },
   });
@@ -28,7 +28,17 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
     try {
       const { data } = await getStoreById(storeId);
       if (data.promotionalSpaces) {
-        setSpaces(data.promotionalSpaces);
+        // Asegurar que las barras laterales sean arrays
+        const loadedSpaces = {
+          ...data.promotionalSpaces,
+          sidebarLeft: Array.isArray(data.promotionalSpaces.sidebarLeft) 
+            ? data.promotionalSpaces.sidebarLeft 
+            : [],
+          sidebarRight: Array.isArray(data.promotionalSpaces.sidebarRight) 
+            ? data.promotionalSpaces.sidebarRight 
+            : []
+        };
+        setSpaces(loadedSpaces);
       }
     } catch (error) {
       console.error("Error cargando espacios:", error);
@@ -41,16 +51,57 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
       return;
     }
     
+    // Para barras laterales, agregar/limpiar array
+    if (position === 'sidebarLeft' || position === 'sidebarRight') {
+      const currentArray = spaces[position];
+      if (currentArray.length === 0) {
+        // Agregar primer anuncio
+        setSpaces(prev => ({
+          ...prev,
+          [position]: [{ enabled: true, imageUrl: '', link: '' }]
+        }));
+      } else {
+        // Limpiar todos
+        setSpaces(prev => ({
+          ...prev,
+          [position]: []
+        }));
+      }
+    } else {
+      // Para posiciones simples, toggle enabled
+      setSpaces(prev => ({
+        ...prev,
+        [position]: {
+          ...prev[position],
+          enabled: !prev[position].enabled
+        }
+      }));
+    }
+  };
+
+  const handleAddSidebarAd = (position) => {
+    if (!isPro) return;
+    
+    const currentAds = spaces[position];
+    if (currentAds.length >= 7) {
+      alert('⚠️ Máximo 7 anuncios por barra lateral');
+      return;
+    }
+    
     setSpaces(prev => ({
       ...prev,
-      [position]: {
-        ...prev[position],
-        enabled: !prev[position].enabled
-      }
+      [position]: [...prev[position], { enabled: true, imageUrl: '', link: '' }]
     }));
   };
 
-  const handleImageUpload = async (position, file) => {
+  const handleRemoveSidebarAd = (position, index) => {
+    setSpaces(prev => ({
+      ...prev,
+      [position]: prev[position].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleImageUpload = async (position, file, index = null) => {
     if (!isPro) {
       alert("🔒 Necesitas un plan Pro o Premium para subir tus propios anuncios");
       return;
@@ -60,47 +111,72 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("storeId", storeId);
 
     try {
-      setUploading(prev => ({ ...prev, [position]: true }));
+      const uploadKey = index !== null ? `${position}-${index}` : position;
+      setUploading(prev => ({ ...prev, [uploadKey]: true }));
       
-      const { data } = await axios.post(
-        "http://localhost:3000/api/upload/sponsor-ad",
+      const { data } = await api.post(
+        "/upload/sponsor-ad",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" }
         }
       );
 
       if (data.imageUrl) {
-        setSpaces(prev => ({
-          ...prev,
-          [position]: {
-            ...prev[position],
-            imageUrl: data.imageUrl
-          }
-        }));
+        // Para barras laterales con índice
+        if (index !== null && (position === 'sidebarLeft' || position === 'sidebarRight')) {
+          setSpaces(prev => ({
+            ...prev,
+            [position]: prev[position].map((ad, i) => 
+              i === index ? { ...ad, imageUrl: data.imageUrl } : ad
+            )
+          }));
+        } else {
+          // Para posiciones simples
+          setSpaces(prev => ({
+            ...prev,
+            [position]: {
+              ...prev[position],
+              imageUrl: data.imageUrl
+            }
+          }));
+        }
+        setMessage("✅ Imagen subida correctamente");
+        setTimeout(() => setMessage(""), 3000);
       }
     } catch (error) {
       console.error("Error subiendo imagen:", error);
-      alert("Error al subir la imagen");
+      const errorMsg = error.response?.data?.message || "Error al subir la imagen";
+      alert(`❌ ${errorMsg}`);
     } finally {
-      setUploading(prev => ({ ...prev, [position]: false }));
+      const uploadKey = index !== null ? `${position}-${index}` : position;
+      setUploading(prev => ({ ...prev, [uploadKey]: false }));
     }
   };
 
-  const handleLinkChange = (position, link) => {
+  const handleLinkChange = (position, link, index = null) => {
     if (!isPro) return;
     
-    setSpaces(prev => ({
-      ...prev,
-      [position]: {
-        ...prev[position],
-        link: link
-      }
-    }));
+    // Para barras laterales con índice
+    if (index !== null && (position === 'sidebarLeft' || position === 'sidebarRight')) {
+      setSpaces(prev => ({
+        ...prev,
+        [position]: prev[position].map((ad, i) => 
+          i === index ? { ...ad, link } : ad
+        )
+      }));
+    } else {
+      // Para posiciones simples
+      setSpaces(prev => ({
+        ...prev,
+        [position]: {
+          ...prev[position],
+          link: link
+        }
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -202,8 +278,118 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
       {/* Espacios Publicitarios */}
       <div className="space-y-4">
         {Object.keys(spaces).map((position) => {
+          const isSidebarPosition = position === 'sidebarLeft' || position === 'sidebarRight';
+          
+          // Para barras laterales (arrays)
+          if (isSidebarPosition) {
+            const ads = spaces[position];
+            const hasAds = Array.isArray(ads) && ads.length > 0;
+            
+            return (
+              <div 
+                key={position}
+                className="bg-white rounded-lg border-2 border-gray-200 p-5"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                      {positionIcons[position]} {positionLabels[position]}
+                    </h3>
+                    <p className="text-xs text-blue-600 mt-1">
+                      📐 {recommendedSizes[position]} | Máximo: 7 anuncios
+                    </p>
+                  </div>
+                  {isPro && ads.length < 7 && (
+                    <button
+                      onClick={() => handleAddSidebarAd(position)}
+                      className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      ➕ Agregar Anuncio ({ads.length}/7)
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de anuncios */}
+                <div className="space-y-4">
+                  {!hasAds && (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                      <p className="text-gray-400">Sin anuncios configurados</p>
+                      {isPro && (
+                        <button
+                          onClick={() => handleAddSidebarAd(position)}
+                          className="mt-3 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
+                        >
+                          Agregar Primer Anuncio
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {hasAds && ads.map((ad, index) => (
+                    <div key={index} className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold text-purple-900">
+                          Anuncio #{index + 1}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveSidebarAd(position, index)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+
+                      {/* Preview */}
+                      {ad.imageUrl && (
+                        <div className="mb-3 relative">
+                          <img 
+                            src={ad.imageUrl} 
+                            alt={`Anuncio ${index + 1}`}
+                            className="w-full max-h-32 object-contain bg-white rounded border"
+                          />
+                        </div>
+                      )}
+
+                      {/* Upload */}
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Imagen del anuncio
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(position, e.target.files[0], index)}
+                          disabled={uploading[`${position}-${index}`]}
+                          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white"
+                        />
+                        {uploading[`${position}-${index}`] && (
+                          <p className="text-xs text-blue-600 mt-1">Subiendo...</p>
+                        )}
+                      </div>
+
+                      {/* Link */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Enlace (opcional)
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://tu-sitio.com"
+                          value={ad.link || ''}
+                          onChange={(e) => handleLinkChange(position, e.target.value, index)}
+                          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          
+          // Para posiciones simples (top, betweenSections, footer)
           const space = spaces[position];
-          const isCustom = space.enabled && isPro;
+          const isCustom = space?.enabled && isPro;
           
           return (
             <div 
@@ -236,7 +422,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                         <span className="text-sm text-gray-700">Personalizar</span>
                         <input
                           type="checkbox"
-                          checked={space.enabled}
+                          checked={space?.enabled || false}
                           onChange={() => handleToggle(position)}
                           className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                         />
@@ -247,7 +433,6 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                   {/* Preview */}
                   <div className="mb-3">
                     {isCustom ? (
-                      // Custom ad
                       space.imageUrl ? (
                         <div className="relative">
                           <img 
@@ -255,16 +440,6 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                             alt={positionLabels[position]}
                             className="w-full max-h-32 object-contain bg-gray-50 rounded border"
                           />
-                          {space.link && (
-                            <a 
-                              href={space.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                            >
-                              🔗 Ver enlace
-                            </a>
-                          )}
                         </div>
                       ) : (
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
@@ -278,7 +453,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                     )}
                   </div>
 
-                  {/* Controls (only for Pro users with enabled custom ads) */}
+                  {/* Controls */}
                   {isCustom && (
                     <div className="space-y-3 bg-purple-50 rounded-lg p-4">
                       <div>
@@ -290,7 +465,7 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                           accept="image/*"
                           onChange={(e) => handleImageUpload(position, e.target.files[0])}
                           disabled={uploading[position]}
-                          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none"
+                          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white"
                         />
                         {uploading[position] && (
                           <p className="text-xs text-blue-600 mt-1">Subiendo...</p>
@@ -304,9 +479,9 @@ export default function PromotionalSpacesManager({ storeId, storePlan }) {
                         <input
                           type="url"
                           placeholder="https://tu-sitio.com"
-                          value={space.link}
+                          value={space.link || ''}
                           onChange={(e) => handleLinkChange(position, e.target.value)}
-                          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
                         />
                       </div>
                     </div>

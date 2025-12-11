@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+// Validación para límite de anuncios en barras laterales
+function arrayLimit(val) {
+  return val.length <= 7;
+}
+
 const storeSchema = new mongoose.Schema(
   {
     // Compatibilidad con documentos antiguos
@@ -58,15 +63,24 @@ const storeSchema = new mongoose.Schema(
         imageUrl: { type: String, default: '' },
         link: { type: String, default: '' },
       },
+      // Barras laterales permiten múltiples anuncios (hasta 7)
       sidebarLeft: {
-        enabled: { type: Boolean, default: false },
-        imageUrl: { type: String, default: '' },
-        link: { type: String, default: '' },
+        type: [{
+          enabled: { type: Boolean, default: false },
+          imageUrl: { type: String, default: '' },
+          link: { type: String, default: '' },
+        }],
+        default: [],
+        validate: [arrayLimit, 'Máximo 7 anuncios por barra lateral']
       },
       sidebarRight: {
-        enabled: { type: Boolean, default: false },
-        imageUrl: { type: String, default: '' },
-        link: { type: String, default: '' },
+        type: [{
+          enabled: { type: Boolean, default: false },
+          imageUrl: { type: String, default: '' },
+          link: { type: String, default: '' },
+        }],
+        default: [],
+        validate: [arrayLimit, 'Máximo 7 anuncios por barra lateral']
       },
       betweenSections: {
         enabled: { type: Boolean, default: false },

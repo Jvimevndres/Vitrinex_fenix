@@ -470,7 +470,7 @@ export const getStoreById = async (req, res) => {
   try {
     const { id } = req.params;
     const store = await Store.findById(id)
-      .populate("owner", "username avatarUrl email")
+      .populate("owner", "username avatarUrl email plan")
       .lean();
 
     if (!store) return res.status(404).json({ message: "Tienda no encontrada" });
@@ -524,7 +524,8 @@ export const getStoreById = async (req, res) => {
         _id: store.owner._id,
         username: store.owner.username,
         avatarUrl: store.owner.avatarUrl,
-        email: store.owner.email
+        email: store.owner.email,
+        plan: store.owner.plan || 'free' // 🆕 Plan del propietario
       } : null,
       ownerName: store.owner?.username || null,
       ownerAvatar: store.owner?.avatarUrl || null,
