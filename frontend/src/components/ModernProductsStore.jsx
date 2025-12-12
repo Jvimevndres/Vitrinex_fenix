@@ -153,6 +153,9 @@ export default function ModernProductsStore({ store, appearance }) {
       setOrderSuccess(true);
       setCart([]);
       
+      // 🔔 Disparar evento para actualizar chats inmediatamente
+      window.dispatchEvent(new CustomEvent('refreshChats'));
+      
       // Reset después de 15 segundos para dar tiempo a abrir el chat
       setTimeout(() => {
         setShowCheckout(false);
@@ -629,20 +632,18 @@ function CheckoutModal({ cart, total, form, setForm, onSubmit, onClose, submitti
   if (success) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+          >
+            ×
+          </button>
           <div className="text-6xl mb-4">✅</div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Pedido Realizado!</h3>
           <p className="text-gray-600 mb-6">
             Hemos recibido tu pedido. Te contactaremos pronto.
           </p>
-          {orderId && onOpenChat && (
-            <button
-              onClick={onOpenChat}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-            >
-              💬 Chatear con la tienda
-            </button>
-          )}
         </div>
       </div>
     );

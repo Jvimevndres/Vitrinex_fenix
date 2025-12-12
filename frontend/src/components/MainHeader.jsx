@@ -689,11 +689,27 @@ export default function MainHeader({
                             onClick={() => {
                               markNotificationAsRead(notif.id); // ✅ Marcar como leída
                               setOpenNotifications(false);
-                              // Navegar según el tipo de notificación
-                              if (notif.itemType === 'order') {
-                                navigate(`/negocio/${notif.storeId}?tab=ventas&panel=orders`);
-                              } else if (notif.itemType === 'booking') {
-                                navigate(`/negocio/${notif.storeId}`);
+                              
+                              // 🎯 Distinguir entre notificaciones de mensaje y de reserva/pedido
+                              if (notif.type === 'unread_message') {
+                                // 💬 Mensajes nuevos → abrir chat en la burbuja
+                                if (window.openChatFromNotification) {
+                                  window.openChatFromNotification(notif);
+                                } else {
+                                  // Fallback si no está disponible
+                                  if (notif.itemType === 'order') {
+                                    navigate(`/negocio/${notif.storeId}?tab=ventas&panel=orders`);
+                                  } else if (notif.itemType === 'booking') {
+                                    navigate(`/negocio/${notif.storeId}`);
+                                  }
+                                }
+                              } else {
+                                // 📅 Nueva reserva / 🛒 Nuevo pedido → navegar a la página correspondiente
+                                if (notif.type === 'new_order' || notif.itemType === 'order') {
+                                  navigate(`/negocio/${notif.storeId}?tab=ventas&panel=orders`);
+                                } else if (notif.type === 'new_booking' || notif.itemType === 'booking') {
+                                  navigate(`/negocio/${notif.storeId}`);
+                                }
                               }
                             }}
                             className={`px-4 py-3 border-b border-white/5 hover:bg-purple-500/10 transition-colors cursor-pointer ${

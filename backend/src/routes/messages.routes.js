@@ -14,6 +14,8 @@ import {
   getUserMessages,
   sendUserMessage,
   getUserConversations,
+  deleteBookingMessages,
+  deleteOrderMessages,
 } from "../controllers/messages.controller.js";
 
 const router = Router();
@@ -21,6 +23,7 @@ const router = Router();
 // Rutas protegidas - Bookings (owner)
 router.get("/bookings/:bookingId/messages", authRequired, getBookingMessages);
 router.post("/bookings/:bookingId/messages", authRequired, sendMessage);
+router.delete("/bookings/:bookingId/messages", authRequired, deleteBookingMessages);
 router.get("/stores/:storeId/bookings-with-messages", authRequired, getBookingsWithMessages);
 
 // Rutas públicas - Bookings (clientes)
@@ -30,6 +33,7 @@ router.post("/public/bookings/:bookingId/messages", sendMessagePublic);
 // Rutas protegidas - Orders (owner)
 router.get("/orders/:orderId/messages", authRequired, getOrderMessages);
 router.post("/orders/:orderId/messages", authRequired, sendOrderMessage);
+router.delete("/orders/:orderId/messages", authRequired, deleteOrderMessages);
 
 // Rutas públicas - Orders (clientes)
 router.get("/public/orders/:orderId/messages", getOrderMessagesPublic);

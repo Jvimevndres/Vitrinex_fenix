@@ -635,3 +635,89 @@ export const getOrderMessagesPublic = async (req, res) => {
     return res.status(500).json({ message: "Error al obtener mensajes" });
   }
 };
+
+// =================== ELIMINAR CHATS ===================
+
+/**
+ * DELETE /api/bookings/:bookingId/messages
+ * Eliminar todos los mensajes de una reserva (solo owner)
+ */
+export const deleteBookingMessages = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    // Verificar que la reserva existe
+    const booking = await Booking.findById(bookingId).populate("store", "owner user");
+    if (!booking) {
+      return res.status(404).json({ message: "Reserva no encontrada" });
+    }
+
+    // Verificar permisos: solo el dueño de la tienda
+    const userId = req.user.id;
+    const ownerId = booking.store.owner?.toString();
+    const legacyOwnerId = booking.store.user?.toString();
+    
+    if (ownerId !== userId && legacyOwnerId !== userId) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    // Eliminar todos los mensajes
+    const result = await Message.deleteMany({ booking: bookingId });
+
+    // Resetear contadores
+    booking.lastMessageAt = null;
+    booking.unreadMessagesOwner = 0;
+    booking.unreadMessagesCustomer = 0;
+    await booking.save();
+
+    return res.json({ 
+      message: "Chat eliminado correctamente",
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error("Error al eliminar mensajes de reserva:", error);
+    return res.status(500).json({ message: "Error al eliminar chat" });
+  }
+};
+
+/**
+ * DELETE /api/orders/:orderId/messages
+ * Eliminar todos los mensajes de un pedido (solo owner)
+ */
+export const deleteOrderMessages = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Verificar que el pedido existe
+    const order = await Order.findById(orderId).populate("store", "owner user");
+    if (!order) {
+      return res.status(404).json({ message: "Orden no encontrada" });
+    }
+
+    // Verificar permisos: solo el dueño de la tienda
+    const userId = req.user.id;
+    const ownerId = order.store.owner?.toString();
+    const legacyOwnerId = order.store.user?.toString();
+    
+    if (ownerId !== userId && legacyOwnerId !== userId) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    // Eliminar todos los mensajes
+    const result = await Message.deleteMany({ order: orderId });
+
+    // Resetear contadores
+    order.lastMessageAt = null;
+    order.unreadMessagesOwner = 0;
+    order.unreadMessagesCustomer = 0;
+    await order.save();
+
+    return res.json({ 
+      message: "Chat eliminado correctamente",
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error("Error al eliminar mensajes de orden:", error);
+    return res.status(500).json({ message: "Error al eliminar chat" });
+  }
+};

@@ -155,3 +155,23 @@ export const getOrderMessagesPublic = async (orderId, email) => {
   });
   return response.data;
 };
+
+/**
+ * Eliminar todos los mensajes de una reserva (solo owner)
+ * @param {string} bookingId - ID de la reserva
+ * @returns {Promise<Object>} Confirmación de eliminación
+ */
+export const deleteBookingMessages = async (bookingId) => {
+  const response = await axios.delete(`/bookings/${bookingId}/messages`);
+  return response.data;
+};
+
+/**
+ * Eliminar todos los mensajes de un pedido (solo owner)
+ * @param {string} orderId - ID del pedido
+ * @returns {Promise<Object>} Confirmación de eliminación
+ */
+export const deleteOrderMessages = async (orderId) => {
+  const response = await axios.delete(`/orders/${orderId}/messages`);
+  return response.data;
+};

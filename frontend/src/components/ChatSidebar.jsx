@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { listMyStores, listStoreOrders } from '../api/store';
-import { getBookingsWithMessages } from '../api/messages';
+import { getBookingsWithMessages, deleteBookingMessages, deleteOrderMessages } from '../api/messages';
 import axios from '../api/axios';
-import { FaComments, FaStore, FaUser, FaUsers, FaTimes, FaChevronRight } from 'react-icons/fa';
+import { FaComments, FaStore, FaUser, FaUsers, FaTimes, FaChevronRight, FaTrash, FaCheck } from 'react-icons/fa';
 
 export default function ChatSidebar() {
   // ✅ Todos los hooks al inicio en el orden correcto
@@ -136,7 +136,7 @@ export default function ChatSidebar() {
       if (stores && stores.length > 0) {
         for (const store of stores) {
           try {
-            const { data: bookings } = await getBookingsWithMessages(store._id);
+            const bookings = await getBookingsWithMessages(store._id);
             const safeBookings = bookings || [];
 
             safeBookings.forEach(booking => {
@@ -163,9 +163,10 @@ export default function ChatSidebar() {
               try {
                 const { data: orders } = await listStoreOrders(store._id);
                 const safeOrders = orders || [];
-                safeOrders
-                  .filter(order => order.unreadMessagesOwner > 0 || order.lastMessageAt)
-                  .forEach(order => {
+                // Mostrar todos los pedidos que tengan mensajes (unreadMessagesOwner > 0 o lastMessageAt)
+                safeOrders.forEach(order => {
+                  // Solo agregar si tiene mensajes
+                  if (order.unreadMessagesOwner > 0 || order.lastMessageAt) {
                     allConversations.push({
                       id: `owner-order-${order._id}`,
                       orderId: order._id,
@@ -182,7 +183,8 @@ export default function ChatSidebar() {
                       orderTotal: order.total,
                       orderStatus: order.status
                     });
-                  });
+                  }
+                });
               } catch (err) {
                 console.error(`Error loading orders for store ${store._id}:`, err);
               }
@@ -257,6 +259,23 @@ export default function ChatSidebar() {
         return data || [];
       });
       
+      // Actualizar el contador de no leídos inmediatamente en el estado local
+      if (!skipScroll) {
+        setConversations(prev => 
+          prev.map(c => 
+            c.id === conv.id ? { ...c, unreadCount: 0 } : c
+          )
+        );
+        
+        // Recargar conversaciones desde el backend para sincronizar
+        try {
+          const { data: stores } = await listMyStores();
+          await loadMessages(stores || []);
+        } catch (err) {
+          console.error('Error al actualizar conversaciones:', err);
+        }
+      }
+      
       // Scroll al final solo si no es polling o es la primera carga
       if (!skipScroll) {
         setTimeout(() => {
@@ -269,7 +288,7 @@ export default function ChatSidebar() {
     } finally {
       setLoadingChat(false);
     }
-  }, [user?.email]);
+  }, [user?.email, loadMessages]);
 
   // ✅ Función para enviar mensaje
   const sendMessage = async () => {
@@ -367,7 +386,7 @@ export default function ChatSidebar() {
     }
 
     loadData();
-    pollingIntervalRef.current = setInterval(loadData, 10000);
+    pollingIntervalRef.current = setInterval(loadData, 5000); // 🔄 Reducido a 5s para actualización más rápida
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -388,9 +407,25 @@ export default function ChatSidebar() {
       }
     };
     
+    const handleRefreshChats = async () => {
+      if (isAuthenticated && user?._id) {
+        try {
+          const { data: stores } = await listMyStores();
+          await loadMessages(stores || []);
+        } catch (error) {
+          console.error('Error refrescando chats:', error);
+        }
+      }
+    };
+    
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, activeChatModal]);
+    window.addEventListener('refreshChats', handleRefreshChats);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('refreshChats', handleRefreshChats);
+    };
+  }, [isOpen, activeChatModal, isAuthenticated, user?._id, loadMessages]);
 
   // ✅ Polling de mensajes del chat activo
   useEffect(() => {
@@ -476,7 +511,81 @@ export default function ChatSidebar() {
     handleConversationClick(conv);
   };
 
-  const unreadMessages = conversations.filter(c => !readMessages.has(c.id)).length;
+  // 🗑️ Función para eliminar chat
+  const handleDeleteChat = async (e, conv) => {
+    e.stopPropagation(); // Evitar que se abra el chat al hacer clic en eliminar
+    
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este chat? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      if (conv.type === 'owner') {
+        // Solo el dueño puede eliminar chats
+        if (conv.itemType === 'booking') {
+          await deleteBookingMessages(conv.bookingId);
+        } else if (conv.itemType === 'order') {
+          await deleteOrderMessages(conv.orderId);
+        }
+        
+        // Recargar conversaciones
+        const { data: stores } = await listMyStores();
+        await loadMessages(stores || []);
+        
+        // Cerrar chat activo si es el que se eliminó
+        if (activeChatModal?.id === conv.id) {
+          setActiveChatModal(null);
+          setChatMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error al eliminar chat:', error);
+      alert('Error al eliminar el chat. Por favor intenta de nuevo.');
+    }
+  };
+
+
+
+  // 🌐 Exponer función global para abrir chat desde notificaciones
+  useEffect(() => {
+    window.openChatFromNotification = (notif) => {
+      // Buscar la conversación correspondiente
+      const conv = conversations.find(c => {
+        if (notif.itemType === 'booking') {
+          return c.bookingId === notif.bookingId;
+        } else if (notif.itemType === 'order') {
+          return c.orderId === notif.orderId;
+        }
+        return false;
+      });
+
+      if (conv) {
+        handleConversationClick(conv);
+      } else {
+        console.warn('⚠️ No se encontró la conversación para:', notif);
+        // Recargar conversaciones y reintentar
+        if (isAuthenticated && user?._id) {
+          listMyStores().then(({ data: stores }) => {
+            loadMessages(stores || []).then(() => {
+              const newConv = conversations.find(c => {
+                if (notif.itemType === 'booking') return c.bookingId === notif.bookingId;
+                if (notif.itemType === 'order') return c.orderId === notif.orderId;
+                return false;
+              });
+              if (newConv) handleConversationClick(newConv);
+            });
+          });
+        }
+      }
+    };
+
+    return () => {
+      delete window.openChatFromNotification;
+    };
+  }, [conversations, isAuthenticated, user?._id, loadMessages, handleConversationClick]);
+
+  // Calcular mensajes no leídos basado en el contador real de cada conversación
+  const unreadMessages = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
 
   if (!isAuthenticated) return null;
 
@@ -626,61 +735,80 @@ export default function ChatSidebar() {
                     const isUnread = !readMessages.has(conv.id);
                     
                     return (
-                      <button
+                      <div
                         key={conv.id}
-                        onClick={() => handleConversationClickInternal(conv)}
-                        className={`w-full text-left p-4 hover:bg-indigo-50 transition-colors flex items-start gap-3 ${
+                        className={`relative hover:bg-indigo-50 transition-colors ${
                           isUnread ? 'bg-indigo-50/50' : ''
                         }`}
                       >
-                        <div className="flex-shrink-0">
-                          {conv.type === 'user-chat' ? (
-                            conv.avatar ? (
-                              <img src={conv.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
-                                <FaUser className="text-white text-lg" />
-                              </div>
-                            )
-                          ) : conv.storeLogo ? (
-                            <img src={conv.storeLogo} alt="" className="w-12 h-12 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                              <FaStore className="text-white text-lg" />
-                            </div>
-                          )}
-                        </div>
+                        <div
+                          onClick={() => handleConversationClickInternal(conv)}
+                          className="group w-full p-4 flex items-start gap-3 cursor-pointer"
+                        >
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-1">
-                            <h4 className={`font-semibold text-sm truncate ${isUnread ? 'text-indigo-900' : 'text-gray-900'}`}>
-                              {conv.type === 'user-chat' ? conv.userName : 
-                               conv.isOwner ? conv.customerName : conv.storeName}
-                            </h4>
-                            {isUnread && (
-                              <span className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-600 ml-2 mt-1"></span>
+                          <div className="flex-shrink-0">
+                            {conv.type === 'user-chat' ? (
+                              conv.avatar ? (
+                                <img src={conv.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
+                                  <FaUser className="text-white text-lg" />
+                                </div>
+                              )
+                            ) : conv.storeLogo ? (
+                              <img src={conv.storeLogo} alt="" className="w-12 h-12 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                                <FaStore className="text-white text-lg" />
+                              </div>
                             )}
                           </div>
-                          
-                          <p className="text-xs text-gray-500 mb-1">
-                            {conv.serviceName || conv.storeName}
-                          </p>
-                          
-                          <p className={`text-xs truncate ${isUnread ? 'text-indigo-700 font-medium' : 'text-gray-500'}`}>
-                            {conv.lastMessage}
-                          </p>
 
-                          {conv.unreadCount > 0 && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                {conv.unreadCount} nuevo{conv.unreadCount > 1 ? 's' : ''}
-                              </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-1">
+                              <h4 className={`font-semibold text-sm truncate ${isUnread ? 'text-indigo-900' : 'text-gray-900'}`}>
+                                {conv.type === 'user-chat' ? conv.userName : 
+                                 conv.isOwner ? conv.customerName : conv.storeName}
+                              </h4>
+                              {isUnread && (
+                                <span className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-600 ml-2 mt-1"></span>
+                              )}
                             </div>
-                          )}
+                            
+                            <p className="text-xs text-gray-500 mb-1">
+                              {conv.serviceName || conv.storeName}
+                            </p>
+                            
+                            <p className={`text-xs truncate ${isUnread ? 'text-indigo-700 font-medium' : 'text-gray-500'}`}>
+                              {conv.lastMessage}
+                            </p>
+
+                            {conv.unreadCount > 0 && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                  {conv.unreadCount} nuevo{conv.unreadCount > 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          <FaChevronRight className="text-gray-400 text-sm flex-shrink-0 mt-1" />
                         </div>
 
-                        <FaChevronRight className="text-gray-400 text-sm flex-shrink-0 mt-1" />
-                      </button>
+                        {/* Botón de eliminar - solo visible para owner */}
+                        {conv.type === 'owner' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteChat(e, conv);
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-lg z-10"
+                            title="Eliminar chat"
+                          >
+                            <FaTrash className="text-xs" />
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

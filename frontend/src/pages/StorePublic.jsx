@@ -1326,8 +1326,11 @@ export default function StorePublicPage() {
         `¡Listo! Tu cita para ${selectedService.name} ha sido solicitada. El negocio confirmará pronto.`
       );
       
-      // Reset completo después de 10 segundos (más tiempo para ver el enlace)
-      setTimeout(() => resetBookingFlow(), 10000);
+      // 🔔 Disparar evento para actualizar chats inmediatamente
+      window.dispatchEvent(new CustomEvent('refreshChats'));
+      
+      // Reset automático después de 3 segundos
+      setTimeout(() => resetBookingFlow(), 3000);
     } catch (err) {
       console.error(err);
       setBookingError(
@@ -1937,25 +1940,17 @@ export default function StorePublicPage() {
               )}
 
               {bookingMsg && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 relative">
+                  <button
+                    onClick={() => resetBookingFlow()}
+                    className="absolute top-2 right-2 text-green-400 hover:text-green-600 text-xl font-bold"
+                  >
+                    ×
+                  </button>
                   <FaCheckCircle className="text-xl text-green-600" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800">¡Éxito!</p>
                     <p className="text-sm text-green-600 mt-1">{bookingMsg}</p>
-                    {createdBookingId && (
-                      <div className="mt-3">
-                        <button
-                          onClick={() => {
-                            setChatType("booking");
-                            setChatId(createdBookingId);
-                            setShowChatModal(true);
-                          }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-                        >
-                          <FaComments className="mr-2" /> Chatear con la tienda
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

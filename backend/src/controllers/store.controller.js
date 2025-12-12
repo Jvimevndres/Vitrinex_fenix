@@ -4,6 +4,7 @@ import Booking from "../models/booking.model.js";
 import Order from "../models/order.model.js";
 import Service from "../models/service.model.js";
 import Comment from "../models/comment.model.js";
+import Message from "../models/message.model.js";
 import {
   normalizeAvailability,
   validateTimeBlock,
@@ -1239,6 +1240,35 @@ export const createStoreOrder = async (req, res) => {
       notes: notes || "",
     });
 
+    // 🤖 Crear mensaje automático para el chat
+    try {
+      const itemsCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      const productsList = orderItems.map(item => `${item.quantity}x ${item.productName}`).join(', ');
+      
+      const message = await Message.create({
+        store: store._id,
+        order: order._id,
+        conversationType: "store",
+        senderType: "owner",
+        senderName: "Sistema",
+        senderEmail: "system@vitrinex.com",
+        content: `🛒 Nueva orden #${order._id.toString().slice(-6).toUpperCase()}\n\n📦 ${itemsCount} producto${itemsCount > 1 ? 's' : ''}:\n${productsList}\n\n💰 Total: $${total.toLocaleString('es-CL')}\n\n✅ Tu pedido ha sido recibido y está siendo procesado.`,
+        isRead: false,
+      });
+
+      console.log('✅ Mensaje automático creado para orden:', message._id);
+
+      // Actualizar lastMessageAt y contador de no leídos en la orden
+      order.lastMessageAt = new Date();
+      order.unreadMessagesOwner = (order.unreadMessagesOwner || 0) + 1;
+      await order.save();
+      
+      console.log('✅ Orden actualizada con lastMessageAt y unreadMessagesOwner:', order.unreadMessagesOwner);
+    } catch (msgError) {
+      console.error('❌ Error creando mensaje automático para orden:', msgError);
+      // No fallar la creación de la orden si falla el mensaje
+    }
+
     res.status(201).json({
       _id: order._id,
       items: order.items,
@@ -1633,6 +1663,43 @@ export const createAppointment = async (req, res) => {
 
     // Popular servicio si existe
     await booking.populate("service", "name duration price");
+
+    // 🤖 Crear mensaje automático para el chat
+    try {
+      const bookingDate = new Date(normalizedDate);
+      const formattedDate = bookingDate.toLocaleDateString('es-CL', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      const serviceInfo = service ? `\n🔧 Servicio: ${service.name}` : '';
+      const priceInfo = price > 0 ? `\n💰 Precio: $${price.toLocaleString('es-CL')}` : '';
+      
+      const message = await Message.create({
+        store: store._id,
+        booking: booking._id,
+        conversationType: "store",
+        senderType: "owner",
+        senderName: "Sistema",
+        senderEmail: "system@vitrinex.com",
+        content: `📅 Nueva reserva confirmada\n\n📆 Fecha: ${formattedDate}\n🕐 Hora: ${slot}${serviceInfo}${priceInfo}\n\n✅ Tu cita ha sido agendada exitosamente.`,
+        isRead: false,
+      });
+
+      console.log('✅ Mensaje automático creado para booking:', message._id);
+
+      // Actualizar lastMessageAt y contador de no leídos en el booking
+      booking.lastMessageAt = new Date();
+      booking.unreadMessagesOwner = (booking.unreadMessagesOwner || 0) + 1;
+      await booking.save();
+      
+      console.log('✅ Booking actualizado con lastMessageAt y unreadMessagesOwner:', booking.unreadMessagesOwner);
+    } catch (msgError) {
+      console.error('❌ Error creando mensaje automático para booking:', msgError);
+      // No fallar la creación del booking si falla el mensaje
+    }
 
     return res.status(201).json(booking);
   } catch (error) {
