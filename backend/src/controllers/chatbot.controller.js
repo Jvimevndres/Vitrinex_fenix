@@ -269,7 +269,7 @@ export const sendPremiumChatMessage = async (req, res) => {
       store: { $in: storeIds },
       createdAt: { $gte: threeMonthsAgo }
     })
-      .select('totalAmount status items customerName customerEmail createdAt updatedAt')
+      .select('total status items customerName customerEmail createdAt updatedAt')
       .sort({ createdAt: -1 })
       .lean();
     
@@ -293,19 +293,36 @@ export const sendPremiumChatMessage = async (req, res) => {
     
     // ============ ANÁLISIS PROFUNDO DE DATOS ============
     
+    // 🐛 DEBUG: Log de datos cargados
+    logger.log(`📊 Datos cargados para ${stores.map(s => s.name).join(', ')}:`);
+    logger.log(`   Productos: ${products.length}`);
+    logger.log(`   Órdenes (últimos 3 meses): ${allOrders.length}`);
+    if (allOrders.length > 0) {
+      const statusCounts = {};
+      allOrders.forEach(o => {
+        statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+      });
+      logger.log(`   Estados de órdenes: ${JSON.stringify(statusCounts)}`);
+    }
+    logger.log(`   Reservas: ${allBookings.length}`);
+    logger.log(`   Mensajes: ${recentMessages.length}`);
+    
     // 1. ANÁLISIS DE VENTAS
-    const completedOrders = allOrders.filter(o => o.status === 'completed' || o.status === 'delivered');
+    // Estados válidos: pending, confirmed, fulfilled, cancelled
+    const completedOrders = allOrders.filter(o => o.status === 'confirmed' || o.status === 'fulfilled');
     const pendingOrders = allOrders.filter(o => o.status === 'pending');
     const cancelledOrders = allOrders.filter(o => o.status === 'cancelled');
     
-    const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    logger.log(`   ✅ Órdenes completadas/confirmadas: ${completedOrders.length}`);
+    
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const averageOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
     
     // Ingresos por mes (últimos 3 meses)
     const monthlyRevenue = {};
     completedOrders.forEach(order => {
       const month = new Date(order.createdAt).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + order.totalAmount;
+      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (order.total || 0);
     });
     
     // 2. ANÁLISIS DE PRODUCTOS
@@ -315,9 +332,9 @@ export const sendPremiumChatMessage = async (req, res) => {
     allOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
-          const productName = item.name || item.productName || 'Producto sin nombre';
+          const productName = item.productName || item.name || 'Producto sin nombre';
           const quantity = item.quantity || 1;
-          const price = item.price || 0;
+          const price = item.unitPrice || item.price || 0;
           
           productSales[productName] = (productSales[productName] || 0) + quantity;
           productRevenue[productName] = (productRevenue[productName] || 0) + (price * quantity);
