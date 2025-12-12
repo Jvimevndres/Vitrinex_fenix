@@ -202,9 +202,50 @@ export const sendPremiumChatMessage = async (req, res) => {
     const Message = (await import("../models/message.model.js")).default;
 
     // Obtener TODAS las tiendas del usuario con información completa
-    const stores = await Store.find({ owner: userId })
+    const allStores = await Store.find({ owner: userId })
       .select('name category phone address description plan services schedule weeklySchedule specialDays createdAt')
       .lean();
+    
+    // 🎯 DETECCIÓN INTELIGENTE DE TIENDA ESPECÍFICA
+    // Si el usuario menciona una tienda específica, filtrar solo esa tienda
+    let stores = allStores;
+    let specificStoreDetected = null;
+    
+    if (allStores.length > 1) {
+      // Buscar si el mensaje menciona el nombre de alguna tienda
+      const messageLower = message.toLowerCase();
+      const mentionedStore = allStores.find(store => {
+        const storeName = store.name.toLowerCase();
+        // Buscar menciones exactas o parciales del nombre de la tienda
+        return messageLower.includes(storeName) || 
+               messageLower.includes(storeName.split(' ')[0]) || // Primera palabra del nombre
+               (storeName.length > 5 && messageLower.includes(storeName.substring(0, 5))); // Primeros 5 caracteres
+      });
+      
+      if (mentionedStore) {
+        stores = [mentionedStore];
+        specificStoreDetected = mentionedStore.name;
+        logger.log(`🎯 Tienda específica detectada: ${specificStoreDetected}`);
+      } else {
+        // Si no se detecta una tienda específica pero hay múltiples tiendas,
+        // verificar si la pregunta es genérica o específica
+        const specificQuestions = [
+          'esta tienda', 'mi tienda', 'la tienda',
+          'productos de', 'ventas de', 'clientes de',
+          'órdenes de', 'reservas de', 'ingresos de'
+        ];
+        
+        const isSpecificQuestion = specificQuestions.some(q => messageLower.includes(q));
+        
+        if (isSpecificQuestion && allStores.length > 0) {
+          // Si la pregunta es específica pero no menciona tienda, usar la primera/principal
+          stores = [allStores[0]];
+          specificStoreDetected = allStores[0].name;
+          logger.log(`🎯 Usando tienda por defecto (pregunta específica): ${specificStoreDetected}`);
+        }
+        // Si no, mantener todas las tiendas para preguntas generales
+      }
+    }
     
     const storeIds = stores.map(s => s._id);
     
@@ -374,8 +415,19 @@ export const sendPremiumChatMessage = async (req, res) => {
       email: user.email,
       plan: user.plan,
       
+      // ========== FILTRO DE TIENDA ESPECÍFICA ==========
+      specificStoreFilter: specificStoreDetected ? {
+        detected: true,
+        storeName: specificStoreDetected,
+        message: `El usuario pregunta específicamente sobre la tienda "${specificStoreDetected}". RESPONDE SOLO CON DATOS DE ESTA TIENDA. No mezcles información de otras tiendas.`
+      } : {
+        detected: false,
+        message: allStores.length > 1 ? `El usuario tiene ${allStores.length} tiendas. Si la pregunta es sobre una tienda específica, solicita que aclare cuál tienda.` : null
+      },
+      
       // ========== TIENDAS ==========
       storesCount: stores.length,
+      totalStoresOwned: allStores.length,
       stores: stores.map(s => ({
         name: s.name,
         category: s.category,

@@ -114,15 +114,20 @@ async function callOpenAI(userMessage) {
  * @returns {Promise<string>} - Respuesta de la IA
  */
 async function callOpenAIPremium(userMessage, context) {
+  // Detectar si hay un filtro de tienda específica
+  const storeFilterMessage = context.specificStoreFilter?.detected 
+    ? `\n⚠️ FILTRO ACTIVO: ${context.specificStoreFilter.message}\n` 
+    : (context.specificStoreFilter?.message ? `\n💡 NOTA: ${context.specificStoreFilter.message}\n` : '');
+  
   // Construir contexto detallado del negocio con formato optimizado
   const contextInfo = `
 ═══════════════════════════════════════════════════════════════
 📊 DATOS COMPLETOS DEL NEGOCIO - ${context.username}
 ═══════════════════════════════════════════════════════════════
 📅 Fecha del análisis: ${context.analysisDate || new Date().toLocaleDateString('es-ES')}
-
+${storeFilterMessage}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏪 TIENDAS (${context.storesCount})
+🏪 TIENDAS${context.specificStoreFilter?.detected ? ' (FILTRADO)' : ''} (${context.storesCount}${context.totalStoresOwned !== context.storesCount ? ` de ${context.totalStoresOwned} totales` : ''})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${context.stores && context.stores.length > 0 ? context.stores.map(s => `
   • ${s.name}
@@ -234,6 +239,11 @@ ${context.bookings.topServices.map((s, i) => `    ${i + 1}. ${s.service}: ${s.bo
             "Eres un CONSULTOR DE NEGOCIOS EXPERTO y ASISTENTE EMPRESARIAL PREMIUM de Vitrinex, especializado en análisis de datos comerciales, estrategia de ventas y optimización de negocios.\n\n" +
             "🎯 TU MISIÓN:\n" +
             "Analizar los datos REALES del negocio del usuario y proporcionar insights ACCIONABLES que generen RESULTADOS INMEDIATOS.\n\n" +
+            "🚨 IMPORTANTE - FILTRO DE TIENDAS:\n" +
+            "• Si el contexto indica que hay un FILTRO ACTIVO para una tienda específica, SOLO responde con datos de ESA tienda\n" +
+            "• NUNCA mezcles información de diferentes tiendas cuando el filtro está activo\n" +
+            "• Si el usuario tiene múltiples tiendas pero no especifica cuál, menciona que tiene varias y pregunta cuál le interesa analizar\n" +
+            "• Cuando respondas sobre una tienda específica, menciona su nombre claramente al inicio de tu respuesta\n\n" +
             "CAPACIDADES PRINCIPALES:\n" +
             "• Analizar ventas, tendencias y patrones de compra con datos reales\n" +
             "• Identificar productos rentables y productos problemáticos\n" +
@@ -250,7 +260,8 @@ ${context.bookings.topServices.map((s, i) => `    ${i + 1}. ${s.service}: ${s.bo
             "2. SÉ ESPECÍFICO: En lugar de 'algunos productos', di 'Árbol (10 unidades en stock)'\n" +
             "3. SÉ ACCIONABLE: Da pasos concretos que el usuario pueda ejecutar HOY\n" +
             "4. PRIORIZA: Identifica lo MÁS IMPORTANTE primero (problemas críticos, oportunidades grandes)\n" +
-            "5. CUANTIFICA: Usa números, porcentajes, comparaciones y proyecciones\n\n" +
+            "5. CUANTIFICA: Usa números, porcentajes, comparaciones y proyecciones\n" +
+            "6. RESPETA EL FILTRO: Si se indica una tienda específica, NO menciones datos de otras tiendas\n\n" +
             "ESTRUCTURA Y ESTILO:\n" +
             "• Usa un formato LIMPIO y fácil de leer\n" +
             "• EVITA el exceso de símbolos: máximo 1-2 emojis por sección principal\n" +
@@ -261,8 +272,8 @@ ${context.bookings.topServices.map((s, i) => `    ${i + 1}. ${s.service}: ${s.bo
             "• Profesional pero cercano (como un mentor de negocios)\n" +
             "• Directo y sin rodeos\n" +
             "• Positivo pero realista (si hay problemas, menciónalos CON soluciones)\n\n" +
-            "EJEMPLO DE FORMATO CORRECTO:\n" +
-            "Hola, aquí está el análisis de tu tienda GrowShopWeed.\n\n" +
+            "EJEMPLO DE FORMATO CORRECTO CON FILTRO:\n" +
+            "Análisis de GrowShopWeed\n\n" +
             "RESUMEN GENERAL\n" +
             "Tienes 1 orden pendiente sin completar, 8 productos sin ventas y un solo cliente. Esto requiere atención inmediata.\n\n" +
             "SITUACIÓN ACTUAL:\n" +
@@ -286,8 +297,9 @@ ${context.bookings.topServices.map((s, i) => `    ${i + 1}. ${s.service}: ${s.bo
             "• Enfócate en insights que generen VALOR COMERCIAL inmediato\n" +
             "• Si detectas alertas críticas (stock agotado, ventas cero), menciónalas primero\n" +
             "• Adapta tu respuesta al contexto: si pregunta por productos, enfócate en productos\n" +
-            "• Mantén respuestas concisas: 100-200 palabras para consultas simples, 300-500 palabras máximo para análisis completos\n\n" +
-            "Recuerda: Tu objetivo es ser el MEJOR CONSULTOR DE NEGOCIOS del usuario, usando DATOS REALES para generar RESULTADOS REALES con un formato LIMPIO y PROFESIONAL.",
+            "• Mantén respuestas concisas: 100-200 palabras para consultas simples, 300-500 palabras máximo para análisis completos\n" +
+            "• RESPETA SIEMPRE el filtro de tienda específica si está activo\n\n" +
+            "Recuerda: Tu objetivo es ser el MEJOR CONSULTOR DE NEGOCIOS del usuario, usando DATOS REALES para generar RESULTADOS REALES con un formato LIMPIO y PROFESIONAL, y NUNCA mezclando información de diferentes tiendas.",
         },
         {
           role: "user",
