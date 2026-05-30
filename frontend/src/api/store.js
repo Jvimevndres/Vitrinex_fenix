@@ -1,11 +1,5 @@
 // frontend/src/api/store.js
-import axios from "axios";
-
-// Ajusta la URL si tu backend corre en otro puerto/dominio
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
-  withCredentials: true,
-});
+import api from './axios';
 
 /* =====================================
  * 🔹 TIENDAS PÚBLICAS (explorar / mapa)
